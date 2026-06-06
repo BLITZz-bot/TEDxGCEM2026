@@ -29,10 +29,21 @@ export default function Contact() {
           <div className="mb-8">
             <h4 className="text-ted-red font-bold uppercase tracking-widest text-xs mb-4">Location</h4>
             <p className="text-2xl font-black mb-2">GCEM Bengaluru</p>
-            <p className="text-white/50 text-sm leading-relaxed">
-              We Are excited to see you on GCEM, <br />
+            <p className="text-white/50 text-sm leading-relaxed mb-6">
+             
               Bengaluru, Karnataka 560048
             </p>
+
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-ted-red font-bold uppercase tracking-widest text-xs mb-1">Email</h4>
+                <a href="mailto:organizer@tedxgcem.com" className="text-xl font-black hover:text-ted-red transition-colors">organizer@tedxgcem.com</a>
+              </div>
+              <div>
+                <h4 className="text-ted-red font-bold uppercase tracking-widest text-xs mb-1">Phone</h4>
+                <a href="tel:+919900000000" className="text-xl font-black hover:text-ted-red transition-colors">+91 79758 71167</a>
+              </div>
+            </div>
           </div>
 
           {/* Map Container */}

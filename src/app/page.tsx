@@ -126,8 +126,8 @@ export default function Home() {
               Contact Us
             </button>
           </div>
-          <p className="mt-8 text-[10px] text-white/20 uppercase tracking-widest">
-            © {new Date().getFullYear()} TEDxGCEM. All Rights Reserved.
+          <p className="mt-8 text-[10px] text-white/20 tracking-widest">
+            © {new Date().getFullYear()} <span className="text-ted-red uppercase font-bold">TED</span><span className="text-ted-red lowercase font-bold">x</span><span className="text-white uppercase font-bold">GCEM</span>. All Rights Reserved.
           </p>
         </div>
       </footer>

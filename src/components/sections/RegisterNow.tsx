@@ -24,7 +24,7 @@ export default function RegisterNow() {
         <div className="space-y-8">
           <div className="text-center mb-10">
             <p className="text-white/60">
-              Complete the form below to register for TEDxGCEM 2026. Limited seats available.
+              Complete the form below to register for <span className="text-ted-red uppercase">TED</span><span className="text-ted-red lowercase">x</span><span className="text-white uppercase">GCEM</span> 2026. Limited seats available.
             </p>
           </div>
 
