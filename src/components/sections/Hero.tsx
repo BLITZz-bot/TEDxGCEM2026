@@ -315,7 +315,7 @@ export default function Hero({ onTabChange }: HeroProps) {
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.9, ease: "easeOut" }}
-        className="relative z-10 max-w-xl flex flex-col items-start text-left space-y-6 -translate-y-12 md:translate-y-8"
+        className="relative z-10 max-w-xl flex flex-col items-start text-left space-y-6 -translate-y-24 md:translate-y-8"
       >
         <h2 className="text-xl md:text-2xl tracking-[0.25em] font-black uppercase font-sans leading-none">
           <span className="text-ted-red">TED<span className="lowercase">x</span></span>
