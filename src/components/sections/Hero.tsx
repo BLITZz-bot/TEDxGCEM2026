@@ -8,17 +8,30 @@ interface HeroProps {
   onTabChange: (id: TabId) => void;
 }
 
+interface BgSettings {
+  desktop: { x: number; y: number; scale: number };
+  mobile: { x: number; y: number; scale: number };
+  opacity: number;
+  themeYearSize: number;
+}
+
 export default function Hero({ onTabChange }: HeroProps) {
   const [mounted, setMounted] = React.useState(false);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const [isControlsOpen, setIsControlsOpen] = React.useState(false);
-  const [bgSettings, setBgSettings] = React.useState({
+  const [bgSettings, setBgSettings] = React.useState<BgSettings>({
     desktop: {
       x: 112.80010986328125,
       y: 140.20001220703125,
       scale: 1.1
     },
-    opacity: 88
+    mobile: {
+      x: 0,
+      y: 0,
+      scale: 1
+    },
+    opacity: 88,
+    themeYearSize: 10
   });
   const [isCursorDragActive, setIsCursorDragActive] = React.useState(false);
   const [saveStatus, setSaveStatus] = React.useState<string | null>(null);
@@ -84,7 +97,8 @@ export default function Hero({ onTabChange }: HeroProps) {
       y: ${bgSettings.mobile.y},
       scale: ${bgSettings.mobile.scale.toFixed(2)}
     },
-    opacity: ${bgSettings.opacity}
+    opacity: ${bgSettings.opacity},
+    themeYearSize: ${bgSettings.themeYearSize}
   });`;
           navigator.clipboard.writeText(codeSnippet)
             .then(() => {
