@@ -22,7 +22,7 @@ export default function Hero({ onTabChange }: HeroProps) {
   const [bgSettings, setBgSettings] = React.useState<BgSettings>({
     desktop: {
       x: 112.80010986328125,
-      y: 194,
+      y: 201,
       scale: 1.1
     },
     mobile: {
@@ -315,7 +315,7 @@ export default function Hero({ onTabChange }: HeroProps) {
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.9, ease: "easeOut" }}
-        className="relative z-10 max-w-xl flex flex-col items-start text-left space-y-6 -translate-y-48 md:translate-y-8"
+        className="relative z-10 max-w-xl flex flex-col items-start text-left space-y-6 -translate-y-48 md:-translate-y-4"
       >
         <h2 className="text-xl md:text-2xl tracking-[0.25em] font-black uppercase font-sans leading-none">
           <span className="text-ted-red">TED<span className="lowercase">x</span></span>
@@ -329,14 +329,34 @@ export default function Hero({ onTabChange }: HeroProps) {
           </span>
         </h1>
         
-        <p className="text-white/60 text-sm md:text-base leading-relaxed font-medium max-w-sm pb-6">
+        <p className="text-white/60 text-sm md:text-base leading-relaxed font-medium max-w-sm pb-2">
           A single idea can act as a catalyst, creating ripples that expand outward to challenge status quos, spark new connections, and transform communities.
         </p>
 
+        {/* Laptop-Only Action Buttons (nested under description) */}
+        <div className="hidden md:flex flex-row items-center gap-4 w-auto pt-2 pointer-events-auto">
+          <motion.button
+            whileHover={{ scale: 1.04, boxShadow: "0 0 20px rgba(235,0,40,0.5)" }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => onTabChange("register")}
+            className="w-full sm:w-auto px-10 py-4 bg-ted-red text-white font-black rounded-full text-sm transition-all uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(235,0,40,0.2)] text-center"
+          >
+            Get Tickets
+          </motion.button>
+          
+          <motion.button
+            whileHover={{ scale: 1.04, backgroundColor: "rgba(255,255,255,0.06)" }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => onTabChange("about")}
+            className="w-full sm:w-auto px-10 py-4 bg-transparent border border-white/10 text-white font-bold rounded-full text-sm hover:border-white/15 transition-all uppercase tracking-widest cursor-pointer text-center"
+          >
+            Learn More
+          </motion.button>
+        </div>
       </motion.div>
 
-      {/* Absolute Positioned Stacked Console at the bottom-left */}
-      <div className="absolute bottom-36 md:bottom-16 left-1/2 -translate-x-1/2 md:left-20 md:translate-x-0 z-20 flex flex-col sm:flex-row items-center gap-4 w-full max-w-xs sm:max-w-md px-0 pointer-events-auto">
+      {/* Mobile-Only Absolute Positioned Stacked Console at the bottom */}
+      <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-20 flex md:hidden flex-col sm:flex-row items-center gap-4 w-full max-w-xs sm:max-w-md px-0 pointer-events-auto">
         <motion.button
           whileHover={{ scale: 1.04, boxShadow: "0 0 20px rgba(235,0,40,0.5)" }}
           whileTap={{ scale: 0.96 }}

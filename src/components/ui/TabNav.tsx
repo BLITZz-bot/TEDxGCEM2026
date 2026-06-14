@@ -51,11 +51,25 @@ interface TabNavProps {
 export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [isOpen]);
+
   return (
     <>
       {/* Desktop Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 hidden md:flex justify-center p-6 pointer-events-none">
-        <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 bg-ted-dark-gray/80 p-1.5 rounded-full border border-white/10 max-w-full pointer-events-auto">
+        <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 bg-ted-dark-gray/80 p-1.5 rounded-3xl sm:rounded-full border border-white/10 max-w-full overflow-x-auto no-scrollbar pointer-events-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -108,7 +122,7 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 160, mass: 0.9, delay: 0.05 }}
-              className="fixed inset-0 z-40 bg-neutral-950/98 backdrop-blur-2xl flex flex-col justify-between pointer-events-auto md:hidden overflow-y-auto"
+              className="fixed inset-0 z-40 bg-black flex flex-col justify-between pointer-events-auto md:hidden overflow-y-auto"
               style={{
                 paddingTop: `${mobileMenuConfig.overlayPaddingTop}px`,
                 paddingBottom: `${mobileMenuConfig.overlayPaddingBottom}px`,
