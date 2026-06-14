@@ -26,12 +26,12 @@ export default function Hero({ onTabChange }: HeroProps) {
       scale: 1.1
     },
     mobile: {
-      x: 0,
-      y: 0,
+      x: 21,
+      y: 90,
       scale: 1
     },
-    opacity: 88,
-    themeYearSize: 10
+    opacity: 63,
+    themeYearSize: 14
   });
   const [isCursorDragActive, setIsCursorDragActive] = React.useState(false);
   const [saveStatus, setSaveStatus] = React.useState<string | null>(null);
