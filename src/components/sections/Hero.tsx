@@ -26,11 +26,11 @@ export default function Hero({ onTabChange }: HeroProps) {
       scale: 1.1
     },
     mobile: {
-      x: 21,
-      y: 90,
+      x: 14,
+      y: 97,
       scale: 1
     },
-    opacity: 63,
+    opacity: 58,
     themeYearSize: 14
   });
   const [isCursorDragActive, setIsCursorDragActive] = React.useState(false);
@@ -227,33 +227,57 @@ export default function Hero({ onTabChange }: HeroProps) {
             : "pointer-events-none cursor-default"
         }`}
         style={{
-          x: isMobile ? bgSettings.mobile.x : bgSettings.desktop.x,
-          y: isMobile ? bgSettings.mobile.y : bgSettings.desktop.y,
-          scale: isMobile ? bgSettings.mobile.scale : bgSettings.desktop.scale,
+          x: bgSettings.desktop.x,
+          y: bgSettings.desktop.y,
+          scale: bgSettings.desktop.scale,
         }}
         onDrag={(e, info) => {
-          setBgSettings(prev => {
-            const device = isMobile ? "mobile" : "desktop";
-            return {
-              ...prev,
-              [device]: {
-                ...prev[device],
-                x: prev[device].x + info.delta.x,
-                y: prev[device].y + info.delta.y
-              }
-            };
-          });
+          setBgSettings(prev => ({
+            ...prev,
+            desktop: {
+              ...prev.desktop,
+              x: prev.desktop.x + info.delta.x,
+              y: prev.desktop.y + info.delta.y
+            }
+          }));
+        }}
+      />
+
+      {/* Mobile-Only Movable/Draggable Background Image Layer */}
+      <motion.img 
+        src="/mobbg.png"
+        drag={isCursorDragActive}
+        dragMomentum={false}
+        className={`absolute w-full h-full object-contain z-0 select-none block md:hidden ${
+          isCursorDragActive 
+            ? "pointer-events-auto cursor-grab active:cursor-grabbing" 
+            : "pointer-events-none cursor-default"
+        }`}
+        style={{
+          x: bgSettings.mobile.x,
+          y: bgSettings.mobile.y,
+          scale: bgSettings.mobile.scale,
+        }}
+        onDrag={(e, info) => {
+          setBgSettings(prev => ({
+            ...prev,
+            mobile: {
+              ...prev.mobile,
+              x: prev.mobile.x + info.delta.x,
+              y: prev.mobile.y + info.delta.y
+            }
+          }));
         }}
       />
 
       {/* Dark Overlay Tint Layer */}
       <div 
-        className="absolute inset-0 bg-black pointer-events-none z-0 hidden md:block"
+        className="absolute inset-0 bg-black pointer-events-none z-0 block"
         style={{ opacity: bgSettings.opacity / 100 }}
       />
 
       {/* Bottom Black Gradient Fade Overlay */}
-      <div className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none z-0 hidden md:block" />
+      <div className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none z-0 block" />
 
       {/* Mobile-Only Premium Ambient Glow (visible only on mobile) */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none block md:hidden">
@@ -309,15 +333,6 @@ export default function Hero({ onTabChange }: HeroProps) {
           A single idea can act as a catalyst, creating ripples that expand outward to challenge status quos, spark new connections, and transform communities.
         </p>
 
-        {/* Diagonal Ribbon Marquee Panel */}
-        <div className="w-screen py-3 bg-white/5 border-y border-white/5 overflow-hidden relative -left-6 md:-left-20 pointer-events-none">
-          <div className="animate-marquee flex gap-12 whitespace-nowrap text-[9px] md:text-[10px] font-black uppercase tracking-[0.4em] text-white/20">
-            <span>• TEDxGCEM REPRESENTS : RIPPLE • REGISTER NOW • BENGALURUE</span>
-            <span>• TEDxGCEM REPRESENTS : RIPPLE • REGISTER NOW • BENGALURUE</span>
-            <span>• TEDxGCEM REPRESENTS : RIPPLE • REGISTER NOW • BENGALURUE</span>
-            <span>• TEDxGCEM REPRESENTS : RIPPLE • REGISTER NOW • BENGALURUE</span>
-          </div>
-        </div>
       </motion.div>
 
       {/* Absolute Positioned Stacked Console at the bottom-left */}
