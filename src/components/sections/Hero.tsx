@@ -26,9 +26,9 @@ export default function Hero({ onTabChange }: HeroProps) {
       scale: 1.1
     },
     mobile: {
-      x: 14,
+      x: -69,
       y: 97,
-      scale: 1
+      scale: 1.1
     },
     opacity: 58,
     themeYearSize: 14
