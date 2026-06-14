@@ -147,7 +147,7 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
                   <span className="text-white/40 tracking-[0.2em] font-sans ml-1 text-xs">2026</span>
                 </div>
                 <div className="text-[9px] uppercase tracking-widest text-white/30 font-semibold font-mono">
-                  Theme: Ripple
+                  
                 </div>
               </motion.div>
 
