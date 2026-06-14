@@ -36,6 +36,11 @@ export default function Hero({ onTabChange }: HeroProps) {
   const [isCursorDragActive, setIsCursorDragActive] = React.useState(false);
   const [saveStatus, setSaveStatus] = React.useState<string | null>(null);
   const [isMobile, setIsMobile] = React.useState(false);
+  const isMobileRef = React.useRef(false);
+
+  React.useEffect(() => {
+    isMobileRef.current = isMobile;
+  }, [isMobile]);
 
   const isProduction = process.env.NODE_ENV === "production";
 
@@ -92,7 +97,7 @@ export default function Hero({ onTabChange }: HeroProps) {
       y: 140.20001220703125,
       scale: 1.1
     },
-    opacity: 63
+    opacity: 42
   });`;
           navigator.clipboard.writeText(codeSnippet)
             .then(() => {
@@ -153,7 +158,7 @@ export default function Hero({ onTabChange }: HeroProps) {
       }
 
       update(targetX: number, targetY: number, mouseActive: boolean) {
-        if (mouseActive) {
+        if (mouseActive && !isMobileRef.current) {
           const dx = targetX - this.x;
           const dy = targetY - this.y;
           const dist = Math.hypot(dx, dy);
@@ -225,6 +230,7 @@ export default function Hero({ onTabChange }: HeroProps) {
     };
 
     const handleClick = (e: MouseEvent) => {
+      if (isMobileRef.current) return;
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
