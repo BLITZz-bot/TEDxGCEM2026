@@ -2,8 +2,13 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { TabId } from "@/components/ui/TabNav";
 
-export default function GetMyPass() {
+interface GetMyPassProps {
+  onTabChange: (id: TabId) => void;
+}
+
+export default function GetMyPass({ onTabChange }: GetMyPassProps) {
   const [email, setEmail] = React.useState("");
   const [isSearching, setIsSearching] = React.useState(false);
   const [passFound, setPassFound] = React.useState(false);
@@ -124,10 +129,9 @@ export default function GetMyPass() {
           Didn't find your pass? If you haven't registered yet,
         </p>
         <button 
-          className="px-6 py-3 bg-ted-red border border-ted-red text-white font-bold rounded-full text-sm hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(235,0,40,0.2)]"
+          className="px-6 py-3 bg-ted-red border border-ted-red text-white font-bold rounded-full text-sm hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(235,0,40,0.2)] cursor-pointer"
           onClick={() => {
-            // Since we are in a sub-component, we'll assume the user will navigate 
-            // via the TabNav, but providing a visual button here as requested.
+            onTabChange("register");
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         >

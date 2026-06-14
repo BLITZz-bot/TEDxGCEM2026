@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TabNav, { TabId } from "@/components/ui/TabNav";
 import Hero from "@/components/sections/Hero";
@@ -14,11 +14,22 @@ import Contact from "@/components/sections/Contact";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
 
   const renderSection = () => {
     switch (activeTab) {
       case "home":
-        return <Hero key="home" />;
+        return <Hero key="home" onTabChange={setActiveTab} />;
       case "about":
         return <About key="about" />;
       case "speakers":
@@ -28,23 +39,31 @@ export default function Home() {
       case "partners":
         return <Partners key="partners" />;
       case "register":
-        return <RegisterNow key="register" />;
+        return <RegisterNow key="register" onTabChange={setActiveTab} />;
       case "get-pass":
-        return <GetMyPass key="get-pass" />;
+        return <GetMyPass key="get-pass" onTabChange={setActiveTab} />;
       case "contact":
         return <Contact key="contact" />;
       default:
-        return <Hero key="home" />;
+        return <Hero key="home" onTabChange={setActiveTab} />;
     }
   };
 
   return (
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
+      {/* Interactive Cursor Spotlight Glow */}
+      <div 
+        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300 opacity-20 hidden md:block"
+        style={{
+          background: `radial-gradient(600px at ${mousePos.x}px ${mousePos.y}px, rgba(235, 0, 40, 0.15), transparent 80%)`
+        }}
+      />
+
       {/* Navigation */}
       <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Main Content with Animated Transitions */}
-      <div className="relative z-0">
+      <div className="relative z-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -127,7 +146,7 @@ export default function Home() {
             </button>
           </div>
           <p className="mt-8 text-[10px] text-white/20 tracking-widest">
-            © {new Date().getFullYear()} <span className="text-ted-red uppercase font-bold">TED</span><span className="text-ted-red lowercase font-bold">x</span><span className="text-white uppercase font-bold">GCEM</span>. All Rights Reserved.
+            © {new Date().getFullYear()} <span className="text-ted-red uppercase font-black">TED</span><span className="text-ted-red lowercase font-black">x</span><span className="text-white uppercase font-black">GCEM</span>. All Rights Reserved.
           </p>
         </div>
       </footer>
