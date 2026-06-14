@@ -323,9 +323,9 @@ export default function Hero({ onTabChange }: HeroProps) {
         
         <h1 className="text-7xl md:text-9xl font-black leading-[0.9] tracking-tighter text-left uppercase select-none">
           <motion.span 
-            className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff_25%,#EB0028_45%,#EB0028_55%,#ffffff_75%)] bg-[length:250%_100%] inline-block cursor-default"
+            className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff_20%,#EB0028_45%,#EB0028_55%,#ffffff_80%)] bg-[length:200%_100%] inline-block cursor-default"
             animate={{ 
-              backgroundPosition: ["250% 0", "0% 0"]
+              backgroundPosition: ["0% 0", "-200% 0"]
             }}
             transition={{ 
               repeat: Infinity, 
