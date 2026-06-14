@@ -10,12 +10,13 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { desktop, opacity } = body;
+    const { desktop, mobile, opacity, themeYearSize } = body;
 
     // Check parameter types
     if (
       !desktop || typeof desktop.x !== "number" || typeof desktop.y !== "number" || typeof desktop.scale !== "number" ||
-      typeof opacity !== "number"
+      !mobile || typeof mobile.x !== "number" || typeof mobile.y !== "number" || typeof mobile.scale !== "number" ||
+      typeof opacity !== "number" || typeof themeYearSize !== "number"
     ) {
       return NextResponse.json({ error: "Invalid parameters" }, { status: 400 });
     }
@@ -28,15 +29,15 @@ export async function POST(request: Request) {
 
     let content = fs.readFileSync(filePath, "utf-8");
 
-    // Match the useState declaration for bgSettings
-    const regex = /(const\s+\[bgSettings,\s+setBgSettings\]\s*=\s*React\.useState\(\{)([\s\S]*?)(\}\);)/;
+    // Match the useState declaration for bgSettings, allowing for generic <BgSettings>
+    const regex = /(const\s+\[bgSettings,\s+setBgSettings\]\s*=\s*React\.useState(?:<[^>]+>)?\(\{)([\s\S]*?)(\}\);)/;
     
     if (!regex.test(content)) {
       return NextResponse.json({ error: "Could not locate bgSettings state declaration in Hero.tsx" }, { status: 400 });
     }
 
-    // Replace state with formatting for desktop only
-    const replacement = `$1\n    desktop: {\n      x: ${desktop.x},\n      y: ${desktop.y},\n      scale: ${parseFloat(desktop.scale.toFixed(2))}\n    },\n    opacity: ${opacity}\n  $3`;
+    // Replace state with formatting for all settings
+    const replacement = `$1\n    desktop: {\n      x: ${desktop.x},\n      y: ${desktop.y},\n      scale: ${parseFloat(desktop.scale.toFixed(2))}\n    },\n    mobile: {\n      x: ${mobile.x},\n      y: ${mobile.y},\n      scale: ${parseFloat(mobile.scale.toFixed(2))}\n    },\n    opacity: ${opacity},\n    themeYearSize: ${themeYearSize}\n  $3`;
     
     content = content.replace(regex, replacement);
     fs.writeFileSync(filePath, content, "utf-8");
