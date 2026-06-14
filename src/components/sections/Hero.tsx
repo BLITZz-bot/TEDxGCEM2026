@@ -36,11 +36,6 @@ export default function Hero({ onTabChange }: HeroProps) {
   const [isCursorDragActive, setIsCursorDragActive] = React.useState(false);
   const [saveStatus, setSaveStatus] = React.useState<string | null>(null);
   const [isMobile, setIsMobile] = React.useState(false);
-  const isMobileRef = React.useRef(false);
-
-  React.useEffect(() => {
-    isMobileRef.current = isMobile;
-  }, [isMobile]);
 
   const isProduction = process.env.NODE_ENV === "production";
 
@@ -97,7 +92,7 @@ export default function Hero({ onTabChange }: HeroProps) {
       y: 140.20001220703125,
       scale: 1.1
     },
-    opacity: 42
+    opacity: 11
   });`;
           navigator.clipboard.writeText(codeSnippet)
             .then(() => {
@@ -157,19 +152,7 @@ export default function Hero({ onTabChange }: HeroProps) {
         this.alpha = Math.random() * 0.55 + 0.25;
       }
 
-      update(targetX: number, targetY: number, mouseActive: boolean) {
-        if (mouseActive && !isMobileRef.current) {
-          const dx = targetX - this.x;
-          const dy = targetY - this.y;
-          const dist = Math.hypot(dx, dy);
-
-          if (dist < 180) {
-            const force = (180 - dist) / 180;
-            // Gentle cursor repulsion (push away from target instead of pulling)
-            this.vx -= (dx / dist) * force * 0.45;
-            this.vy -= (dy / dist) * force * 0.45;
-          }
-        }
+      update() {
 
         // Soft upward drift and slight noise/wind
         this.vy -= 0.02;
@@ -213,59 +196,11 @@ export default function Hero({ onTabChange }: HeroProps) {
       particles.push(new Particle());
     }
 
-    const target = { x: canvas.width / 2, y: canvas.height / 2 };
-    let isMouseActive = false;
-    let angle = 0;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      target.x = e.clientX - rect.left;
-      target.y = e.clientY - rect.top;
-      isMouseActive = true;
-    };
-
-    const handleMouseLeave = () => {
-      isMouseActive = false;
-    };
-
-    const handleClick = (e: MouseEvent) => {
-      if (isMobileRef.current) return;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      
-      // Explosion physics repulsion force field
-      particles.forEach((p) => {
-        const dx = p.x - mx;
-        const dy = p.y - my;
-        const dist = Math.hypot(dx, dy);
-        if (dist < 350) {
-          const force = (350 - dist) / 350;
-          const angle = Math.atan2(dy, dx);
-          p.vx += Math.cos(angle) * force * 14;
-          p.vy += Math.sin(angle) * force * 14;
-        }
-      });
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseleave", handleMouseLeave);
-    window.addEventListener("click", handleClick);
-
     const animate = () => {
       ctx.clearRect(0, 0, canvas!.width, canvas!.height);
 
-      // Orbit target automatically when mouse is inactive
-      if (!isMouseActive) {
-        angle += 0.01;
-        target.x = canvas!.width / 2 + Math.cos(angle) * (canvas!.width * 0.25);
-        target.y = canvas!.height / 2 + Math.sin(angle * 1.6) * (canvas!.height * 0.15);
-      }
-
       particles.forEach((p) => {
-        p.update(target.x, target.y, isMouseActive);
+        p.update();
         p.draw();
       });
 
@@ -275,9 +210,6 @@ export default function Hero({ onTabChange }: HeroProps) {
 
     return () => {
       window.removeEventListener("resize", resizeCanvas);
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseleave", handleMouseLeave);
-      window.removeEventListener("click", handleClick);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
