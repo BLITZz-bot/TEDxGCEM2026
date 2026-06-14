@@ -27,7 +27,7 @@ export default function Hero({ onTabChange }: HeroProps) {
     },
     mobile: {
       x: -21,
-      y: 97,
+      y: 14,
       scale: 1.1
     },
     opacity: 58,
@@ -315,7 +315,7 @@ export default function Hero({ onTabChange }: HeroProps) {
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.9, ease: "easeOut" }}
-        className="relative z-10 max-w-xl flex flex-col items-start text-left space-y-6 -translate-y-24 md:translate-y-8"
+        className="relative z-10 max-w-xl flex flex-col items-start text-left space-y-6 -translate-y-32 md:translate-y-8"
       >
         <h2 className="text-xl md:text-2xl tracking-[0.25em] font-black uppercase font-sans leading-none">
           <span className="text-ted-red">TED<span className="lowercase">x</span></span>
@@ -336,7 +336,7 @@ export default function Hero({ onTabChange }: HeroProps) {
       </motion.div>
 
       {/* Absolute Positioned Stacked Console at the bottom-left */}
-      <div className="absolute bottom-28 md:bottom-16 left-1/2 -translate-x-1/2 md:left-20 md:translate-x-0 z-20 flex flex-col sm:flex-row items-center gap-4 w-full max-w-xs sm:max-w-md px-0 pointer-events-auto">
+      <div className="absolute bottom-36 md:bottom-16 left-1/2 -translate-x-1/2 md:left-20 md:translate-x-0 z-20 flex flex-col sm:flex-row items-center gap-4 w-full max-w-xs sm:max-w-md px-0 pointer-events-auto">
         <motion.button
           whileHover={{ scale: 1.04, boxShadow: "0 0 20px rgba(235,0,40,0.5)" }}
           whileTap={{ scale: 0.96 }}
