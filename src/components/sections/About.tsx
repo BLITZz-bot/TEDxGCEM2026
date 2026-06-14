@@ -29,7 +29,7 @@ export default function About() {
               <span className="text-ted-red italic uppercase">TED</span><span className="text-ted-red italic lowercase">x</span><span className="text-white uppercase">GCEM</span>
             </h4>
             <p className="text-white/70 leading-relaxed">
-              TEDxGCEM is a locally organized event that brings people together to share a TED-like experience at the Gopalan College of Engineering and Management. Our mission is to foster "Ideas Worth Spreading" within our campus and the wider community, sparking deep discussion and connection.
+              TEDxGCEM is a locally organized event that brings people together to share a TED-like experience at the Gopalan College of Engineering and Management. Our mission is to foster &quot;Ideas Worth Spreading&quot; within our campus and the wider community, sparking deep discussion and connection.
             </p>
           </div>
           

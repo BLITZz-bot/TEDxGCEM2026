@@ -16,7 +16,6 @@ interface BgSettings {
 }
 
 export default function Hero({ onTabChange }: HeroProps) {
-  const [mounted, setMounted] = React.useState(false);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const [isControlsOpen, setIsControlsOpen] = React.useState(false);
   const [bgSettings, setBgSettings] = React.useState<BgSettings>({
@@ -108,7 +107,6 @@ export default function Hero({ onTabChange }: HeroProps) {
   };
 
   React.useEffect(() => {
-    setMounted(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
