@@ -126,7 +126,7 @@ export default function GetMyPass({ onTabChange }: GetMyPassProps) {
 
       <div className="mt-12 flex flex-col items-center gap-4">
         <p className="text-white/30 text-xs text-center max-w-lg">
-          Didn't find your pass? If you haven't registered yet,
+          Didn&apos;t find your pass? If you haven&apos;t registered yet,
         </p>
         <button 
           className="px-6 py-3 bg-ted-red border border-ted-red text-white font-bold rounded-full text-sm hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(235,0,40,0.2)] cursor-pointer"

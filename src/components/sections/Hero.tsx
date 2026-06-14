@@ -16,7 +16,6 @@ interface BgSettings {
 }
 
 export default function Hero({ onTabChange }: HeroProps) {
-  const [mounted, setMounted] = React.useState(false);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const [isControlsOpen, setIsControlsOpen] = React.useState(false);
   const [bgSettings, setBgSettings] = React.useState<BgSettings>({
@@ -108,7 +107,6 @@ export default function Hero({ onTabChange }: HeroProps) {
   };
 
   React.useEffect(() => {
-    setMounted(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -323,10 +321,25 @@ export default function Hero({ onTabChange }: HeroProps) {
           <span className="text-white/40 tracking-[0.25em] font-sans ml-2 font-bold align-middle" style={{ fontSize: `${bgSettings.themeYearSize}px` }}>2026</span>
         </h2>
         
-        <h1 className="text-7xl md:text-9xl font-black leading-[0.9] tracking-tighter text-left uppercase">
-          <span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-ted-red">
+        <h1 className="text-7xl md:text-9xl font-black leading-[0.9] tracking-tighter text-left uppercase select-none">
+          <motion.span 
+            className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff_25%,#EB0028_45%,#EB0028_55%,#ffffff_75%)] bg-[length:250%_100%] inline-block cursor-default"
+            animate={{ 
+              backgroundPosition: ["250% 0", "0% 0"]
+            }}
+            transition={{ 
+              repeat: Infinity, 
+              duration: 5, 
+              ease: "linear" 
+            }}
+            whileHover={{ 
+              scale: 1.05,
+              filter: "drop-shadow(0 0 20px rgba(235,0,40,0.6))",
+              transition: { duration: 0.3 }
+            }}
+          >
             RIPPLE
-          </span>
+          </motion.span>
         </h1>
         
         <p className="text-white/60 text-sm md:text-base leading-relaxed font-medium max-w-sm pb-2">

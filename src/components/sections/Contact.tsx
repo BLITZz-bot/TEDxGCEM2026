@@ -57,7 +57,7 @@ export default function Contact() {
             ></iframe>
             {/* Overlay to make it clickable */}
             <a 
-              href="https://www.google.com/maps/search/Gopalan+College+of+Engineering+and+Management" 
+              href={googleMapsLink} 
               target="_blank" 
               rel="noopener noreferrer"
               className="absolute inset-0 z-10 cursor-pointer"
