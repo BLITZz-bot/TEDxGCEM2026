@@ -22,7 +22,7 @@ export default function Hero({ onTabChange }: HeroProps) {
   const [bgSettings, setBgSettings] = React.useState<BgSettings>({
     desktop: {
       x: 112.80010986328125,
-      y: 201,
+      y: 153,
       scale: 1.1
     },
     mobile: {
