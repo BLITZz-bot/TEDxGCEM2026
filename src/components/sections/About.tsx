@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 
 const LinkedinIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -36,6 +36,8 @@ const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export default function About() {
+  const [activeMember, setActiveMember] = useState<string | null>(null);
+
   const team = [
     { 
       num: "01",
@@ -171,7 +173,10 @@ export default function About() {
             className="md:col-span-8 bg-black border-2 border-white p-8 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col justify-between cursor-pointer"
           >
             <div>
-              
+              <div className="flex justify-between items-center text-[9px] text-white/30 font-mono mb-4 select-none">
+                <span>{"[ SYS_LOG: CORE_MANIFEST ]"}</span>
+                <span className="text-ted-red font-bold animate-pulse">[ ONLINE ]</span>
+              </div>
               <h3 className="text-3xl font-black italic uppercase text-white mb-4 leading-tight">
                 THE LOCAL STAGE: <span className="text-ted-red">TEDx</span>GCEM
               </h3>
@@ -203,7 +208,10 @@ export default function About() {
             
             <div className="flex-1 bg-black border-2 border-white p-6 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col justify-between cursor-pointer">
               <div>
-              
+                <div className="flex justify-between items-center text-[9px] text-white/30 font-mono mb-4 select-none">
+                  <span>{"[ SPEC: LOCAL_NODE ]"}</span>
+                  <span className="text-ted-red font-bold">[ OK ]</span>
+                </div>
                 <h4 className="text-lg font-black italic text-white uppercase mb-2">WHAT IS TEDx?</h4>
                 <p className="text-white/50 text-xs font-light leading-relaxed">
                   A program of self-organized local events combining live speakers and recorded talks to spark deep community discussion and connection.
@@ -213,7 +221,10 @@ export default function About() {
 
             <div className="flex-1 bg-black border-2 border-white p-6 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col justify-between cursor-pointer">
               <div>
-              
+                <div className="flex justify-between items-center text-[9px] text-white/30 font-mono mb-4 select-none">
+                  <span>{"[ SPEC: GLOBAL_NODE ]"}</span>
+                  <span className="text-ted-red font-bold">[ OK ]</span>
+                </div>
                 <h4 className="text-lg font-black italic text-white uppercase mb-2">WHAT IS TED?</h4>
                 <p className="text-white/50 text-xs font-light leading-relaxed">
                   A global nonprofit organization dedicated to Ideas Worth Spreading, hosting annual summits, and translating powerful talks globally.
@@ -232,7 +243,10 @@ export default function About() {
             className="md:col-span-12 bg-black border-2 border-white p-8 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col md:flex-row justify-between items-start md:items-center gap-6 cursor-pointer"
           >
             <div className="max-w-xl">
-             
+              <div className="flex justify-between items-center text-[9px] text-white/30 font-mono mb-4 select-none">
+                <span>{"[ PARAM: ANNUAL_THEME ]"}</span>
+                <span className="text-ted-red font-bold">[ SET_INDEX ]</span>
+              </div>
               <h4 className="text-2xl font-black italic text-white uppercase mb-2">
                 THEME: <span className="text-ted-red">TRANSFORMING PERSPECTIVES</span>
               </h4>
@@ -256,13 +270,13 @@ export default function About() {
             transition={{ duration: 0.6 }}
             className="border-b border-white/10 pb-6 mb-16"
           >
-            <span className="text-ted-red text-xs uppercase tracking-[0.3em] font-mono block mb-2">{"OUR_TEAM"}</span>
+            <span className="text-ted-red text-xs uppercase tracking-[0.3em] font-mono block mb-2">{"// ORG_INDEX"}</span>
             <h2 className="text-4xl font-black italic tracking-tighter uppercase text-white">
               THE ORGANIZING COMMITTEE
             </h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
             {team.map((member, index) => (
               <motion.div
                 key={index}
@@ -270,10 +284,11 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group relative w-full h-[400px] bg-black border-2 border-white rounded-none shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col justify-between p-6 cursor-pointer select-none"
+                onClick={() => setActiveMember(activeMember === member.num ? null : member.num)}
+                className="group relative w-full h-[320px] md:h-[400px] bg-black border-2 border-white rounded-none shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col justify-between p-4 md:p-6 cursor-pointer select-none"
               >
                 {/* Visual placeholder inside card */}
-                <div className="relative aspect-[16/10] w-full bg-white/[0.015] overflow-hidden border border-white mb-4 pointer-events-none">
+                <div className="relative aspect-[16/10] w-full bg-white/[0.015] overflow-hidden border border-white mb-3 md:mb-4 pointer-events-none">
                   <div className="absolute top-2 left-2 text-[8px] text-white/20 font-mono select-none">+</div>
                   <div className="absolute top-2 right-2 text-[8px] text-white/20 font-mono select-none">+</div>
                   <div className="absolute bottom-2 left-2 text-[8px] text-white/20 font-mono select-none">+</div>
@@ -287,7 +302,7 @@ export default function About() {
                     }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[40px] font-black italic text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.06)] group-hover:[-webkit-text-stroke:1px_rgba(235,0,40,0.15)] transition-all duration-300 select-none">
+                    <span className="text-[28px] md:text-[40px] font-black italic text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.06)] group-hover:[-webkit-text-stroke:1px_rgba(235,0,40,0.15)] transition-all duration-300 select-none">
                       TEDx
                     </span>
                   </div>
@@ -295,62 +310,67 @@ export default function About() {
 
                 {/* Details */}
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 bg-ted-red shrink-0" />
-                    <h4 className="text-lg font-black italic text-white uppercase tracking-tight font-mono">{member.name}</h4>
+                  <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-1">
+                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-ted-red shrink-0" />
+                    <h4 className="text-sm md:text-lg font-black italic text-white uppercase tracking-tight font-mono truncate">{member.name}</h4>
                   </div>
-                  <p className="text-xs text-white/40 font-mono tracking-wider">
+                  <p className="text-[10px] md:text-xs text-white/40 font-mono tracking-wider truncate">
                     {member.role}
                   </p>
                 </div>
 
                 {/* Action footer */}
-                <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-white/40 pt-4 border-t border-white/5 mt-auto">
+                <div className="flex items-center justify-between text-[8px] md:text-[10px] font-mono uppercase tracking-widest text-white/40 pt-3 md:pt-4 border-t border-white/5 mt-auto">
                   <span>NODE_{member.num}</span>
-                  <span className="text-ted-red font-bold group-hover:translate-x-1 transition-transform duration-300">VIEW BIO →</span>
+                  <span className="text-ted-red font-bold group-hover:translate-x-1 transition-transform duration-300 text-[9px] md:text-[10px]">BIO →</span>
                 </div>
 
-                {/* HOVER BIO PANEL */}
-                <div className="absolute inset-0 bg-black/98 border-t-2 border-ted-red p-6 flex flex-col justify-between translate-y-[102%] group-hover:translate-y-0 transition-transform duration-500 ease-out z-20">
+                {/* HOVER/TAP BIO PANEL */}
+                <div className={`absolute inset-0 bg-black/98 border-t-2 border-ted-red p-4 md:p-6 flex flex-col justify-between transition-transform duration-500 ease-out z-20 ${
+                  activeMember === member.num ? "translate-y-0" : "translate-y-[102%] md:group-hover:translate-y-0"
+                }`}>
                   <div>
-                    <div className="flex justify-between items-center text-[10px] text-white/30 border-b border-white/5 pb-2 mb-4 font-mono select-none">
+                    <div className="flex justify-between items-center text-[9px] md:text-[10px] text-white/30 border-b border-white/5 pb-2 mb-3 md:mb-4 font-mono select-none">
                       <span>{"// ACCESS_GRANTED"}</span>
                       <span className="text-ted-red">NODE_{member.num}</span>
                     </div>
                     
-                    <h4 className="text-sm font-black italic tracking-tight mb-4 text-white uppercase leading-snug font-mono">
+                    <h4 className="text-xs md:text-sm font-black italic tracking-tight mb-2 md:mb-4 text-white uppercase leading-snug font-mono line-clamp-2 md:line-clamp-none">
                       &ldquo;{member.headline}&rdquo;
                     </h4>
                     
-                    <div className="text-[11px] text-white/70 font-light leading-relaxed border-l-2 border-ted-red pl-3 italic mb-4 max-h-[140px] overflow-y-auto no-scrollbar select-text">
+                    <div className="text-[10px] md:text-[11px] text-white/70 font-light leading-relaxed border-l-2 border-ted-red pl-2 md:pl-3 italic mb-2 md:mb-4 max-h-[85px] md:max-h-[140px] overflow-y-auto no-scrollbar select-text">
                       {member.bio}
                     </div>
                   </div>
 
                   {/* Social contacts */}
-                  <div className="border-t border-white/5 pt-4 flex justify-between items-center text-[10px] font-mono mt-auto">
-                    <div className="flex gap-4">
+                  <div className="border-t border-white/5 pt-3 md:pt-4 flex justify-between items-center text-[9px] md:text-[10px] font-mono mt-auto">
+                    <div className="flex gap-3 md:gap-4">
                       <a 
                         href={member.linkedin} 
                         target="_blank" 
                         rel="noopener noreferrer" 
+                        onClick={(e) => e.stopPropagation()}
                         className="text-white/40 hover:text-ted-red transition-colors flex items-center gap-1"
                       >
                         <LinkedinIcon className="w-3.5 h-3.5" />
-                        <span>LINKEDIN</span>
+                        <span className="hidden sm:inline">LINKEDIN</span>
                       </a>
                       <a 
                         href={member.instagram} 
                         target="_blank" 
                         rel="noopener noreferrer" 
+                        onClick={(e) => e.stopPropagation()}
                         className="text-white/40 hover:text-ted-red transition-colors flex items-center gap-1"
                       >
                         <InstagramIcon className="w-3.5 h-3.5" />
-                        <span>INSTAGRAM</span>
+                        <span className="hidden sm:inline">INSTAGRAM</span>
                       </a>
                     </div>
                     <a 
                       href={`mailto:${member.email}`} 
+                      onClick={(e) => e.stopPropagation()}
                       className="text-white/40 hover:text-ted-red transition-colors"
                     >
                       EMAIL
