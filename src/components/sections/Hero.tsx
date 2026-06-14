@@ -88,17 +88,11 @@ export default function Hero({ onTabChange }: HeroProps) {
           console.error("Could not write directly to file, copying snippet instead:", err);
           const codeSnippet = `const [bgSettings, setBgSettings] = React.useState({
     desktop: {
-      x: ${bgSettings.desktop.x},
-      y: ${bgSettings.desktop.y},
-      scale: ${bgSettings.desktop.scale.toFixed(2)}
+      x: 112.80010986328125,
+      y: 140.20001220703125,
+      scale: 1.1
     },
-    mobile: {
-      x: ${bgSettings.mobile.x},
-      y: ${bgSettings.mobile.y},
-      scale: ${bgSettings.mobile.scale.toFixed(2)}
-    },
-    opacity: ${bgSettings.opacity},
-    themeYearSize: ${bgSettings.themeYearSize}
+    opacity: 63
   });`;
           navigator.clipboard.writeText(codeSnippet)
             .then(() => {
@@ -121,7 +115,7 @@ export default function Hero({ onTabChange }: HeroProps) {
     if (!ctx) return;
 
     let animationFrameId: number;
-    let particles: Particle[] = [];
+    const particles: Particle[] = [];
     const particleCount = 200;
 
     const resizeCanvas = () => {
@@ -158,16 +152,18 @@ export default function Hero({ onTabChange }: HeroProps) {
         this.alpha = Math.random() * 0.55 + 0.25;
       }
 
-      update(targetX: number, targetY: number) {
-        const dx = targetX - this.x;
-        const dy = targetY - this.y;
-        const dist = Math.hypot(dx, dy);
+      update(targetX: number, targetY: number, mouseActive: boolean) {
+        if (mouseActive) {
+          const dx = targetX - this.x;
+          const dy = targetY - this.y;
+          const dist = Math.hypot(dx, dy);
 
-        if (dist < 450) {
-          const force = (450 - dist) / 450;
-          // Pull vector towards target
-          this.vx += (dx / dist) * force * 0.14;
-          this.vy += (dy / dist) * force * 0.14;
+          if (dist < 180) {
+            const force = (180 - dist) / 180;
+            // Gentle cursor repulsion (push away from target instead of pulling)
+            this.vx -= (dx / dist) * force * 0.45;
+            this.vy -= (dy / dist) * force * 0.45;
+          }
         }
 
         // Soft upward drift and slight noise/wind
@@ -212,7 +208,7 @@ export default function Hero({ onTabChange }: HeroProps) {
       particles.push(new Particle());
     }
 
-    let target = { x: canvas.width / 2, y: canvas.height / 2 };
+    const target = { x: canvas.width / 2, y: canvas.height / 2 };
     let isMouseActive = false;
     let angle = 0;
 
@@ -263,7 +259,7 @@ export default function Hero({ onTabChange }: HeroProps) {
       }
 
       particles.forEach((p) => {
-        p.update(target.x, target.y);
+        p.update(target.x, target.y, isMouseActive);
         p.draw();
       });
 
@@ -317,6 +313,9 @@ export default function Hero({ onTabChange }: HeroProps) {
         className="absolute inset-0 bg-black pointer-events-none z-0 hidden md:block"
         style={{ opacity: bgSettings.opacity / 100 }}
       />
+
+      {/* Bottom Black Gradient Fade Overlay */}
+      <div className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none z-0 hidden md:block" />
 
       {/* Mobile-Only Premium Ambient Glow (visible only on mobile) */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none block md:hidden">
