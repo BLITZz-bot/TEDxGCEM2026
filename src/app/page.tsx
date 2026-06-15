@@ -30,6 +30,7 @@ export default function Home() {
 
     let animationFrameId: number;
     let triggeredExplosion = false;
+    let isTerminated = false;
     const particles: Array<{
       x: number;
       y: number;
@@ -52,6 +53,8 @@ export default function Home() {
     const startTime = Date.now();
 
     const draw = () => {
+      if (isTerminated) return;
+
       // Create trailing motion blur effect by drawing transparent black overlay
       ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -223,6 +226,10 @@ export default function Home() {
         
         // Finish the intro sequence and transition to the full site reveal
         setTimeout(() => {
+          isTerminated = true;
+          if (ctx && canvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
           setShowIntro(false);
         }, 1600);
       }
