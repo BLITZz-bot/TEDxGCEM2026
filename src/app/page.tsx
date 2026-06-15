@@ -129,7 +129,7 @@ export default function Home() {
         <TabNav activeTab={activeTab} onTabChange={handleTabChange} />
 
         {/* Main Content with Animated Transitions */}
-        <div className="relative z-10">
+        <div className="relative z-20">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
