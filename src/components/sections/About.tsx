@@ -173,10 +173,8 @@ export default function About() {
             className="md:col-span-8 bg-black border-2 border-white p-8 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col justify-between cursor-pointer"
           >
             <div>
-              <div className="flex justify-between items-center text-[9px] text-white/30 font-mono mb-4 select-none">
-                <span>{"[ SYS_LOG: CORE_MANIFEST ]"}</span>
-                <span className="text-ted-red font-bold animate-pulse">[ ONLINE ]</span>
-              </div>
+              
+              
               <h3 className="text-3xl font-black italic uppercase text-white mb-4 leading-tight">
                 THE LOCAL STAGE: <span className="text-ted-red">TEDx</span>GCEM
               </h3>
@@ -208,10 +206,7 @@ export default function About() {
             
             <div className="flex-1 bg-black border-2 border-white p-6 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col justify-between cursor-pointer">
               <div>
-                <div className="flex justify-between items-center text-[9px] text-white/30 font-mono mb-4 select-none">
-                  <span>{"[ SPEC: LOCAL_NODE ]"}</span>
-                  <span className="text-ted-red font-bold">[ OK ]</span>
-                </div>
+                
                 <h4 className="text-lg font-black italic text-white uppercase mb-2">WHAT IS TEDx?</h4>
                 <p className="text-white/50 text-xs font-light leading-relaxed">
                   A program of self-organized local events combining live speakers and recorded talks to spark deep community discussion and connection.
@@ -221,10 +216,7 @@ export default function About() {
 
             <div className="flex-1 bg-black border-2 border-white p-6 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col justify-between cursor-pointer">
               <div>
-                <div className="flex justify-between items-center text-[9px] text-white/30 font-mono mb-4 select-none">
-                  <span>{"[ SPEC: GLOBAL_NODE ]"}</span>
-                  <span className="text-ted-red font-bold">[ OK ]</span>
-                </div>
+                
                 <h4 className="text-lg font-black italic text-white uppercase mb-2">WHAT IS TED?</h4>
                 <p className="text-white/50 text-xs font-light leading-relaxed">
                   A global nonprofit organization dedicated to Ideas Worth Spreading, hosting annual summits, and translating powerful talks globally.
@@ -243,10 +235,6 @@ export default function About() {
             className="md:col-span-12 bg-black border-2 border-white p-8 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col md:flex-row justify-between items-start md:items-center gap-6 cursor-pointer"
           >
             <div className="max-w-xl">
-              <div className="flex justify-between items-center text-[9px] text-white/30 font-mono mb-4 select-none">
-                <span>{"[ PARAM: ANNUAL_THEME ]"}</span>
-                <span className="text-ted-red font-bold">[ SET_INDEX ]</span>
-              </div>
               <h4 className="text-2xl font-black italic text-white uppercase mb-2">
                 THEME: <span className="text-ted-red">TRANSFORMING PERSPECTIVES</span>
               </h4>
