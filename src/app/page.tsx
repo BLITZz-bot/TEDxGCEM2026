@@ -18,15 +18,18 @@ export default function Home() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
   const [triggerExplosion, setTriggerExplosion] = useState(false);
-  const introCanvasRef = useRef<HTMLCanvasElement>(null);
+  const leftCanvasRef = useRef<HTMLCanvasElement>(null);
+  const rightCanvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!showIntro) return;
 
-    const canvas = introCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const leftCanvas = leftCanvasRef.current;
+    const rightCanvas = rightCanvasRef.current;
+    if (!leftCanvas || !rightCanvas) return;
+    const leftCtx = leftCanvas.getContext("2d");
+    const rightCtx = rightCanvas.getContext("2d");
+    if (!leftCtx || !rightCtx) return;
 
     let animationFrameId: number;
     let triggeredExplosion = false;
@@ -63,17 +66,24 @@ export default function Home() {
     const spacing = 35; // pixel spacing of the dots grid
 
     const handleResize = () => {
-      canvas.width = canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth;
-      canvas.height = canvas.parentElement ? canvas.parentElement.clientHeight : window.innerHeight;
-      initGrid();
+      const parent = leftCanvas.parentElement;
+      const w = parent ? parent.clientWidth : window.innerWidth;
+      const h = parent ? parent.clientHeight : window.innerHeight;
+
+      leftCanvas.width = w;
+      leftCanvas.height = h;
+      rightCanvas.width = w;
+      rightCanvas.height = h;
+
+      initGrid(w, h);
     };
 
-    const initGrid = () => {
+    const initGrid = (w: number, h: number) => {
       dots.length = 0;
-      const cols = Math.ceil(canvas.width / spacing) + 1;
-      const rows = Math.ceil(canvas.height / spacing) + 1;
-      const startX = (canvas.width - (cols - 1) * spacing) / 2;
-      const startY = (canvas.height - (rows - 1) * spacing) / 2;
+      const cols = Math.ceil(w / spacing) + 1;
+      const rows = Math.ceil(h / spacing) + 1;
+      const startX = (w - (cols - 1) * spacing) / 2;
+      const startY = (h - (rows - 1) * spacing) / 2;
 
       for (let c = 0; c < cols; c++) {
         for (let r = 0; r < rows; r++) {
@@ -106,97 +116,15 @@ export default function Home() {
     const draw = () => {
       if (isTerminated) return;
 
-      // Draw solid black background
-      ctx.fillStyle = "rgb(0, 0, 0)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
       const elapsed = Date.now() - startTime;
       const progress = Math.min(100, (elapsed / duration) * 100);
 
-      const cx = canvas.width / 2;
-      const cy = canvas.height / 2;
+      const w = leftCanvas.width;
+      const h = leftCanvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
 
-      // 1. Draw Central Shutter & TEDxGCEM Text (grows, spins, glitched entry)
-      if (progress < 100) {
-        ctx.save();
-        ctx.translate(cx, cy);
-
-        // Dynamic font size based on canvas width
-        const fontSize = Math.min(canvas.width * 0.09, 72);
-        ctx.font = `italic 900 ${fontSize}px Impact, Arial Black, sans-serif`;
-        ctx.textBaseline = "middle";
-
-        const tedxWidth = ctx.measureText("TEDx").width;
-        const gcemWidth = ctx.measureText("GCEM").width;
-        const totalWidth = tedxWidth + gcemWidth;
-        const startX = -totalWidth / 2;
-
-        // Entry animation (0.0s to 0.6s): Zoom out to center (scale down from 8x to 1x)
-        let textScale = 1.0;
-        let textAlpha = 1.0;
-        let shake = 0;
-
-        if (elapsed < 600) {
-          const t = elapsed / 600;
-          // easeOutCubic
-          const ease = 1 - Math.pow(1 - t, 3);
-          textScale = 8.0 - ease * 7.0;
-          textAlpha = ease;
-          shake = (1.0 - ease) * 8; // Screen shake on impact
-        }
-
-        // Apply screen shake
-        if (shake > 0) {
-          ctx.translate(Math.random() * shake - shake / 2, Math.random() * shake - shake / 2);
-        }
-
-        // Glitch offset effect (random horizontal shifts)
-        let glitchOffset = 0;
-        if (Math.random() > 0.94) {
-          glitchOffset = Math.random() * 10 - 5;
-        }
-
-
-
-        // Draw main text
-        ctx.save();
-        ctx.scale(textScale, textScale);
-
-        // Render main text
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = "rgba(235, 0, 40, 0.6)";
-
-        ctx.fillStyle = `rgba(235, 0, 40, ${textAlpha})`;
-        ctx.fillText("TEDx", startX + glitchOffset, 0);
-
-        ctx.fillStyle = `rgba(255, 255, 255, ${textAlpha})`;
-        ctx.shadowColor = "rgba(255, 255, 255, 0.3)";
-        ctx.fillText("GCEM", startX + tedxWidth + glitchOffset, 0);
-        ctx.restore();
-
-        // Draw trail echoes
-        if (elapsed < 600) {
-          const t = elapsed / 600;
-          const ease = 1 - Math.pow(1 - t, 3);
-          const echoScale = textScale * 1.4;
-          const echoAlpha = (1.0 - ease) * 0.2;
-          
-          if (echoAlpha > 0) {
-            ctx.save();
-            ctx.scale(echoScale, echoScale);
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = `rgba(235, 0, 40, ${echoAlpha})`;
-            ctx.fillText("TEDx", startX + glitchOffset, 0);
-            ctx.fillStyle = `rgba(255, 255, 255, ${echoAlpha})`;
-            ctx.fillText("GCEM", startX + tedxWidth + glitchOffset, 0);
-            ctx.restore();
-          }
-        }
-
-        ctx.restore();
-      }
-
-      // 2. Draw Dot Matrix Grid & Handle Disintegration
+      // 1. Update dots repulsion/breathing physics (runs once per frame)
       const waveRadius = progress >= 100 ? (elapsed - duration) * 1.8 : 0;
 
       for (let i = 0; i < dots.length; i++) {
@@ -211,7 +139,7 @@ export default function Home() {
             if (dist < waveRadius) {
               dot.isScattered = true;
               const angle = Math.atan2(dy, dx);
-              const speed = Math.random() * 8 + 4;
+              const speed = Math.random() * 10 + 5;
               dot.vx = Math.cos(angle) * speed;
               dot.vy = Math.sin(angle) * speed;
             } else {
@@ -222,8 +150,8 @@ export default function Home() {
             // Update scattered dots physics
             dot.cx += dot.vx;
             dot.cy += dot.vy;
-            dot.vx *= 0.94;
-            dot.vy *= 0.94;
+            dot.vx *= 0.95;
+            dot.vy *= 0.95;
             dot.alpha -= 0.012;
           }
         } else {
@@ -234,51 +162,9 @@ export default function Home() {
           const wave = Math.sin(dist / 60 - elapsed / 180) * 0.04;
           dot.alpha = Math.max(0.02, (dot.color === "235, 0, 40" ? 0.25 : 0.08) + wave);
         }
-
-        if (dot.alpha > 0) {
-          ctx.fillStyle = `rgba(${dot.color}, ${dot.alpha})`;
-          ctx.fillRect(dot.cx - dot.size / 2, dot.cy - dot.size / 2, dot.size, dot.size);
-        }
       }
 
-      // 2.5. Draw Text Blast Expanding Zoom-Out Shockwave
-      if (progress >= 100) {
-        const postExplosionTime = elapsed - duration;
-        if (postExplosionTime < 800) {
-          const t = postExplosionTime / 800; // 0 to 1
-          // fast expansion ease out
-          const waveScale = 1.0 + Math.pow(t, 2) * 14.0; // 1 to 15
-          const waveAlpha = Math.max(0, 1 - Math.pow(t, 1.5)); // smooth fade-out
-          
-          ctx.save();
-          ctx.translate(cx, cy);
-          ctx.scale(waveScale, waveScale);
-          
-          const fontSize = Math.min(canvas.width * 0.09, 72);
-          ctx.font = `italic 900 ${fontSize}px Impact, Arial Black, sans-serif`;
-          ctx.textBaseline = "middle";
-          
-          const tedxWidth = ctx.measureText("TEDx").width;
-          const gcemWidth = ctx.measureText("GCEM").width;
-          const totalWidth = tedxWidth + gcemWidth;
-          const startX = -totalWidth / 2;
-          
-          ctx.lineWidth = 1.5;
-          ctx.shadowBlur = 0;
-          
-          // Outline TEDx in Red
-          ctx.strokeStyle = `rgba(235, 0, 40, ${waveAlpha * 0.75})`;
-          ctx.strokeText("TEDx", startX, 0);
-          
-          // Outline GCEM in White
-          ctx.strokeStyle = `rgba(255, 255, 255, ${waveAlpha * 0.5})`;
-          ctx.strokeText("GCEM", startX + tedxWidth, 0);
-          
-          ctx.restore();
-        }
-      }
-
-      // 3. Draw Debris & Shattered Letters
+      // 2. Update debris physics (runs once per frame)
       for (let i = debris.length - 1; i >= 0; i--) {
         const d = debris[i];
         d.x += d.vx;
@@ -290,35 +176,10 @@ export default function Home() {
 
         if (d.alpha <= 0) {
           debris.splice(i, 1);
-          continue;
         }
-
-        ctx.save();
-        ctx.translate(d.x, d.y);
-        ctx.rotate(d.angle);
-        ctx.fillStyle = `rgba(${d.color}, ${d.alpha})`;
-
-        if (d.text) {
-          // It's a flying letter particle
-          ctx.font = `italic 900 ${d.size}px Impact, Arial Black, sans-serif`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          if (d.color === "235, 0, 40") {
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = "rgba(235, 0, 40, 0.5)";
-          }
-          ctx.fillText(d.text, 0, 0);
-        } else {
-          // Standard block debris
-          ctx.fillRect(-d.size / 2, -d.size / 2, d.size, d.size);
-        }
-        ctx.restore();
       }
 
-      // Continue drawing loop
-      animationFrameId = requestAnimationFrame(draw);
-
-      // Trigger the explosion states when the gathering finishes
+      // 3. Trigger explosion and debris spawn (runs once per frame)
       if (progress >= 100 && !triggeredExplosion) {
         triggeredExplosion = true;
         setTriggerExplosion(true);
@@ -365,12 +226,160 @@ export default function Home() {
         // Finish the intro sequence and transition to the full site reveal
         setTimeout(() => {
           isTerminated = true;
-          if (ctx && canvas) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-          }
+          leftCtx.clearRect(0, 0, w, h);
+          rightCtx.clearRect(0, 0, w, h);
           setShowIntro(false);
         }, 1600);
       }
+
+      // 4. Render drawing states on both contexts
+      const render = (ctx: CanvasRenderingContext2D) => {
+        // Clear background with black
+        ctx.fillStyle = "rgb(0, 0, 0)";
+        ctx.fillRect(0, 0, w, h);
+
+        // A. Draw central text & zoom entry (before explosion)
+        if (progress < 100) {
+          ctx.save();
+          ctx.translate(cx, cy);
+
+          const fontSize = Math.min(w * 0.09, 72);
+          ctx.font = `italic 900 ${fontSize}px Impact, Arial Black, sans-serif`;
+          ctx.textBaseline = "middle";
+
+          const tedxWidth = ctx.measureText("TEDx").width;
+          const gcemWidth = ctx.measureText("GCEM").width;
+          const totalWidth = tedxWidth + gcemWidth;
+          const startX = -totalWidth / 2;
+
+          let textScale = 1.0;
+          let textAlpha = 1.0;
+          let shake = 0;
+
+          if (elapsed < 600) {
+            const t = elapsed / 600;
+            const ease = 1 - Math.pow(1 - t, 3);
+            textScale = 8.0 - ease * 7.0;
+            textAlpha = ease;
+            shake = (1.0 - ease) * 8;
+          }
+
+          if (shake > 0) {
+            ctx.translate(Math.random() * shake - shake / 2, Math.random() * shake - shake / 2);
+          }
+
+          let glitchOffset = 0;
+          if (Math.random() > 0.94) {
+            glitchOffset = Math.random() * 10 - 5;
+          }
+
+          ctx.save();
+          ctx.scale(textScale, textScale);
+
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = "rgba(235, 0, 40, 0.6)";
+
+          ctx.fillStyle = `rgba(235, 0, 40, ${textAlpha})`;
+          ctx.fillText("TEDx", startX + glitchOffset, 0);
+
+          ctx.fillStyle = `rgba(255, 255, 255, ${textAlpha})`;
+          ctx.shadowColor = "rgba(255, 255, 255, 0.3)";
+          ctx.fillText("GCEM", startX + tedxWidth + glitchOffset, 0);
+          ctx.restore();
+
+          if (elapsed < 600) {
+            const t = elapsed / 600;
+            const ease = 1 - Math.pow(1 - t, 3);
+            const echoScale = textScale * 1.4;
+            const echoAlpha = (1.0 - ease) * 0.2;
+            
+            if (echoAlpha > 0) {
+              ctx.save();
+              ctx.scale(echoScale, echoScale);
+              ctx.shadowBlur = 0;
+              ctx.fillStyle = `rgba(235, 0, 40, ${echoAlpha})`;
+              ctx.fillText("TEDx", startX + glitchOffset, 0);
+              ctx.fillStyle = `rgba(255, 255, 255, ${echoAlpha})`;
+              ctx.fillText("GCEM", startX + tedxWidth + glitchOffset, 0);
+              ctx.restore();
+            }
+          }
+
+          ctx.restore();
+        }
+
+        // B. Draw Dot Matrix Grid
+        for (let i = 0; i < dots.length; i++) {
+          const dot = dots[i];
+          if (dot.alpha > 0) {
+            ctx.fillStyle = `rgba(${dot.color}, ${dot.alpha})`;
+            ctx.fillRect(dot.cx - dot.size / 2, dot.cy - dot.size / 2, dot.size, dot.size);
+          }
+        }
+
+        // C. Draw Text Blast Expanding Zoom-Out Shockwave (after explosion)
+        if (progress >= 100) {
+          const postExplosionTime = elapsed - duration;
+          if (postExplosionTime < 800) {
+            const t = postExplosionTime / 800;
+            const waveScale = 1.0 + Math.pow(t, 2) * 14.0;
+            const waveAlpha = Math.max(0, 1 - Math.pow(t, 1.5));
+            
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(waveScale, waveScale);
+            
+            const fontSize = Math.min(w * 0.09, 72);
+            ctx.font = `italic 900 ${fontSize}px Impact, Arial Black, sans-serif`;
+            ctx.textBaseline = "middle";
+            
+            const tedxWidth = ctx.measureText("TEDx").width;
+            const gcemWidth = ctx.measureText("GCEM").width;
+            const totalWidth = tedxWidth + gcemWidth;
+            const startX = -totalWidth / 2;
+            
+            ctx.lineWidth = 1.5;
+            ctx.shadowBlur = 0;
+            
+            ctx.strokeStyle = `rgba(235, 0, 40, ${waveAlpha * 0.75})`;
+            ctx.strokeText("TEDx", startX, 0);
+            
+            ctx.strokeStyle = `rgba(255, 255, 255, ${waveAlpha * 0.5})`;
+            ctx.strokeText("GCEM", startX + tedxWidth, 0);
+            
+            ctx.restore();
+          }
+        }
+
+        // D. Draw Debris & Shattered Letters
+        for (let i = 0; i < debris.length; i++) {
+          const d = debris[i];
+          ctx.save();
+          ctx.translate(d.x, d.y);
+          ctx.rotate(d.angle);
+          ctx.fillStyle = `rgba(${d.color}, ${d.alpha})`;
+
+          if (d.text) {
+            ctx.font = `italic 900 ${d.size}px Impact, Arial Black, sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            if (d.color === "235, 0, 40") {
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = "rgba(235, 0, 40, 0.5)";
+            }
+            ctx.fillText(d.text, 0, 0);
+          } else {
+            ctx.fillRect(-d.size / 2, -d.size / 2, d.size, d.size);
+          }
+          ctx.restore();
+        }
+      };
+
+      // Draw onto both contexts
+      render(leftCtx);
+      render(rightCtx);
+
+      animationFrameId = requestAnimationFrame(draw);
     };
 
     draw();
@@ -445,29 +454,50 @@ export default function Home() {
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
       {/* First-time Opening Cinematic Intro Ripple Loader */}
       {showIntro && (
-        <motion.div
-          initial={{ opacity: 1 }}
-          className="fixed inset-0 bg-black z-[99990] flex flex-col items-center justify-center select-none overflow-hidden"
-        >
-          {/* Canvas for Dot-Matrix Shutter */}
-          <canvas 
-            ref={introCanvasRef} 
-            className="absolute inset-0 w-full h-full pointer-events-none z-0" 
-          />
+        <div className="fixed inset-0 z-[99990] pointer-events-none select-none overflow-hidden">
+          {/* Left Shutter Panel */}
+          <motion.div
+            initial={{ x: "0%" }}
+            animate={{ x: triggerExplosion ? "-100%" : "0%" }}
+            transition={{ duration: 1.3, ease: [0.85, 0, 0.15, 1] }}
+            style={{ clipPath: "inset(0 50% 0 0)" }}
+            className="absolute inset-0 bg-black pointer-events-auto"
+          >
+            <canvas 
+              ref={leftCanvasRef} 
+              className="absolute inset-0 w-full h-full pointer-events-none" 
+            />
+          </motion.div>
+
+          {/* Right Shutter Panel */}
+          <motion.div
+            initial={{ x: "0%" }}
+            animate={{ x: triggerExplosion ? "100%" : "0%" }}
+            transition={{ duration: 1.3, ease: [0.85, 0, 0.15, 1] }}
+            style={{ clipPath: "inset(0 0 0 50%)" }}
+            className="absolute inset-0 bg-black pointer-events-auto"
+          >
+            <canvas 
+              ref={rightCanvasRef} 
+              className="absolute inset-0 w-full h-full pointer-events-none" 
+            />
+          </motion.div>
 
           {/* Ambient Background Glow */}
-          <div className="absolute w-[300px] h-[300px] bg-ted-red/10 rounded-full blur-[100px] pointer-events-none z-0" />
+          {!triggerExplosion && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-ted-red/10 rounded-full blur-[100px] pointer-events-none z-0" />
+          )}
 
           {/* Shockwaves */}
           {triggerExplosion && (
-            <>
+            <div className="absolute inset-0 pointer-events-none z-50">
               {/* Screen Camera Flash */}
               <motion.div
                 key="screen-flash"
                 initial={{ opacity: 0.7 }}
                 animate={{ opacity: 0 }}
                 transition={{ duration: 0.45, ease: "easeOut" }}
-                className="absolute inset-0 bg-white pointer-events-none z-[15]"
+                className="absolute inset-0 bg-white pointer-events-none"
               />
 
               {/* Concentric Glowing Ring 1 */}
@@ -476,7 +506,7 @@ export default function Home() {
                 initial={{ scale: 1, opacity: 0.8, x: "-50%", y: "-50%" }}
                 animate={{ scale: 220, opacity: [0.8, 0.6, 0], x: "-50%", y: "-50%" }}
                 transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
-                className="absolute top-1/2 left-1/2 w-4 h-4 border border-ted-red rounded-full shadow-[0_0_15px_rgba(235,0,40,0.6)] pointer-events-none z-10"
+                className="absolute top-1/2 left-1/2 w-4 h-4 border border-ted-red rounded-full shadow-[0_0_15px_rgba(235,0,40,0.6)] pointer-events-none"
               />
               {/* Concentric Glowing Ring 2 */}
               <motion.div 
@@ -484,11 +514,11 @@ export default function Home() {
                 initial={{ scale: 1, opacity: 0.6, x: "-50%", y: "-50%" }}
                 animate={{ scale: 260, opacity: [0.6, 0], x: "-50%", y: "-50%" }}
                 transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-                className="absolute top-1/2 left-1/2 w-4 h-4 border border-white/20 rounded-full pointer-events-none z-10"
+                className="absolute top-1/2 left-1/2 w-4 h-4 border border-white/20 rounded-full pointer-events-none"
               />
-            </>
+            </div>
           )}
-        </motion.div>
+        </div>
       )}
 
       {/* Interactive Cursor Spotlight Glow */}
@@ -523,17 +553,8 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Main Website Wrapper with Expanding Portal Reveal */}
-      <motion.div
-        initial={{ clipPath: "circle(0vmax at 50% 50%)" }}
-        animate={{ 
-          clipPath: !showIntro 
-            ? "circle(99999px at 50% 50%)" 
-            : triggerExplosion 
-              ? "circle(150vmax at 50% 50%)" 
-              : "circle(0vmax at 50% 50%)" 
-        }}
-        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] as const }}
+      {/* Main Website Wrapper */}
+      <div
         className="relative w-full min-h-screen bg-black"
         style={{ zIndex: isTransitioning ? 10 : 99995 }}
       >
@@ -670,7 +691,7 @@ export default function Home() {
             </div>
           </div>
         </footer>
-      </motion.div>
+      </div>
     </main>
   );
 }
