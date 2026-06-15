@@ -14,6 +14,7 @@ import Contact from "@/components/sections/Contact";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -26,10 +27,33 @@ export default function Home() {
     };
   }, []);
 
+  const handleTabChange = (id: TabId) => {
+    if (id === activeTab) return;
+    
+    // Only apply red curtain transition on desktop/laptop sizes (md breakpoint)
+    const isDesktop = window.innerWidth >= 768;
+    if (isDesktop) {
+      setIsTransitioning(true);
+      
+      // Switch the page content at 350ms (when screen is fully covered by red)
+      setTimeout(() => {
+        setActiveTab(id);
+      }, 350);
+      
+      // Slide the curtain off the screen at 400ms
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 400);
+    } else {
+      // Mobile changes tab content immediately (mobile menu has its own transition)
+      setActiveTab(id);
+    }
+  };
+
   const renderSection = () => {
     switch (activeTab) {
       case "home":
-        return <Hero key="home" onTabChange={setActiveTab} />;
+        return <Hero key="home" onTabChange={handleTabChange} />;
       case "about":
         return <About key="about" />;
       case "speakers":
@@ -39,13 +63,13 @@ export default function Home() {
       case "partners":
         return <Partners key="partners" />;
       case "register":
-        return <RegisterNow key="register" onTabChange={setActiveTab} />;
+        return <RegisterNow key="register" onTabChange={handleTabChange} />;
       case "get-pass":
-        return <GetMyPass key="get-pass" onTabChange={setActiveTab} />;
+        return <GetMyPass key="get-pass" onTabChange={handleTabChange} />;
       case "contact":
         return <Contact key="contact" />;
       default:
-        return <Hero key="home" onTabChange={setActiveTab} />;
+        return <Hero key="home" onTabChange={handleTabChange} />;
     }
   };
 
@@ -59,8 +83,21 @@ export default function Home() {
         }}
       />
 
+      {/* Desktop Page Transition Curtain Overlay */}
+      <AnimatePresence>
+        {isTransitioning && (
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: "0%" }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.4, ease: [0.76, 0, 0.24, 1] }}
+            className="fixed inset-0 bg-ted-red z-[9999] pointer-events-none hidden md:block"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Navigation */}
-      <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <TabNav activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Main Content with Animated Transitions */}
       <div className="relative z-10">
@@ -141,7 +178,7 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-xs uppercase tracking-[0.2em] text-white/60">
-            <button className="hover:text-ted-red transition-colors" onClick={() => setActiveTab("contact")}>
+            <button className="hover:text-ted-red transition-colors cursor-pointer" onClick={() => handleTabChange("contact")}>
               Contact Us
             </button>
           </div>
