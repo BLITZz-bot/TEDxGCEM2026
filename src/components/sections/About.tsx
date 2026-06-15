@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import demoImg from "../../../public/DEMO.png";
 
 export default function About() {
   const team = [
@@ -68,7 +69,7 @@ export default function About() {
           >
             <div>
               <h3 className="text-3xl font-black italic uppercase text-white mb-4 leading-tight">
-                THE LOCAL STAGE: <span className="text-ted-red">TEDx</span>GCEM
+                THE LOCAL STAGE: <span className="not-italic"><span className="text-ted-red">TEDx</span>GCEM</span>
               </h3>
               <p className="text-white/60 leading-relaxed text-sm md:text-base font-light">
                 TEDxGCEM is an independently organized event licensed by TED, hosted at the Gopalan College of Engineering and Management. Our forum brings together leading visionaries, developers, artists, and activists to share powerful messages, stimulating meaningful conversation and creating local community connection.
@@ -98,7 +99,7 @@ export default function About() {
             
             <div className="flex-1 bg-black border-2 border-white p-6 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col justify-between cursor-pointer">
               <div>
-                <h4 className="text-lg font-black italic text-white uppercase mb-2">WHAT IS TEDx?</h4>
+                <h4 className="text-lg font-black italic text-white uppercase mb-2">WHAT IS <span className="not-italic">TEDx</span>?</h4>
                 <p className="text-white/50 text-xs font-light leading-relaxed">
                   A program of self-organized local events combining live speakers and recorded talks to spark deep community discussion and connection.
                 </p>
@@ -107,7 +108,7 @@ export default function About() {
 
             <div className="flex-1 bg-black border-2 border-white p-6 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col justify-between cursor-pointer">
               <div>
-                <h4 className="text-lg font-black italic text-white uppercase mb-2">WHAT IS TED?</h4>
+                <h4 className="text-lg font-black italic text-white uppercase mb-2">WHAT IS <span className="not-italic">TED</span>?</h4>
                 <p className="text-white/50 text-xs font-light leading-relaxed">
                   A global nonprofit organization dedicated to Ideas Worth Spreading, hosting annual summits, and translating powerful talks globally.
                 </p>
@@ -164,25 +165,13 @@ export default function About() {
                 transition={{ duration: 0.5, delay: index * 0.05 }}
                 className="group relative w-full bg-black border-2 border-white rounded-none shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 transition-all duration-300 flex flex-col p-4 md:p-6 select-none"
               >
-                {/* Visual placeholder inside card */}
-                <div className="relative aspect-square w-full bg-white/[0.015] overflow-hidden border border-white mb-3 md:mb-4 pointer-events-none">
-                  <div className="absolute top-2 left-2 text-[8px] text-white/20 font-mono select-none">+</div>
-                  <div className="absolute top-2 right-2 text-[8px] text-white/20 font-mono select-none">+</div>
-                  <div className="absolute bottom-2 left-2 text-[8px] text-white/20 font-mono select-none">+</div>
-                  <div className="absolute bottom-2 right-2 text-[8px] text-white/20 font-mono select-none">+</div>
-                  
-                  <div 
-                    className="absolute inset-0 pointer-events-none opacity-[0.25] group-hover:opacity-[0.4] transition-opacity duration-300"
-                    style={{
-                      backgroundImage: "radial-gradient(rgba(235, 0, 40, 0.45) 20%, transparent 20%)",
-                      backgroundSize: "6px 6px"
-                    }}
+                {/* Visual photo frame inside card */}
+                <div className="relative aspect-square w-full overflow-hidden border border-white mb-3 md:mb-4 pointer-events-none">
+                  <img 
+                    src={demoImg.src} 
+                    alt={member.name} 
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[36px] md:text-[52px] font-black italic text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.06)] group-hover:[-webkit-text-stroke:1px_rgba(235,0,40,0.15)] transition-all duration-300 select-none">
-                      TEDx
-                    </span>
-                  </div>
                 </div>
 
                 {/* Details */}

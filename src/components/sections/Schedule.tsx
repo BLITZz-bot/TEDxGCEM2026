@@ -170,7 +170,7 @@ export default function Schedule() {
       </motion.div>
 
       {/* Cyber-Brutalist Tabs */}
-      <div className="flex flex-wrap gap-3 mb-16">
+      <div className="grid grid-cols-3 md:flex md:flex-wrap gap-2 md:gap-3 mb-16 w-full">
         {filters.map((f) => {
           const isActive = activeFilter === f.id;
           const isBtnHovered = hoveredFilterId === f.id;
@@ -181,7 +181,7 @@ export default function Schedule() {
                 setActiveFilter(f.id as any);
                 setExpandedSession(null);
               }}
-              className={`px-5 py-3 font-mono text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 border cursor-pointer rounded-none schedule-filter-btn ${
+              className={`w-full md:w-auto px-1 md:px-5 py-2.5 md:py-3 text-center font-mono text-[8px] xs:text-[9px] sm:text-xs uppercase tracking-wider sm:tracking-widest transition-all duration-300 border cursor-pointer rounded-none schedule-filter-btn shrink-0 ${
                 isActive 
                   ? "bg-ted-red border-ted-red text-white font-black" 
                   : `bg-transparent text-white ${

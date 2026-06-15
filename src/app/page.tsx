@@ -171,7 +171,7 @@ export default function Home() {
               
               {/* Column 1: Giant Logo & Mission Statement */}
               <div className="md:col-span-5 md:border-r border-white/10 md:pr-12 pb-8 md:pb-0 space-y-4">
-                <div className="text-3xl font-black italic tracking-tighter uppercase select-none">
+                <div className="text-3xl font-black not-italic tracking-tighter uppercase select-none">
                   <span className="text-ted-red">TED<span className="lowercase">x</span></span>
                   <span className="text-white">GCEM</span>
                 </div>
