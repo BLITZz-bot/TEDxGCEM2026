@@ -55,6 +55,7 @@ export default function Home() {
       va: number;
       alpha: number;
       color: string;
+      text?: string;
     }
 
     const dots: Dot[] = [];
@@ -115,32 +116,136 @@ export default function Home() {
       const cx = canvas.width / 2;
       const cy = canvas.height / 2;
 
-      // 1. Draw Central Shutter (grows & spins)
+      // 1. Draw Central Shutter & TEDxGCEM Text (grows, spins, glitched entry)
       if (progress < 100) {
         ctx.save();
         ctx.translate(cx, cy);
-        
-        const rotationSpeed = 0.002 + (progress / 100) * 0.018;
+
+        // Dynamic font size based on canvas width
+        const fontSize = Math.min(canvas.width * 0.09, 72);
+        ctx.font = `italic 900 ${fontSize}px Impact, Arial Black, sans-serif`;
+        ctx.textBaseline = "middle";
+
+        const tedxWidth = ctx.measureText("TEDx").width;
+        const gcemWidth = ctx.measureText("GCEM").width;
+        const totalWidth = tedxWidth + gcemWidth;
+        const startX = -totalWidth / 2;
+
+        // Entry animation (0.0s to 0.6s): Zoom out to center (scale down from 8x to 1x)
+        let textScale = 1.0;
+        let textAlpha = 1.0;
+        let shake = 0;
+
+        if (elapsed < 600) {
+          const t = elapsed / 600;
+          // easeOutCubic
+          const ease = 1 - Math.pow(1 - t, 3);
+          textScale = 8.0 - ease * 7.0;
+          textAlpha = ease;
+          shake = (1.0 - ease) * 8; // Screen shake on impact
+        }
+
+        // Apply screen shake
+        if (shake > 0) {
+          ctx.translate(Math.random() * shake - shake / 2, Math.random() * shake - shake / 2);
+        }
+
+        // Glitch offset effect (random horizontal shifts)
+        let glitchOffset = 0;
+        if (Math.random() > 0.94) {
+          glitchOffset = Math.random() * 10 - 5;
+        }
+
+        // Draw Outer Spinning Wireframe Square & Tech Corners
+        ctx.save();
+        const rotationSpeed = 0.001 + (progress / 100) * 0.004;
         const angle = elapsed * rotationSpeed;
         ctx.rotate(angle);
 
-        const size = 10 + (progress / 100) * 35;
-        
-        // Outer Brutalist Framing Square
-        ctx.strokeStyle = "rgba(235, 0, 40, 0.7)";
+        const frameSize = (totalWidth / 2) + 32;
+        ctx.strokeStyle = "rgba(235, 0, 40, 0.25)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-frameSize, -frameSize, frameSize * 2, frameSize * 2);
+
+        // Tech corner ticks
+        const tickLen = 6;
+        ctx.strokeStyle = "rgb(235, 0, 40)";
         ctx.lineWidth = 1.5;
-        ctx.strokeRect(-size - 6, -size - 6, (size + 6) * 2, (size + 6) * 2);
+        
+        // Top-left
+        ctx.beginPath(); ctx.moveTo(-frameSize - tickLen, -frameSize); ctx.lineTo(-frameSize + tickLen, -frameSize);
+        ctx.moveTo(-frameSize, -frameSize - tickLen); ctx.lineTo(-frameSize, -frameSize + tickLen); ctx.stroke();
+        // Top-right
+        ctx.beginPath(); ctx.moveTo(frameSize - tickLen, -frameSize); ctx.lineTo(frameSize + tickLen, -frameSize);
+        ctx.moveTo(frameSize, -frameSize - tickLen); ctx.lineTo(frameSize, -frameSize + tickLen); ctx.stroke();
+        // Bottom-left
+        ctx.beginPath(); ctx.moveTo(-frameSize - tickLen, frameSize); ctx.lineTo(-frameSize + tickLen, frameSize);
+        ctx.moveTo(-frameSize, frameSize - tickLen); ctx.lineTo(-frameSize, frameSize + tickLen); ctx.stroke();
+        // Bottom-right
+        ctx.beginPath(); ctx.moveTo(frameSize - tickLen, frameSize); ctx.lineTo(frameSize + tickLen, frameSize);
+        ctx.moveTo(frameSize, frameSize - tickLen); ctx.lineTo(frameSize, frameSize + tickLen); ctx.stroke();
+        
+        ctx.restore();
 
-        // Core Solid Red Shutter
-        ctx.fillStyle = "rgb(235, 0, 40)";
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "rgb(235, 0, 40)";
-        ctx.fillRect(-size, -size, size * 2, size * 2);
+        // Draw Brutalist Framing Brackets around the text
+        const bracketHeight = fontSize * 0.9;
+        const bracketPadding = 16;
+        const leftBracketX = startX - bracketPadding;
+        const rightBracketX = startX + totalWidth + bracketPadding;
 
-        // White hot center insert
-        ctx.fillStyle = "rgb(255, 255, 255)";
-        ctx.shadowBlur = 0;
-        ctx.fillRect(-size * 0.3, -size * 0.3, size * 0.6, size * 0.6);
+        ctx.strokeStyle = `rgba(235, 0, 40, ${textAlpha})`;
+        ctx.lineWidth = 2.5;
+
+        // Left Bracket [
+        ctx.beginPath();
+        ctx.moveTo(leftBracketX + 8, -bracketHeight / 2);
+        ctx.lineTo(leftBracketX, -bracketHeight / 2);
+        ctx.lineTo(leftBracketX, bracketHeight / 2);
+        ctx.lineTo(leftBracketX + 8, bracketHeight / 2);
+        ctx.stroke();
+
+        // Right Bracket ]
+        ctx.beginPath();
+        ctx.moveTo(rightBracketX - 8, -bracketHeight / 2);
+        ctx.lineTo(rightBracketX, -bracketHeight / 2);
+        ctx.lineTo(rightBracketX, bracketHeight / 2);
+        ctx.lineTo(rightBracketX - 8, bracketHeight / 2);
+        ctx.stroke();
+
+        // Draw main text
+        ctx.save();
+        ctx.scale(textScale, textScale);
+
+        // Render main text
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "rgba(235, 0, 40, 0.6)";
+
+        ctx.fillStyle = `rgba(235, 0, 40, ${textAlpha})`;
+        ctx.fillText("TEDx", startX + glitchOffset, 0);
+
+        ctx.fillStyle = `rgba(255, 255, 255, ${textAlpha})`;
+        ctx.shadowColor = "rgba(255, 255, 255, 0.3)";
+        ctx.fillText("GCEM", startX + tedxWidth + glitchOffset, 0);
+        ctx.restore();
+
+        // Draw trail echoes
+        if (elapsed < 600) {
+          const t = elapsed / 600;
+          const ease = 1 - Math.pow(1 - t, 3);
+          const echoScale = textScale * 1.4;
+          const echoAlpha = (1.0 - ease) * 0.2;
+          
+          if (echoAlpha > 0) {
+            ctx.save();
+            ctx.scale(echoScale, echoScale);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = `rgba(235, 0, 40, ${echoAlpha})`;
+            ctx.fillText("TEDx", startX + glitchOffset, 0);
+            ctx.fillStyle = `rgba(255, 255, 255, ${echoAlpha})`;
+            ctx.fillText("GCEM", startX + tedxWidth + glitchOffset, 0);
+            ctx.restore();
+          }
+        }
 
         ctx.restore();
       }
@@ -190,15 +295,52 @@ export default function Home() {
         }
       }
 
-      // 3. Draw Shutter Debris
+      // 2.5. Draw Text Blast Expanding Zoom-Out Shockwave
+      if (progress >= 100) {
+        const postExplosionTime = elapsed - duration;
+        if (postExplosionTime < 800) {
+          const t = postExplosionTime / 800; // 0 to 1
+          // fast expansion ease out
+          const waveScale = 1.0 + Math.pow(t, 2) * 14.0; // 1 to 15
+          const waveAlpha = Math.max(0, 1 - Math.pow(t, 1.5)); // smooth fade-out
+          
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.scale(waveScale, waveScale);
+          
+          const fontSize = Math.min(canvas.width * 0.09, 72);
+          ctx.font = `italic 900 ${fontSize}px Impact, Arial Black, sans-serif`;
+          ctx.textBaseline = "middle";
+          
+          const tedxWidth = ctx.measureText("TEDx").width;
+          const gcemWidth = ctx.measureText("GCEM").width;
+          const totalWidth = tedxWidth + gcemWidth;
+          const startX = -totalWidth / 2;
+          
+          ctx.lineWidth = 1.5;
+          ctx.shadowBlur = 0;
+          
+          // Outline TEDx in Red
+          ctx.strokeStyle = `rgba(235, 0, 40, ${waveAlpha * 0.75})`;
+          ctx.strokeText("TEDx", startX, 0);
+          
+          // Outline GCEM in White
+          ctx.strokeStyle = `rgba(255, 255, 255, ${waveAlpha * 0.5})`;
+          ctx.strokeText("GCEM", startX + tedxWidth, 0);
+          
+          ctx.restore();
+        }
+      }
+
+      // 3. Draw Debris & Shattered Letters
       for (let i = debris.length - 1; i >= 0; i--) {
         const d = debris[i];
         d.x += d.vx;
         d.y += d.vy;
         d.angle += d.va;
-        d.vx *= 0.95;
-        d.vy *= 0.95;
-        d.alpha -= 0.016;
+        d.vx *= 0.96;
+        d.vy *= 0.96;
+        d.alpha -= 0.014;
 
         if (d.alpha <= 0) {
           debris.splice(i, 1);
@@ -209,7 +351,21 @@ export default function Home() {
         ctx.translate(d.x, d.y);
         ctx.rotate(d.angle);
         ctx.fillStyle = `rgba(${d.color}, ${d.alpha})`;
-        ctx.fillRect(-d.size / 2, -d.size / 2, d.size, d.size);
+
+        if (d.text) {
+          // It's a flying letter particle
+          ctx.font = `italic 900 ${d.size}px Impact, Arial Black, sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          if (d.color === "235, 0, 40") {
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "rgba(235, 0, 40, 0.5)";
+          }
+          ctx.fillText(d.text, 0, 0);
+        } else {
+          // Standard block debris
+          ctx.fillRect(-d.size / 2, -d.size / 2, d.size, d.size);
+        }
         ctx.restore();
       }
 
@@ -221,20 +377,42 @@ export default function Home() {
         triggeredExplosion = true;
         setTriggerExplosion(true);
         
-        // Spawn shutter block debris
-        for (let i = 0; i < 40; i++) {
+        // Spawn standard block debris
+        for (let i = 0; i < 30; i++) {
           const angle = Math.random() * Math.PI * 2;
-          const speed = Math.random() * 10 + 4;
+          const speed = Math.random() * 12 + 4;
           debris.push({
             x: cx,
             y: cy,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
-            size: Math.random() * 6 + 3,
+            size: Math.random() * 8 + 3,
             angle: Math.random() * Math.PI,
-            va: Math.random() * 0.2 - 0.1,
+            va: Math.random() * 0.3 - 0.15,
             alpha: 1.0,
-            color: Math.random() > 0.25 ? "235, 0, 40" : "255, 255, 255"
+            color: Math.random() > 0.3 ? "235, 0, 40" : "255, 255, 255"
+          });
+        }
+
+        // Spawn letter debris ("TEDxGCEM" characters blasting out)
+        const chars = ["T", "E", "D", "x", "G", "C", "E", "M"];
+        for (let k = 0; k < 3; k++) { // 3 waves of flying characters
+          chars.forEach((char) => {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 14 + 6; // high-speed blast outward
+            const size = Math.random() * 20 + 14; // random scale for visual variety
+            debris.push({
+              x: cx,
+              y: cy,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              size,
+              angle: Math.random() * Math.PI,
+              va: Math.random() * 0.2 - 0.1,
+              alpha: 1.0,
+              color: char === "T" || char === "E" || char === "D" || char === "x" ? "235, 0, 40" : "255, 255, 255",
+              text: char
+            });
           });
         }
         
@@ -337,6 +515,15 @@ export default function Home() {
           {/* Shockwaves */}
           {triggerExplosion && (
             <>
+              {/* Screen Camera Flash */}
+              <motion.div
+                key="screen-flash"
+                initial={{ opacity: 0.7 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
+                className="absolute inset-0 bg-white pointer-events-none z-[15]"
+              />
+
               {/* Concentric Glowing Ring 1 */}
               <motion.div 
                 key="shockwave-ring-1"
