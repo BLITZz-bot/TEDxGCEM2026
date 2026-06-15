@@ -350,10 +350,10 @@ export default function Speakers() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.5 }}
-          className="mb-16 text-center sm:text-left"
+          className="mb-20 flex flex-col justify-between items-start gap-4 border-b border-white/10 pb-12 text-left"
         >
-          <span className="text-ted-red font-bold text-sm uppercase tracking-[0.25em] mb-3 block">The Lineup</span>
-          <h2 className="text-4xl md:text-6xl font-black italic tracking-tight uppercase">
+          <span className="text-ted-red text-xs uppercase tracking-[0.3em] font-mono block mb-2">{"// THE LINEUP"}</span>
+          <h2 className="text-4xl md:text-6xl font-black italic tracking-tighter leading-[0.95] uppercase">
             FEATURED <span className="text-ted-red">SPEAKERS</span>
           </h2>
         </motion.div>
