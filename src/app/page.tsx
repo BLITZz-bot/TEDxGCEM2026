@@ -18,15 +18,13 @@ export default function Home() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
   const [triggerExplosion, setTriggerExplosion] = useState(false);
-  const [leftCanvas, setLeftCanvas] = useState<HTMLCanvasElement | null>(null);
-  const [rightCanvas, setRightCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     if (!showIntro) return;
-    if (!leftCanvas || !rightCanvas) return;
-    const leftCtx = leftCanvas.getContext("2d");
-    const rightCtx = rightCanvas.getContext("2d");
-    if (!leftCtx || !rightCtx) return;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
     let animationFrameId: number;
     let triggeredExplosion = false;
@@ -63,14 +61,11 @@ export default function Home() {
     const spacing = 35; // pixel spacing of the dots grid
 
     const handleResize = () => {
-      const parent = leftCanvas.parentElement;
-      const w = parent ? parent.clientWidth : window.innerWidth;
-      const h = parent ? parent.clientHeight : window.innerHeight;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
 
-      leftCanvas.width = w;
-      leftCanvas.height = h;
-      rightCanvas.width = w;
-      rightCanvas.height = h;
+      canvas.width = w;
+      canvas.height = h;
 
       initGrid(w, h);
     };
@@ -116,8 +111,8 @@ export default function Home() {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(100, (elapsed / duration) * 100);
 
-      const w = leftCanvas.width;
-      const h = leftCanvas.height;
+      const w = canvas.width;
+      const h = canvas.height;
       const cx = w / 2;
       const cy = h / 2;
 
@@ -223,17 +218,21 @@ export default function Home() {
         // Finish the intro sequence and transition to the full site reveal
         setTimeout(() => {
           isTerminated = true;
-          leftCtx.clearRect(0, 0, w, h);
-          rightCtx.clearRect(0, 0, w, h);
+          ctx.clearRect(0, 0, w, h);
           setShowIntro(false);
         }, 1600);
       }
 
-      // 4. Render drawing states on both contexts
+      // 4. Render drawing states on context
       const render = (ctx: CanvasRenderingContext2D) => {
-        // Clear background with black
-        ctx.fillStyle = "rgb(0, 0, 0)";
-        ctx.fillRect(0, 0, w, h);
+        // Clear background
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw solid black background on canvas only before the explosion starts
+        if (progress < 100) {
+          ctx.fillStyle = "rgb(0, 0, 0)";
+          ctx.fillRect(0, 0, w, h);
+        }
 
         // A. Draw central text & zoom entry (before explosion)
         if (progress < 100) {
@@ -372,9 +371,8 @@ export default function Home() {
         }
       };
 
-      // Draw onto both contexts
-      render(leftCtx);
-      render(rightCtx);
+      // Draw onto context
+      render(ctx);
 
       animationFrameId = requestAnimationFrame(draw);
     };
@@ -385,7 +383,7 @@ export default function Home() {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [showIntro, leftCanvas, rightCanvas]);
+  }, [showIntro, canvas]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -459,12 +457,7 @@ export default function Home() {
             transition={{ duration: 1.3, ease: [0.85, 0, 0.15, 1] }}
             style={{ clipPath: "inset(0 50% 0 0)" }}
             className="absolute inset-0 bg-black pointer-events-auto"
-          >
-            <canvas 
-              ref={setLeftCanvas} 
-              className="absolute inset-0 w-full h-full pointer-events-none" 
-            />
-          </motion.div>
+          />
 
           {/* Right Shutter Panel */}
           <motion.div
@@ -473,12 +466,13 @@ export default function Home() {
             transition={{ duration: 1.3, ease: [0.85, 0, 0.15, 1] }}
             style={{ clipPath: "inset(0 0 0 50%)" }}
             className="absolute inset-0 bg-black pointer-events-auto"
-          >
-            <canvas 
-              ref={setRightCanvas} 
-              className="absolute inset-0 w-full h-full pointer-events-none" 
-            />
-          </motion.div>
+          />
+
+          {/* Canvas for Dot-Matrix Shutter & Text Blast (placed stationary over panels) */}
+          <canvas 
+            ref={setCanvas} 
+            className="absolute inset-0 w-full h-full pointer-events-none z-10" 
+          />
 
           {/* Ambient Background Glow */}
           {!triggerExplosion && (
