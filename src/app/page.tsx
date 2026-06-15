@@ -11,25 +11,11 @@ import Partners from "@/components/sections/Partners";
 import RegisterNow from "@/components/sections/RegisterNow";
 import GetMyPass from "@/components/sections/GetMyPass";
 import Contact from "@/components/sections/Contact";
-import IntroAnimation from "@/components/ui/IntroAnimation";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [showIntro, setShowIntro] = useState(true);
-  const [triggerSplit, setTriggerSplit] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Set up isMounted and localStorage check
-  useEffect(() => {
-    setIsMounted(true);
-    const hasSeenIntro = localStorage.getItem("tedx_intro_seen");
-    if (hasSeenIntro === "true") {
-      setShowIntro(false);
-      setTriggerSplit(true);
-    }
-  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -93,17 +79,6 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
-      {/* First-time Opening Cinematic Intro Shutter Loader */}
-      {isMounted && showIntro && (
-        <IntroAnimation 
-          onStartSplit={() => setTriggerSplit(true)}
-          onComplete={() => {
-            setShowIntro(false);
-            setTriggerSplit(true);
-          }}
-        />
-      )}
-
       {/* Interactive Cursor Spotlight Glow */}
       <div 
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300 opacity-20 hidden md:block"
@@ -137,20 +112,7 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Main Website Wrapper */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={
-          !showIntro || triggerSplit 
-            ? { opacity: 1, y: 0 } 
-            : { opacity: 0, y: 40 }
-        }
-        transition={{ 
-          duration: 1.8, 
-          ease: [0.16, 1, 0.3, 1],
-          delay: 0.15
-        }}
-        className="relative w-full min-h-screen bg-black z-10"
-      >
+      <div className="relative w-full min-h-screen bg-black z-10">
         {/* Navigation */}
         <TabNav activeTab={activeTab} onTabChange={handleTabChange} />
 
@@ -284,7 +246,7 @@ export default function Home() {
             </div>
           </div>
         </footer>
-      </motion.div>
+      </div>
     </main>
   );
 }
