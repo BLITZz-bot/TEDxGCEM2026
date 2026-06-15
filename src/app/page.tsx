@@ -16,6 +16,18 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -118,12 +130,13 @@ export default function Home() {
 
         {/* Main Content with Animated Transitions */}
         <div className="relative z-10">
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, scale: 0.99 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
+              initial={isMobile ? { opacity: 0, x: 30 } : { opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={isMobile ? { opacity: 0, x: -30 } : { opacity: 0 }}
+              transition={{ duration: isMobile ? 0.22 : (isTransitioning ? 0 : 0.35), ease: "easeOut" }}
             >
               {renderSection()}
             </motion.div>
