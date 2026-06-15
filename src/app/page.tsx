@@ -297,7 +297,6 @@ export default function Home() {
   };
 
   const wrapperProps = showIntro ? {
-    key: "wrapper-intro",
     initial: { clipPath: "circle(0vmax at 50% 50%)" },
     animate: { 
       clipPath: triggerExplosion 
@@ -307,9 +306,8 @@ export default function Home() {
     transition: { duration: 1.5, ease: [0.16, 1, 0.3, 1] as const },
     style: { zIndex: 99995 }
   } : {
-    key: "wrapper-site",
     style: { 
-      zIndex: isTransitioning ? 10 : 1,
+      zIndex: isTransitioning ? 10 : 99995,
       clipPath: "none"
     }
   };
@@ -397,6 +395,7 @@ export default function Home() {
 
       {/* Main Website Wrapper with Expanding Portal Reveal */}
       <motion.div
+        key={showIntro ? "wrapper-intro" : "wrapper-site"}
         {...wrapperProps}
         className="relative w-full min-h-screen bg-black"
       >
