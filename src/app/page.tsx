@@ -19,55 +19,33 @@ export default function Home() {
   const [showIntro, setShowIntro] = useState(true);
   const [triggerExplosion, setTriggerExplosion] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [leftCanvas, setLeftCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [rightCanvas, setRightCanvas] = useState<HTMLCanvasElement | null>(null);
   
-  const leftCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rightCanvasRef = useRef<HTMLCanvasElement | null>(null);
-
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
     if (!isMounted || !showIntro) return;
-    const leftCanvas = leftCanvasRef.current;
-    const rightCanvas = rightCanvasRef.current;
     if (!leftCanvas || !rightCanvas) return;
     const leftCtx = leftCanvas.getContext("2d");
     const rightCtx = rightCanvas.getContext("2d");
     if (!leftCtx || !rightCtx) return;
 
     let animationFrameId: number;
-    let triggeredExplosion = false;
+    let triggeredSplit = false;
     let isTerminated = false;
 
     interface Dot {
       x: number;
       y: number;
-      cx: number;
-      cy: number;
-      vx: number;
-      vy: number;
       alpha: number;
       color: string;
-      isScattered: boolean;
       size: number;
-    }
-
-    interface Debris {
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      size: number;
-      angle: number;
-      va: number;
-      alpha: number;
-      color: string;
-      text?: string;
     }
 
     const dots: Dot[] = [];
-    const debris: Debris[] = [];
     const spacing = 35; // pixel spacing of the dots grid
 
     const handleResize = () => {
@@ -98,13 +76,8 @@ export default function Home() {
           dots.push({
             x,
             y,
-            cx: x,
-            cy: y,
-            vx: 0,
-            vy: 0,
             alpha: isRed ? 0.25 : 0.08,
             color: isRed ? "235, 0, 40" : "255, 255, 255",
-            isScattered: false,
             size: isRed ? 1.6 : 0.8
           });
         }
@@ -114,7 +87,7 @@ export default function Home() {
     window.addEventListener("resize", handleResize);
     handleResize();
 
-    const duration = 1500; // 1.5 seconds square rotation & grid scan
+    const duration = 1500; // 1.5 seconds zoom-in & breathe
     const startTime = Date.now();
 
     const draw = () => {
@@ -128,104 +101,20 @@ export default function Home() {
       const cx = w / 2;
       const cy = h / 2;
 
-      // 1. Update dots repulsion/breathing physics (runs once per frame)
-      const waveRadius = progress >= 100 ? (elapsed - duration) * 1.8 : 0;
-
+      // 1. Update dots breathing wave (runs once per frame)
       for (let i = 0; i < dots.length; i++) {
         const dot = dots[i];
-        
-        if (progress >= 100) {
-          const dx = dot.cx - cx;
-          const dy = dot.cy - cy;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (!dot.isScattered) {
-            if (dist < waveRadius) {
-              dot.isScattered = true;
-              const angle = Math.atan2(dy, dx);
-              const speed = Math.random() * 10 + 5;
-              dot.vx = Math.cos(angle) * speed;
-              dot.vy = Math.sin(angle) * speed;
-            } else {
-              // Fade out un-scattered dots slightly
-              dot.alpha -= 0.004;
-            }
-          } else {
-            // Update scattered dots physics
-            dot.cx += dot.vx;
-            dot.cy += dot.vy;
-            dot.vx *= 0.95;
-            dot.vy *= 0.95;
-            dot.alpha -= 0.012;
-          }
-        } else {
-          // Subtle idle breathing wave effect before explosion
-          const dx = dot.x - cx;
-          const dy = dot.y - cy;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const wave = Math.sin(dist / 60 - elapsed / 180) * 0.04;
-          dot.alpha = Math.max(0.02, (dot.color === "235, 0, 40" ? 0.25 : 0.08) + wave);
-        }
+        const dx = dot.x - cx;
+        const dy = dot.y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const wave = Math.sin(dist / 60 - elapsed / 180) * 0.04;
+        dot.alpha = Math.max(0.02, (dot.color === "235, 0, 40" ? 0.25 : 0.08) + wave);
       }
 
-      // 2. Update debris physics (runs once per frame)
-      for (let i = debris.length - 1; i >= 0; i--) {
-        const d = debris[i];
-        d.x += d.vx;
-        d.y += d.vy;
-        d.angle += d.va;
-        d.vx *= 0.96;
-        d.vy *= 0.96;
-        d.alpha -= 0.014;
-
-        if (d.alpha <= 0) {
-          debris.splice(i, 1);
-        }
-      }
-
-      // 3. Trigger explosion and debris spawn (runs once per frame)
-      if (progress >= 100 && !triggeredExplosion) {
-        triggeredExplosion = true;
+      // 2. Trigger screen split when duration completes
+      if (progress >= 100 && !triggeredSplit) {
+        triggeredSplit = true;
         setTriggerExplosion(true);
-        
-        // Spawn standard block debris
-        for (let i = 0; i < 30; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          const speed = Math.random() * 12 + 4;
-          debris.push({
-            x: cx,
-            y: cy,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            size: Math.random() * 8 + 3,
-            angle: Math.random() * Math.PI,
-            va: Math.random() * 0.3 - 0.15,
-            alpha: 1.0,
-            color: Math.random() > 0.3 ? "235, 0, 40" : "255, 255, 255"
-          });
-        }
-
-        // Spawn letter debris ("TEDxGCEM" characters blasting out)
-        const chars = ["T", "E", "D", "x", "G", "C", "E", "M"];
-        for (let k = 0; k < 3; k++) { // 3 waves of flying characters
-          chars.forEach((char) => {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 14 + 6; // high-speed blast outward
-            const size = Math.random() * 20 + 14; // random scale for visual variety
-            debris.push({
-              x: cx,
-              y: cy,
-              vx: Math.cos(angle) * speed,
-              vy: Math.sin(angle) * speed,
-              size,
-              angle: Math.random() * Math.PI,
-              va: Math.random() * 0.2 - 0.1,
-              alpha: 1.0,
-              color: char === "T" || char === "E" || char === "D" || char === "x" ? "235, 0, 40" : "255, 255, 255",
-              text: char
-            });
-          });
-        }
         
         // Finish the intro sequence and transition to the full site reveal
         setTimeout(() => {
@@ -236,23 +125,23 @@ export default function Home() {
         }, 1600);
       }
 
-      // 4. Render drawing states on context
+      // 3. Render drawing states on context
       const render = (ctx: CanvasRenderingContext2D) => {
         // Clear background
         ctx.clearRect(0, 0, w, h);
 
-        // Draw solid black background on canvas only before the explosion starts
+        // Before the split starts, draw solid black background on canvas
         if (progress < 100) {
           ctx.fillStyle = "rgb(0, 0, 0)";
           ctx.fillRect(0, 0, w, h);
         }
 
         // A. Draw central text & zoom entry (fades out as panels split)
-        const postExplosionTime = progress >= 100 ? (elapsed - duration) : 0;
+        const postSplitTime = progress >= 100 ? (elapsed - duration) : 0;
         let textAlpha = 1.0;
         
         if (progress >= 100) {
-          textAlpha = Math.max(0, 1 - postExplosionTime / 800); // fade out over 800ms during split
+          textAlpha = Math.max(0, 1 - postSplitTime / 800); // fade out over 800ms during split
         } else if (elapsed < 600) {
           const t = elapsed / 600;
           const ease = 1 - Math.pow(1 - t, 3);
@@ -328,70 +217,13 @@ export default function Home() {
           ctx.restore();
         }
 
-        // B. Draw Dot Matrix Grid
+        // B. Draw Dot Matrix Grid (slides with the curtains)
         for (let i = 0; i < dots.length; i++) {
           const dot = dots[i];
           if (dot.alpha > 0) {
             ctx.fillStyle = `rgba(${dot.color}, ${dot.alpha})`;
-            ctx.fillRect(dot.cx - dot.size / 2, dot.cy - dot.size / 2, dot.size, dot.size);
+            ctx.fillRect(dot.x - dot.size / 2, dot.y - dot.size / 2, dot.size, dot.size);
           }
-        }
-
-        // C. Draw Text Blast Expanding Zoom-Out Shockwave (after explosion)
-        if (progress >= 100) {
-          const postExplosionTime = elapsed - duration;
-          if (postExplosionTime < 800) {
-            const t = postExplosionTime / 800;
-            const waveScale = 1.0 + Math.pow(t, 2) * 14.0;
-            const waveAlpha = Math.max(0, 1 - Math.pow(t, 1.5));
-            
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.scale(waveScale, waveScale);
-            
-            const fontSize = Math.min(w * 0.09, 72);
-            ctx.font = `italic 900 ${fontSize}px Impact, Arial Black, sans-serif`;
-            ctx.textBaseline = "middle";
-            
-            const tedxWidth = ctx.measureText("TEDx").width;
-            const gcemWidth = ctx.measureText("GCEM").width;
-            const totalWidth = tedxWidth + gcemWidth;
-            const startX = -totalWidth / 2;
-            
-            ctx.lineWidth = 1.5;
-            ctx.shadowBlur = 0;
-            
-            ctx.strokeStyle = `rgba(235, 0, 40, ${waveAlpha * 0.75})`;
-            ctx.strokeText("TEDx", startX, 0);
-            
-            ctx.strokeStyle = `rgba(255, 255, 255, ${waveAlpha * 0.5})`;
-            ctx.strokeText("GCEM", startX + tedxWidth, 0);
-            
-            ctx.restore();
-          }
-        }
-
-        // D. Draw Debris & Shattered Letters
-        for (let i = 0; i < debris.length; i++) {
-          const d = debris[i];
-          ctx.save();
-          ctx.translate(d.x, d.y);
-          ctx.rotate(d.angle);
-          ctx.fillStyle = `rgba(${d.color}, ${d.alpha})`;
-
-          if (d.text) {
-            ctx.font = `italic 900 ${d.size}px Impact, Arial Black, sans-serif`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            if (d.color === "235, 0, 40") {
-              ctx.shadowBlur = 8;
-              ctx.shadowColor = "rgba(235, 0, 40, 0.5)";
-            }
-            ctx.fillText(d.text, 0, 0);
-          } else {
-            ctx.fillRect(-d.size / 2, -d.size / 2, d.size, d.size);
-          }
-          ctx.restore();
         }
       };
 
@@ -408,7 +240,7 @@ export default function Home() {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isMounted, showIntro]);
+  }, [isMounted, showIntro, leftCanvas, rightCanvas]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -484,7 +316,7 @@ export default function Home() {
             className="absolute inset-0 bg-black pointer-events-auto"
           >
             <canvas 
-              ref={leftCanvasRef} 
+              ref={setLeftCanvas} 
               className="absolute inset-0 w-full h-full pointer-events-none" 
             />
           </motion.div>
@@ -498,7 +330,7 @@ export default function Home() {
             className="absolute inset-0 bg-black pointer-events-auto"
           >
             <canvas 
-              ref={rightCanvasRef} 
+              ref={setRightCanvas} 
               className="absolute inset-0 w-full h-full pointer-events-none" 
             />
           </motion.div>
