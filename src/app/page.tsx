@@ -156,61 +156,7 @@ export default function Home() {
           glitchOffset = Math.random() * 10 - 5;
         }
 
-        // Draw Outer Spinning Wireframe Square & Tech Corners
-        ctx.save();
-        const rotationSpeed = 0.001 + (progress / 100) * 0.004;
-        const angle = elapsed * rotationSpeed;
-        ctx.rotate(angle);
 
-        const frameSize = (totalWidth / 2) + 32;
-        ctx.strokeStyle = "rgba(235, 0, 40, 0.25)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(-frameSize, -frameSize, frameSize * 2, frameSize * 2);
-
-        // Tech corner ticks
-        const tickLen = 6;
-        ctx.strokeStyle = "rgb(235, 0, 40)";
-        ctx.lineWidth = 1.5;
-        
-        // Top-left
-        ctx.beginPath(); ctx.moveTo(-frameSize - tickLen, -frameSize); ctx.lineTo(-frameSize + tickLen, -frameSize);
-        ctx.moveTo(-frameSize, -frameSize - tickLen); ctx.lineTo(-frameSize, -frameSize + tickLen); ctx.stroke();
-        // Top-right
-        ctx.beginPath(); ctx.moveTo(frameSize - tickLen, -frameSize); ctx.lineTo(frameSize + tickLen, -frameSize);
-        ctx.moveTo(frameSize, -frameSize - tickLen); ctx.lineTo(frameSize, -frameSize + tickLen); ctx.stroke();
-        // Bottom-left
-        ctx.beginPath(); ctx.moveTo(-frameSize - tickLen, frameSize); ctx.lineTo(-frameSize + tickLen, frameSize);
-        ctx.moveTo(-frameSize, frameSize - tickLen); ctx.lineTo(-frameSize, frameSize + tickLen); ctx.stroke();
-        // Bottom-right
-        ctx.beginPath(); ctx.moveTo(frameSize - tickLen, frameSize); ctx.lineTo(frameSize + tickLen, frameSize);
-        ctx.moveTo(frameSize, frameSize - tickLen); ctx.lineTo(frameSize, frameSize + tickLen); ctx.stroke();
-        
-        ctx.restore();
-
-        // Draw Brutalist Framing Brackets around the text
-        const bracketHeight = fontSize * 0.9;
-        const bracketPadding = 16;
-        const leftBracketX = startX - bracketPadding;
-        const rightBracketX = startX + totalWidth + bracketPadding;
-
-        ctx.strokeStyle = `rgba(235, 0, 40, ${textAlpha})`;
-        ctx.lineWidth = 2.5;
-
-        // Left Bracket [
-        ctx.beginPath();
-        ctx.moveTo(leftBracketX + 8, -bracketHeight / 2);
-        ctx.lineTo(leftBracketX, -bracketHeight / 2);
-        ctx.lineTo(leftBracketX, bracketHeight / 2);
-        ctx.lineTo(leftBracketX + 8, bracketHeight / 2);
-        ctx.stroke();
-
-        // Right Bracket ]
-        ctx.beginPath();
-        ctx.moveTo(rightBracketX - 8, -bracketHeight / 2);
-        ctx.lineTo(rightBracketX, -bracketHeight / 2);
-        ctx.lineTo(rightBracketX, bracketHeight / 2);
-        ctx.lineTo(rightBracketX - 8, bracketHeight / 2);
-        ctx.stroke();
 
         // Draw main text
         ctx.save();
