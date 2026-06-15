@@ -18,14 +18,11 @@ export default function Home() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
   const [triggerExplosion, setTriggerExplosion] = useState(false);
-  const leftCanvasRef = useRef<HTMLCanvasElement>(null);
-  const rightCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [leftCanvas, setLeftCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [rightCanvas, setRightCanvas] = useState<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     if (!showIntro) return;
-
-    const leftCanvas = leftCanvasRef.current;
-    const rightCanvas = rightCanvasRef.current;
     if (!leftCanvas || !rightCanvas) return;
     const leftCtx = leftCanvas.getContext("2d");
     const rightCtx = rightCanvas.getContext("2d");
@@ -388,7 +385,7 @@ export default function Home() {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [showIntro]);
+  }, [showIntro, leftCanvas, rightCanvas]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -464,7 +461,7 @@ export default function Home() {
             className="absolute inset-0 bg-black pointer-events-auto"
           >
             <canvas 
-              ref={leftCanvasRef} 
+              ref={setLeftCanvas} 
               className="absolute inset-0 w-full h-full pointer-events-none" 
             />
           </motion.div>
@@ -478,7 +475,7 @@ export default function Home() {
             className="absolute inset-0 bg-black pointer-events-auto"
           >
             <canvas 
-              ref={rightCanvasRef} 
+              ref={setRightCanvas} 
               className="absolute inset-0 w-full h-full pointer-events-none" 
             />
           </motion.div>
