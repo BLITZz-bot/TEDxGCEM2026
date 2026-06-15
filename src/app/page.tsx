@@ -296,6 +296,24 @@ export default function Home() {
     }
   };
 
+  const wrapperProps = showIntro ? {
+    key: "wrapper-intro",
+    initial: { clipPath: "circle(0vmax at 50% 50%)" },
+    animate: { 
+      clipPath: triggerExplosion 
+        ? "circle(150vmax at 50% 50%)" 
+        : "circle(0vmax at 50% 50%)" 
+    },
+    transition: { duration: 1.5, ease: [0.16, 1, 0.3, 1] as const },
+    style: { zIndex: 99995 }
+  } : {
+    key: "wrapper-site",
+    style: { 
+      zIndex: isTransitioning ? 10 : 1,
+      clipPath: "none"
+    }
+  };
+
   return (
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
       {/* First-time Opening Cinematic Intro Ripple Loader */}
@@ -379,18 +397,8 @@ export default function Home() {
 
       {/* Main Website Wrapper with Expanding Portal Reveal */}
       <motion.div
-        initial={showIntro ? { clipPath: "circle(0vmax at 50% 50%)" } : false}
-        animate={showIntro ? { 
-          clipPath: triggerExplosion 
-            ? "circle(150vmax at 50% 50%)" 
-            : "circle(0vmax at 50% 50%)" 
-        } : {}}
-        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+        {...wrapperProps}
         className="relative w-full min-h-screen bg-black"
-        style={{ 
-          zIndex: isTransitioning ? 10 : 99995,
-          clipPath: showIntro ? undefined : "none" 
-        }}
       >
         {/* Navigation */}
         <TabNav activeTab={activeTab} onTabChange={handleTabChange} />
