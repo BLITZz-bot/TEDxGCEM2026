@@ -17,230 +17,50 @@ export default function Home() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
-  const [triggerExplosion, setTriggerExplosion] = useState(false);
+  const [triggerSplit, setTriggerSplit] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [leftCanvas, setLeftCanvas] = useState<HTMLCanvasElement | null>(null);
-  const [rightCanvas, setRightCanvas] = useState<HTMLCanvasElement | null>(null);
-  
+
+  // Set up isMounted and localStorage check
   useEffect(() => {
     setIsMounted(true);
+    const hasSeenIntro = localStorage.getItem("tedx-intro-seen");
+    if (hasSeenIntro === "true") {
+      setShowIntro(false);
+    }
   }, []);
 
+  // Timer sequences for cinematic intro
   useEffect(() => {
-    if (!isMounted || !showIntro) return;
-    if (!leftCanvas || !rightCanvas) return;
-    const leftCtx = leftCanvas.getContext("2d");
-    const rightCtx = rightCanvas.getContext("2d");
-    if (!leftCtx || !rightCtx) return;
+    if (!showIntro) return;
 
-    let animationFrameId: number;
-    let triggeredSplit = false;
-    let isTerminated = false;
+    // Split text and panels after 1.7 seconds (1.2s logo zoom/overshoot + 500ms pause)
+    const splitTimer = setTimeout(() => {
+      setTriggerSplit(true);
+    }, 1700);
 
-    interface Dot {
-      x: number;
-      y: number;
-      alpha: number;
-      color: string;
-      size: number;
-    }
-
-    const dots: Dot[] = [];
-    const spacing = 35; // pixel spacing of the dots grid
-
-    const handleResize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-
-      leftCanvas.width = w;
-      leftCanvas.height = h;
-      rightCanvas.width = w;
-      rightCanvas.height = h;
-
-      initGrid(w, h);
-    };
-
-    const initGrid = (w: number, h: number) => {
-      dots.length = 0;
-      const cols = Math.ceil(w / spacing) + 1;
-      const rows = Math.ceil(h / spacing) + 1;
-      const startX = (w - (cols - 1) * spacing) / 2;
-      const startY = (h - (rows - 1) * spacing) / 2;
-
-      for (let c = 0; c < cols; c++) {
-        for (let r = 0; r < rows; r++) {
-          const x = startX + c * spacing;
-          const y = startY + r * spacing;
-          
-          const isRed = Math.random() > 0.93;
-          dots.push({
-            x,
-            y,
-            alpha: isRed ? 0.25 : 0.08,
-            color: isRed ? "235, 0, 40" : "255, 255, 255",
-            size: isRed ? 1.6 : 0.8
-          });
-        }
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    handleResize();
-
-    const duration = 1500; // 1.5 seconds zoom-in & breathe
-    const startTime = Date.now();
-
-    const draw = () => {
-      if (isTerminated) return;
-
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(100, (elapsed / duration) * 100);
-
-      const w = leftCanvas.width;
-      const h = leftCanvas.height;
-      const cx = w / 2;
-      const cy = h / 2;
-
-      // 1. Update dots breathing wave (runs once per frame)
-      for (let i = 0; i < dots.length; i++) {
-        const dot = dots[i];
-        const dx = dot.x - cx;
-        const dy = dot.y - cy;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const wave = Math.sin(dist / 60 - elapsed / 180) * 0.04;
-        dot.alpha = Math.max(0.02, (dot.color === "235, 0, 40" ? 0.25 : 0.08) + wave);
-      }
-
-      // 2. Trigger screen split when duration completes
-      if (progress >= 100 && !triggeredSplit) {
-        triggeredSplit = true;
-        setTriggerExplosion(true);
-        
-        // Finish the intro sequence and transition to the full site reveal
-        setTimeout(() => {
-          isTerminated = true;
-          leftCtx.clearRect(0, 0, w, h);
-          rightCtx.clearRect(0, 0, w, h);
-          setShowIntro(false);
-        }, 2700);
-      }
-
-      // 3. Render drawing states on context
-      const render = (ctx: CanvasRenderingContext2D) => {
-        // Clear background
-        ctx.clearRect(0, 0, w, h);
-
-        // Before the split starts, draw solid black background on canvas
-        if (progress < 100) {
-          ctx.fillStyle = "rgb(0, 0, 0)";
-          ctx.fillRect(0, 0, w, h);
-        }
-
-        // A. Draw central text & zoom entry (fades out as panels split)
-        const postSplitTime = progress >= 100 ? (elapsed - duration) : 0;
-        let textAlpha = 1.0;
-        
-        if (progress >= 100) {
-          textAlpha = Math.max(0, 1 - postSplitTime / 1600); // fade out over 1600ms during split
-        } else if (elapsed < 600) {
-          const t = elapsed / 600;
-          const ease = 1 - Math.pow(1 - t, 3);
-          textAlpha = ease;
-        }
-
-        if (textAlpha > 0) {
-          ctx.save();
-          ctx.translate(cx, cy);
-
-          const fontSize = Math.min(w * 0.09, 72);
-          ctx.font = `italic 900 ${fontSize}px Impact, Arial Black, sans-serif`;
-          ctx.textBaseline = "middle";
-
-          const tedxWidth = ctx.measureText("TEDx").width;
-          const gcemWidth = ctx.measureText("GCEM").width;
-          const totalWidth = tedxWidth + gcemWidth;
-          const startX = -totalWidth / 2;
-
-          let textScale = 1.0;
-          let shake = 0;
-
-          if (progress < 100 && elapsed < 600) {
-            const t = elapsed / 600;
-            const ease = 1 - Math.pow(1 - t, 3);
-            textScale = 8.0 - ease * 7.0;
-            shake = (1.0 - ease) * 8;
-          }
-
-          if (shake > 0) {
-            ctx.translate(Math.random() * shake - shake / 2, Math.random() * shake - shake / 2);
-          }
-
-          let glitchOffset = 0;
-          if (progress < 100 && Math.random() > 0.94) {
-            glitchOffset = Math.random() * 10 - 5;
-          }
-
-          ctx.save();
-          ctx.scale(textScale, textScale);
-
-          ctx.shadowBlur = progress < 100 ? 12 : 0;
-          ctx.shadowColor = "rgba(235, 0, 40, 0.6)";
-
-          // Draw TEDx
-          ctx.fillStyle = `rgba(235, 0, 40, ${textAlpha})`;
-          ctx.fillText("TEDx", startX + glitchOffset, 0);
-
-          // Draw GCEM
-          ctx.fillStyle = `rgba(255, 255, 255, ${textAlpha})`;
-          ctx.shadowColor = "rgba(255, 255, 255, 0.3)";
-          ctx.fillText("GCEM", startX + tedxWidth + glitchOffset, 0);
-          ctx.restore();
-
-          if (progress < 100 && elapsed < 600) {
-            const t = elapsed / 600;
-            const ease = 1 - Math.pow(1 - t, 3);
-            const echoScale = textScale * 1.4;
-            const echoAlpha = (1.0 - ease) * 0.2;
-            
-            if (echoAlpha > 0) {
-              ctx.save();
-              ctx.scale(echoScale, echoScale);
-              ctx.shadowBlur = 0;
-              ctx.fillStyle = `rgba(235, 0, 40, ${echoAlpha})`;
-              ctx.fillText("TEDx", startX + glitchOffset, 0);
-              ctx.fillStyle = `rgba(255, 255, 255, ${echoAlpha})`;
-              ctx.fillText("GCEM", startX + tedxWidth + glitchOffset, 0);
-              ctx.restore();
-            }
-          }
-
-          ctx.restore();
-        }
-
-        // B. Draw Dot Matrix Grid (slides with the curtains)
-        for (let i = 0; i < dots.length; i++) {
-          const dot = dots[i];
-          if (dot.alpha > 0) {
-            ctx.fillStyle = `rgba(${dot.color}, ${dot.alpha})`;
-            ctx.fillRect(dot.x - dot.size / 2, dot.y - dot.size / 2, dot.size, dot.size);
-          }
-        }
-      };
-
-      // Draw onto both contexts
-      render(leftCtx);
-      render(rightCtx);
-
-      animationFrameId = requestAnimationFrame(draw);
-    };
-
-    draw();
+    // Unmount intro completely after 3.5 seconds (1.7s split + 1.8s luxurious slide transition)
+    const unmountTimer = setTimeout(() => {
+      setShowIntro(false);
+      localStorage.setItem("tedx-intro-seen", "true");
+    }, 3500);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationFrameId);
+      clearTimeout(splitTimer);
+      clearTimeout(unmountTimer);
     };
-  }, [isMounted, showIntro, leftCanvas, rightCanvas]);
+  }, [showIntro]);
+
+  // Skip intro via Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowIntro(false);
+        localStorage.setItem("tedx-intro-seen", "true");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -304,72 +124,84 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
-      {/* First-time Opening Cinematic Intro Ripple Loader */}
+      {/* First-time Opening Cinematic Intro Shutter Loader */}
       {isMounted && showIntro && (
-        <div className="fixed inset-0 z-[99990] pointer-events-none select-none overflow-hidden">
+        <div 
+          onClick={() => {
+            setShowIntro(false);
+            localStorage.setItem("tedx-intro-seen", "true");
+          }}
+          className="fixed inset-0 z-[99999] select-none overflow-hidden bg-transparent cursor-pointer"
+        >
+          {/* Skip Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowIntro(false);
+              localStorage.setItem("tedx-intro-seen", "true");
+            }}
+            className="absolute top-6 right-6 z-[99999] px-4 py-2 border border-white/10 bg-black/40 text-white/50 hover:text-white hover:border-white transition-all duration-200 font-mono text-[10px] tracking-widest uppercase cursor-pointer"
+          >
+            Skip Intro [ESC]
+          </button>
+
           {/* Left Shutter Panel */}
           <motion.div
             initial={{ x: "0%" }}
-            animate={{ x: triggerExplosion ? "-100%" : "0%" }}
-            transition={{ duration: 2.4, ease: [0.85, 0, 0.15, 1] }}
-            style={{ clipPath: "inset(0 50% 0 0)" }}
-            className="absolute inset-0 bg-black pointer-events-auto"
+            animate={triggerSplit ? { x: "-100%" } : { x: "0%" }}
+            transition={{ duration: 1.8, ease: [0.85, 0, 0.15, 1] }}
+            className="absolute top-0 left-0 w-1/2 h-full overflow-hidden bg-black border-r border-white/5"
           >
-            <canvas 
-              ref={setLeftCanvas} 
-              className="absolute inset-0 w-full h-full pointer-events-none" 
-            />
+            {/* 100vw content box aligned to viewport 0px */}
+            <div className="absolute top-0 left-0 w-screen h-full flex items-center justify-center">
+              <motion.div
+                initial={{ scale: 3.0, filter: "blur(20px)", opacity: 0 }}
+                animate={{
+                  scale: [3.0, 1.0, 1.15, 0.95, 1.0],
+                  filter: ["blur(20px)", "blur(0px)", "blur(0px)", "blur(0px)", "blur(0px)"],
+                  opacity: [0, 1, 1, 1, 1]
+                }}
+                transition={{
+                  duration: 1.2,
+                  times: [0, 0.35, 0.5, 0.7, 1.0],
+                  ease: ["easeOut", "easeOut", "easeInOut", "easeOut"]
+                }}
+                className="text-5xl md:text-8xl font-black italic tracking-tighter uppercase text-center"
+              >
+                <span className="text-ted-red inline-block pr-1">TEDx</span>
+                <span className="text-white inline-block pl-1">GCEM</span>
+              </motion.div>
+            </div>
           </motion.div>
- 
+
           {/* Right Shutter Panel */}
           <motion.div
             initial={{ x: "0%" }}
-            animate={{ x: triggerExplosion ? "100%" : "0%" }}
-            transition={{ duration: 2.4, ease: [0.85, 0, 0.15, 1] }}
-            style={{ clipPath: "inset(0 0 0 50%)" }}
-            className="absolute inset-0 bg-black pointer-events-auto"
+            animate={triggerSplit ? { x: "100%" } : { x: "0%" }}
+            transition={{ duration: 1.8, ease: [0.85, 0, 0.15, 1] }}
+            className="absolute top-0 right-0 w-1/2 h-full overflow-hidden bg-black border-l border-white/5"
           >
-            <canvas 
-              ref={setRightCanvas} 
-              className="absolute inset-0 w-full h-full pointer-events-none" 
-            />
-          </motion.div>
-
-          {/* Ambient Background Glow */}
-          {!triggerExplosion && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-ted-red/10 rounded-full blur-[100px] pointer-events-none z-0" />
-          )}
-
-          {/* Shockwaves */}
-          {triggerExplosion && (
-            <div className="absolute inset-0 pointer-events-none z-50">
-              {/* Screen Camera Flash */}
+            {/* 100vw content box shifted right to align with viewport center */}
+            <div className="absolute top-0 right-0 w-screen h-full flex items-center justify-center">
               <motion.div
-                key="screen-flash"
-                initial={{ opacity: 0.7 }}
-                animate={{ opacity: 0 }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-                className="absolute inset-0 bg-white pointer-events-none"
-              />
-
-              {/* Concentric Glowing Ring 1 */}
-              <motion.div 
-                key="shockwave-ring-1"
-                initial={{ scale: 1, opacity: 0.8, x: "-50%", y: "-50%" }}
-                animate={{ scale: 220, opacity: [0.8, 0.6, 0], x: "-50%", y: "-50%" }}
-                transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
-                className="absolute top-1/2 left-1/2 w-4 h-4 border border-ted-red rounded-full shadow-[0_0_15px_rgba(235,0,40,0.6)] pointer-events-none"
-              />
-              {/* Concentric Glowing Ring 2 */}
-              <motion.div 
-                key="shockwave-ring-2"
-                initial={{ scale: 1, opacity: 0.6, x: "-50%", y: "-50%" }}
-                animate={{ scale: 260, opacity: [0.6, 0], x: "-50%", y: "-50%" }}
-                transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-                className="absolute top-1/2 left-1/2 w-4 h-4 border border-white/20 rounded-full pointer-events-none"
-              />
+                initial={{ scale: 3.0, filter: "blur(20px)", opacity: 0 }}
+                animate={{
+                  scale: [3.0, 1.0, 1.15, 0.95, 1.0],
+                  filter: ["blur(20px)", "blur(0px)", "blur(0px)", "blur(0px)", "blur(0px)"],
+                  opacity: [0, 1, 1, 1, 1]
+                }}
+                transition={{
+                  duration: 1.2,
+                  times: [0, 0.35, 0.5, 0.7, 1.0],
+                  ease: ["easeOut", "easeOut", "easeInOut", "easeOut"]
+                }}
+                className="text-5xl md:text-8xl font-black italic tracking-tighter uppercase text-center"
+              >
+                <span className="text-ted-red inline-block pr-1">TEDx</span>
+                <span className="text-white inline-block pl-1">GCEM</span>
+              </motion.div>
             </div>
-          )}
+          </motion.div>
         </div>
       )}
 
@@ -406,13 +238,21 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Main Website Wrapper */}
-      <div
-        className="relative w-full min-h-screen bg-black"
-        style={{ 
-          zIndex: isTransitioning ? 10 : 99995,
-          opacity: isMounted && (triggerExplosion || !showIntro) ? 1 : 0,
-          transition: "opacity 0.2s ease-out"
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={
+          !showIntro 
+            ? { opacity: 1, y: 0 } 
+            : triggerSplit 
+              ? { opacity: 1, y: 0 } 
+              : { opacity: 0, y: 15 }
+        }
+        transition={{ 
+          duration: 1.8, 
+          ease: [0.16, 1, 0.3, 1],
+          delay: 0.15
         }}
+        className="relative w-full min-h-screen bg-black z-10"
       >
         {/* Navigation */}
         <TabNav activeTab={activeTab} onTabChange={handleTabChange} />
@@ -547,7 +387,7 @@ export default function Home() {
             </div>
           </div>
         </footer>
-      </div>
+      </motion.div>
     </main>
   );
 }
