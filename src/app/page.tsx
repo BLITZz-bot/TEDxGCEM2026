@@ -18,11 +18,19 @@ export default function Home() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
   const [triggerExplosion, setTriggerExplosion] = useState(false);
-  const [leftCanvas, setLeftCanvas] = useState<HTMLCanvasElement | null>(null);
-  const [rightCanvas, setRightCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  const leftCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rightCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    if (!showIntro) return;
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted || !showIntro) return;
+    const leftCanvas = leftCanvasRef.current;
+    const rightCanvas = rightCanvasRef.current;
     if (!leftCanvas || !rightCanvas) return;
     const leftCtx = leftCanvas.getContext("2d");
     const rightCtx = rightCanvas.getContext("2d");
@@ -400,7 +408,7 @@ export default function Home() {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [showIntro, leftCanvas, rightCanvas]);
+  }, [isMounted, showIntro]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -465,7 +473,7 @@ export default function Home() {
   return (
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
       {/* First-time Opening Cinematic Intro Ripple Loader */}
-      {showIntro && (
+      {isMounted && showIntro && (
         <div className="fixed inset-0 z-[99990] pointer-events-none select-none overflow-hidden">
           {/* Left Shutter Panel */}
           <motion.div
@@ -476,11 +484,11 @@ export default function Home() {
             className="absolute inset-0 bg-black pointer-events-auto"
           >
             <canvas 
-              ref={setLeftCanvas} 
+              ref={leftCanvasRef} 
               className="absolute inset-0 w-full h-full pointer-events-none" 
             />
           </motion.div>
-
+ 
           {/* Right Shutter Panel */}
           <motion.div
             initial={{ x: "0%" }}
@@ -490,7 +498,7 @@ export default function Home() {
             className="absolute inset-0 bg-black pointer-events-auto"
           >
             <canvas 
-              ref={setRightCanvas} 
+              ref={rightCanvasRef} 
               className="absolute inset-0 w-full h-full pointer-events-none" 
             />
           </motion.div>
@@ -568,7 +576,11 @@ export default function Home() {
       {/* Main Website Wrapper */}
       <div
         className="relative w-full min-h-screen bg-black"
-        style={{ zIndex: isTransitioning ? 10 : 99995 }}
+        style={{ 
+          zIndex: isTransitioning ? 10 : 99995,
+          opacity: isMounted && (triggerExplosion || !showIntro) ? 1 : 0,
+          transition: "opacity 0.2s ease-out"
+        }}
       >
         {/* Navigation */}
         <TabNav activeTab={activeTab} onTabChange={handleTabChange} />
