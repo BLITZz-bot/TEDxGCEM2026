@@ -143,10 +143,11 @@ export default function Speakers() {
 
     const mouse = { x: -1000, y: -1000 };
 
+    let canvasRect = canvas.getBoundingClientRect();
+
     const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
+      mouse.x = e.clientX - canvasRect.left;
+      mouse.y = e.clientY - canvasRect.top;
     };
 
     const handleMouseLeave = () => {
@@ -158,13 +159,19 @@ export default function Speakers() {
       if (canvas && canvas.parentElement) {
         canvas.width = canvas.parentElement.clientWidth;
         canvas.height = canvas.parentElement.clientHeight;
+        canvasRect = canvas.getBoundingClientRect();
       }
+    };
+
+    const handleScroll = () => {
+      canvasRect = canvas.getBoundingClientRect();
     };
 
     // Listeners
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseleave", handleMouseLeave);
     window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll);
 
     // Initial sizing
     handleResize();
@@ -262,6 +269,7 @@ export default function Speakers() {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseleave", handleMouseLeave);
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);

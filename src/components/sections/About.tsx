@@ -1,124 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 
-const LinkedinIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={props.className}
-  >
-    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-    <rect x="2" y="9" width="4" height="12" />
-    <circle cx="4" cy="4" r="2" />
-  </svg>
-);
-
-const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={props.className}
-  >
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-  </svg>
-);
-
 export default function About() {
-  const [activeMember, setActiveMember] = useState<string | null>(null);
-
   const team = [
-    { 
-      num: "01",
-      name: "Aarav Sharma", 
-      role: "Licensee & Organizer", 
-      headline: "Ideas belong on stage... and they will shape our future.",
-      bio: "Fascinated by the intersection of technology, humanities, and entrepreneurship. Dedicated to building a world-class platform where ideas spark actionable change.",
-      email: "aarav@tedxgcem.com", 
-      linkedin: "#", 
-      instagram: "#" 
-    },
-    { 
-      num: "02",
-      name: "Diya Iyer", 
-      role: "Co-Organizer", 
-      headline: "Transforming regional ideas into global connections, step by step.",
-      bio: "Operations enthusiast and community builder. Passionate about structuring seamless, unforgettable physical and digital experiences.",
-      email: "diya@tedxgcem.com", 
-      linkedin: "#", 
-      instagram: "#" 
-    },
-    { 
-      num: "03",
-      name: "Rohan Verma", 
-      role: "Curation Lead", 
-      headline: "Searching for the quiet voices that challenge common patterns.",
-      bio: "Uncovering voices that deserve to be heard. Constantly seeking narratives that disrupt conventions and prompt deep reflection.",
-      email: "rohan@tedxgcem.com", 
-      linkedin: "#", 
-      instagram: "#" 
-    },
-    { 
-      num: "04",
-      name: "Kavya Menon", 
-      role: "Design & Tech Lead", 
-      headline: "Visual systems should bridge gaps between ideas and humans.",
-      bio: "Creative technologist crafting immersive visual systems, responsive products, and interactive storytelling portals that bridge design and code.",
-      email: "kavya@tedxgcem.com", 
-      linkedin: "#", 
-      instagram: "#" 
-    },
-    { 
-      num: "05",
-      name: "Vikram Sen", 
-      role: "Marketing & PR Lead", 
-      headline: "Creating digital spaces where community sparks organic dialogue.",
-      bio: "Storyteller focused on amplifying local perspectives. Driven by creating digital buzz and meaningful audience engagement.",
-      email: "vikram@tedxgcem.com", 
-      linkedin: "#", 
-      instagram: "#" 
-    },
-    { 
-      num: "06",
-      name: "Ananya Rao", 
-      role: "Operations & Production Lead", 
-      headline: "Flawless physical execution is the baseline of high storytelling.",
-      bio: "Managing complex timelines, sets, audio-visual layouts, and on-ground setups with surgical precision to ensure a flawless stage delivery.",
-      email: "ananya@tedxgcem.com", 
-      linkedin: "#", 
-      instagram: "#" 
-    },
-    { 
-      num: "07",
-      name: "Siddharth Nair", 
-      role: "Sponsorship & Finance Lead", 
-      headline: "Empowering organizational growth through smart mutual values.",
-      bio: "Building strategic corporate alliances and financial frameworks that secure resources and empower long-term community value.",
-      email: "siddharth@tedxgcem.com", 
-      linkedin: "#", 
-      instagram: "#" 
-    },
-    { 
-      num: "08",
-      name: "Meera Patel", 
-      role: "Volunteer Coordinator", 
-      headline: "Coordinating human capital is the key to event success.",
-      bio: "Empowering our high-energy team of student volunteers, coordinating shifts, and ensuring everyone plays their part in the TEDxGCEM vision.",
-      email: "meera@tedxgcem.com", 
-      linkedin: "#", 
-      instagram: "#" 
-    }
+    { name: "Aarav Sharma", role: "Licensee & Organizer" },
+    { name: "Diya Iyer", role: "Co-Organizer" },
+    { name: "Rohan Verma", role: "Curation Lead" },
+    { name: "Kavya Menon", role: "Design & Tech Lead" },
+    { name: "Vikram Sen", role: "Marketing & PR Lead" },
+    { name: "Ananya Rao", role: "Operations & Production Lead" },
+    { name: "Siddharth Nair", role: "Sponsorship & Finance Lead" },
+    { name: "Meera Patel", role: "Volunteer Coordinator" }
   ];
 
   return (
@@ -173,8 +67,6 @@ export default function About() {
             className="md:col-span-8 bg-black border-2 border-white p-8 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col justify-between cursor-pointer"
           >
             <div>
-              
-              
               <h3 className="text-3xl font-black italic uppercase text-white mb-4 leading-tight">
                 THE LOCAL STAGE: <span className="text-ted-red">TEDx</span>GCEM
               </h3>
@@ -206,7 +98,6 @@ export default function About() {
             
             <div className="flex-1 bg-black border-2 border-white p-6 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col justify-between cursor-pointer">
               <div>
-                
                 <h4 className="text-lg font-black italic text-white uppercase mb-2">WHAT IS TEDx?</h4>
                 <p className="text-white/50 text-xs font-light leading-relaxed">
                   A program of self-organized local events combining live speakers and recorded talks to spark deep community discussion and connection.
@@ -216,7 +107,6 @@ export default function About() {
 
             <div className="flex-1 bg-black border-2 border-white p-6 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col justify-between cursor-pointer">
               <div>
-                
                 <h4 className="text-lg font-black italic text-white uppercase mb-2">WHAT IS TED?</h4>
                 <p className="text-white/50 text-xs font-light leading-relaxed">
                   A global nonprofit organization dedicated to Ideas Worth Spreading, hosting annual summits, and translating powerful talks globally.
@@ -264,7 +154,7 @@ export default function About() {
             </h2>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             {team.map((member, index) => (
               <motion.div
                 key={index}
@@ -272,11 +162,10 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                onClick={() => setActiveMember(activeMember === member.num ? null : member.num)}
-                className="group relative w-full h-[320px] md:h-[400px] bg-black border-2 border-white rounded-none shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col justify-between p-4 md:p-6 cursor-pointer select-none"
+                className="group relative w-full bg-black border-2 border-white rounded-none shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 transition-all duration-300 flex flex-col p-4 md:p-6 select-none"
               >
                 {/* Visual placeholder inside card */}
-                <div className="relative aspect-[16/10] w-full bg-white/[0.015] overflow-hidden border border-white mb-3 md:mb-4 pointer-events-none">
+                <div className="relative aspect-square w-full bg-white/[0.015] overflow-hidden border border-white mb-3 md:mb-4 pointer-events-none">
                   <div className="absolute top-2 left-2 text-[8px] text-white/20 font-mono select-none">+</div>
                   <div className="absolute top-2 right-2 text-[8px] text-white/20 font-mono select-none">+</div>
                   <div className="absolute bottom-2 left-2 text-[8px] text-white/20 font-mono select-none">+</div>
@@ -290,80 +179,21 @@ export default function About() {
                     }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[28px] md:text-[40px] font-black italic text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.06)] group-hover:[-webkit-text-stroke:1px_rgba(235,0,40,0.15)] transition-all duration-300 select-none">
+                    <span className="text-[36px] md:text-[52px] font-black italic text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.06)] group-hover:[-webkit-text-stroke:1px_rgba(235,0,40,0.15)] transition-all duration-300 select-none">
                       TEDx
                     </span>
                   </div>
                 </div>
 
                 {/* Details */}
-                <div>
-                  <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-1">
+                <div className="mt-2">
+                  <div className="flex items-center gap-1.5 md:gap-2 mb-1">
                     <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-ted-red shrink-0" />
                     <h4 className="text-sm md:text-lg font-black italic text-white uppercase tracking-tight font-mono truncate">{member.name}</h4>
                   </div>
                   <p className="text-[10px] md:text-xs text-white/40 font-mono tracking-wider truncate">
                     {member.role}
                   </p>
-                </div>
-
-                {/* Action footer */}
-                <div className="flex items-center justify-between text-[8px] md:text-[10px] font-mono uppercase tracking-widest text-white/40 pt-3 md:pt-4 border-t border-white/5 mt-auto">
-                  <span>NODE_{member.num}</span>
-                  <span className="text-ted-red font-bold group-hover:translate-x-1 transition-transform duration-300 text-[9px] md:text-[10px]">BIO →</span>
-                </div>
-
-                {/* HOVER/TAP BIO PANEL */}
-                <div className={`absolute inset-0 bg-black/98 border-t-2 border-ted-red p-4 md:p-6 flex flex-col justify-between transition-transform duration-500 ease-out z-20 ${
-                  activeMember === member.num ? "translate-y-0" : "translate-y-[102%] md:group-hover:translate-y-0"
-                }`}>
-                  <div>
-                    <div className="flex justify-between items-center text-[9px] md:text-[10px] text-white/30 border-b border-white/5 pb-2 mb-3 md:mb-4 font-mono select-none">
-                      <span>{"// ACCESS_GRANTED"}</span>
-                      <span className="text-ted-red">NODE_{member.num}</span>
-                    </div>
-                    
-                    <h4 className="text-xs md:text-sm font-black italic tracking-tight mb-2 md:mb-4 text-white uppercase leading-snug font-mono line-clamp-2 md:line-clamp-none">
-                      &ldquo;{member.headline}&rdquo;
-                    </h4>
-                    
-                    <div className="text-[10px] md:text-[11px] text-white/70 font-light leading-relaxed border-l-2 border-ted-red pl-2 md:pl-3 italic mb-2 md:mb-4 max-h-[85px] md:max-h-[140px] overflow-y-auto no-scrollbar select-text">
-                      {member.bio}
-                    </div>
-                  </div>
-
-                  {/* Social contacts */}
-                  <div className="border-t border-white/5 pt-3 md:pt-4 flex justify-between items-center text-[9px] md:text-[10px] font-mono mt-auto">
-                    <div className="flex gap-3 md:gap-4">
-                      <a 
-                        href={member.linkedin} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-white/40 hover:text-ted-red transition-colors flex items-center gap-1"
-                      >
-                        <LinkedinIcon className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">LINKEDIN</span>
-                      </a>
-                      <a 
-                        href={member.instagram} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-white/40 hover:text-ted-red transition-colors flex items-center gap-1"
-                      >
-                        <InstagramIcon className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">INSTAGRAM</span>
-                      </a>
-                    </div>
-                    <a 
-                      href={`mailto:${member.email}`} 
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-white/40 hover:text-ted-red transition-colors"
-                    >
-                      EMAIL
-                    </a>
-                  </div>
                 </div>
 
               </motion.div>

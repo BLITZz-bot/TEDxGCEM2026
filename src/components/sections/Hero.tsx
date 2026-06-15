@@ -324,18 +324,22 @@ export default function Hero({ onTabChange }: HeroProps) {
         <h1 className="text-7xl md:text-9xl font-black leading-[0.9] tracking-tighter text-left uppercase select-none">
           <motion.span 
             className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff_20%,#EB0028_45%,#EB0028_55%,#ffffff_80%)] bg-[length:200%_100%] inline-block cursor-default"
+            style={{ letterSpacing: "-0.05em" }}
             animate={{ 
               backgroundPosition: ["0% 0", "-200% 0"]
             }}
             transition={{ 
-              repeat: Infinity, 
-              duration: 5, 
-              ease: "linear" 
+              backgroundPosition: {
+                repeat: Infinity, 
+                duration: 5, 
+                ease: "linear" 
+              }
             }}
             whileHover={{ 
-              scale: 1.05,
-              filter: "drop-shadow(0 0 20px rgba(235,0,40,0.6))",
-              transition: { duration: 0.3 }
+              scale: 1.015,
+              letterSpacing: "-0.03em",
+              filter: "drop-shadow(0 0 12px rgba(235,0,40,0.5))",
+              transition: { duration: 0.3, ease: "easeOut" }
             }}
           >
             RIPPLE
