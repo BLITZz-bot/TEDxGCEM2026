@@ -67,7 +67,8 @@ const speakers = [
     size: "large",
     bio: "Sarah is a research fellow at the Institute for Human-Centered AI, studying algorithmic accountability and ethics in large-scale generative models.",
     details: "Ph.D. in Computer Science from Stanford. Former lead ethical researcher at DeepMind.",
-    icon: Cpu
+    icon: Cpu,
+    photo: "/SLIMG.png"
   },
   { 
     id: 2, 
@@ -76,7 +77,8 @@ const speakers = [
     size: "small",
     bio: "An environmental architect specializing in integrating bio-diverse ecosystems into skyscrapers and urban infrastructure.",
     details: "Founder of GreenGrid Studios. TED Senior Fellow and designer of Milan's Vertical Forests.",
-    icon: Globe
+    icon: Globe,
+    photo: "/SLIMG.png"
   },
   { 
     id: 3, 
@@ -85,7 +87,8 @@ const speakers = [
     size: "medium",
     bio: "A media theorist exploring the application of quantum physics concepts to interactive narratives and digital media.",
     details: "Professor of Digital Media at MIT. Author of 'Schrödinger's Screen'.",
-    icon: Sparkles
+    icon: Sparkles,
+    photo: "/SLIMG.png"
   },
   { 
     id: 4, 
@@ -94,7 +97,8 @@ const speakers = [
     size: "small",
     bio: "A sound designer and acoustician researching the neurological effects of absolute silence in high-noise environments.",
     details: "Acoustic consultant for NASA's quiet spacecraft initiative. Winner of multiple sound engineering awards.",
-    icon: Compass
+    icon: Compass,
+    photo: "/SLIMG.png"
   },
   { 
     id: 5, 
@@ -103,7 +107,8 @@ const speakers = [
     size: "medium",
     bio: "A pioneer in bio-inspired building design, building self-heating and self-cooling living structures using synthetic materials.",
     details: "Dean of Architecture at Barcelona Tech. Pioneer in biological-material printing.",
-    icon: Zap
+    icon: Zap,
+    photo: "/SLIMG.png"
   },
   { 
     id: 6, 
@@ -112,9 +117,19 @@ const speakers = [
     size: "small",
     bio: "A mathematician and author discovering elegance and simple geometry in chaotic topological networks.",
     details: "Fields Medalist. Research focuses on topological data analysis in social network graphs.",
-    icon: Activity
+    icon: Activity,
+    photo: "/SLIMG.png"
   },
 ];
+
+// --- MANUAL SPEAKER BOX ADJUSTMENTS ---
+// Adjust the width, height, and photo aspect ratio of the speaker cards here.
+// You can use any valid CSS length values (e.g. "300px", "280px", "100%", "auto", etc.).
+const BOX_SETTINGS = {
+  width: "500px",       // Width of each speaker card
+  height: "auto",       // Height of each speaker card ("auto" is recommended)
+  aspectRatio: "1.5",   // Aspect ratio of the photo frame (e.g. "1.5" or "4/3" for landscape, "4/5" for portrait)
+};
 
 export default function Speakers() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -125,7 +140,28 @@ export default function Speakers() {
     topic: string;
     bio: string;
     details: string;
+    photo: string;
   } | null>(null);
+
+  const selectedSpeakerRef = useRef<typeof selectedSpeaker>(null);
+  selectedSpeakerRef.current = selectedSpeaker;
+
+  const resumeCanvasRef = useRef<(() => void) | null>(null);
+
+  // Disable body scroll when modal is open
+  useEffect(() => {
+    if (selectedSpeaker) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [selectedSpeaker]);
+
+  // Dynamically calculate the maximum width of the grid based on the card width + gap (32px / 2rem)
+  const gridMaxWidth = `calc((${BOX_SETTINGS.width} * 2) + 2rem)`;
 
   // Particle constellation network simulation (matching About page theme)
   useEffect(() => {
@@ -191,6 +227,12 @@ export default function Speakers() {
 
     const draw = () => {
       if (!ctx || !canvas) return;
+
+      // Pause canvas drawing and calculations when the speaker bio modal is open.
+      if (selectedSpeakerRef.current) {
+        return;
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Draw and update particle coordinates
@@ -202,12 +244,14 @@ export default function Speakers() {
         if (p.x < 0 || p.x > canvas.width) p.vx = -p.vx;
         if (p.y < 0 || p.y > canvas.height) p.vy = -p.vy;
 
-        // Flee interaction from cursor
+        // Flee interaction from cursor (optimized with squared distance)
         if (mouse.x !== -1000 && mouse.y !== -1000) {
           const dx = p.x - mouse.x;
           const dy = p.y - mouse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < mouseRadius) {
+          const distSq = dx * dx + dy * dy;
+          const mouseRadiusSq = mouseRadius * mouseRadius;
+          if (distSq < mouseRadiusSq) {
+            const dist = Math.sqrt(distSq);
             const force = (mouseRadius - dist) / mouseRadius;
             const angle = Math.atan2(dy, dx);
             p.x += Math.cos(angle) * force * 1.5;
@@ -221,45 +265,50 @@ export default function Speakers() {
         ctx.fill();
       });
 
-      // Draw interactive connections
+      // 1. Draw connections to the cursor coordinate (batched to a single stroke draw call)
+      if (mouse.x !== -1000 && mouse.y !== -1000) {
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(235, 0, 40, 0.25)";
+        ctx.lineWidth = 0.7;
+        const mouseRadiusSq = mouseRadius * mouseRadius;
+        particles.forEach((p) => {
+          const dx = p.x - mouse.x;
+          const dy = p.y - mouse.y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < mouseRadiusSq) {
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mouse.x, mouse.y);
+          }
+        });
+        ctx.stroke();
+      }
+
+      // 2. Draw connections to neighboring particles (batched to a single stroke draw call)
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+      ctx.lineWidth = 0.45;
+      const connDistSq = connectionDistance * connectionDistance;
       for (let i = 0; i < particles.length; i++) {
         const p1 = particles[i];
-
-        // Draw connections to the cursor coordinate
-        if (mouse.x !== -1000 && mouse.y !== -1000) {
-          const dx = p1.x - mouse.x;
-          const dy = p1.y - mouse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < mouseRadius) {
-            const alpha = (1 - dist / mouseRadius) * 0.4;
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(mouse.x, mouse.y);
-            ctx.strokeStyle = `rgba(235, 0, 40, ${alpha})`;
-            ctx.lineWidth = 0.7;
-            ctx.stroke();
-          }
-        }
-
-        // Draw connections to neighboring particles
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p1.x - p2.x;
           const dy = p1.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+          const distSq = dx * dx + dy * dy;
 
-          if (dist < connectionDistance) {
-            const alpha = (1 - dist / connectionDistance) * 0.22;
-            ctx.beginPath();
+          if (distSq < connDistSq) {
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-            ctx.lineWidth = 0.45;
-            ctx.stroke();
           }
         }
       }
+      ctx.stroke();
 
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    resumeCanvasRef.current = () => {
+      cancelAnimationFrame(animationFrameId);
       animationFrameId = requestAnimationFrame(draw);
     };
 
@@ -308,44 +357,54 @@ export default function Speakers() {
           </h2>
         </motion.div>
 
-        {/* Speakers Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[250px]">
+        {/* Speakers Grid - 2 per row, compact size, centered */}
+        <div 
+          className="grid grid-cols-1 sm:grid-cols-2 gap-8 mx-auto"
+          style={{ maxWidth: gridMaxWidth }}
+        >
           {speakers.map((speaker, index) => {
-            const SpeakerIcon = speaker.icon;
             return (
               <motion.div
                 key={speaker.id}
-                initial={{ opacity: 0, y: 25 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false }}
                 transition={{ duration: 0.5, delay: index * 0.08 }}
                 onClick={() => setSelectedSpeaker(speaker)}
-                className={`group relative rounded-3xl overflow-hidden border border-white/10 bg-white/[0.02] backdrop-blur-md flex flex-col justify-end p-8 transition-all hover:border-ted-red/35 hover:bg-white/[0.04] cursor-pointer ${
-                  speaker.size === "large" ? "md:col-span-2 md:row-span-2" : 
-                  speaker.size === "medium" ? "md:col-span-1 md:row-span-2" : "md:col-span-1 md:row-span-1"
-                }`}
+                className="group relative border border-white/15 bg-white/[0.01] hover:bg-white/[0.02] hover:border-ted-red/50 rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-[border-color,background-color] duration-300 cursor-pointer select-none w-full mx-auto"
+                style={{ maxWidth: BOX_SETTINGS.width, height: BOX_SETTINGS.height }}
               >
-                {/* Radial glow accent on hover */}
-                <div className="absolute inset-0 bg-[radial-gradient(250px_circle_at_center,rgba(235,0,40,0.07),transparent_80%)] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                
-                {/* Visual placeholder inside card */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-                  <SpeakerIcon className="w-20 h-20 text-white/[0.01] group-hover:text-ted-red/[0.06] group-hover:scale-110 transition-all duration-500" />
-                </div>
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-1 pointer-events-none" />
-
-                <div className="relative z-10">
-                  <span className="text-ted-red text-xs font-bold uppercase tracking-[0.2em] block mb-1">Speaker</span>
-                  <h4 className="text-2xl font-black italic text-white mb-1">{speaker.name}</h4>
-                  <p className="text-white/60 text-sm group-hover:text-white transition-colors">{speaker.topic}</p>
-                </div>
-                
-                {/* Corner Expand Indicator */}
-                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
-                  <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center group-hover:border-ted-red/40">
-                    <span className="text-ted-red text-xs font-bold">→</span>
+                {/* Asymmetric Polaroid Frame Container (Portrait Aspect Ratio) */}
+                <div 
+                  className="relative w-full mb-4"
+                  style={{ aspectRatio: BOX_SETTINGS.aspectRatio }}
+                >
+                  {/* Behind Shadow Layer */}
+                  <div className="absolute inset-0 bg-ted-red rounded-2xl transform translate-x-2.5 translate-y-2.5 md:translate-x-0 md:translate-y-0 md:group-hover:translate-x-2.5 md:group-hover:translate-y-2.5 transition-transform duration-300 ease-out z-0" />
+                  
+                  {/* Front Image Frame */}
+                  <div className="absolute inset-0 rounded-2xl overflow-hidden border border-white/15 group-hover:border-ted-red/30 bg-zinc-900 z-10 transition-[transform,border-color] duration-300 ease-out -translate-x-1 -translate-y-1 md:translate-x-0 md:translate-y-0 md:group-hover:-translate-x-1 md:group-hover:-translate-y-1">
+                    <img 
+                      src={speaker.photo} 
+                      alt={speaker.name} 
+                      className="w-full h-full object-cover filter grayscale-0 md:grayscale md:group-hover:grayscale-0 md:group-hover:scale-105 transition-[transform,filter] duration-300 ease-out transform-gpu [will-change:transform,filter]"
+                    />
                   </div>
+                </div>
+
+                {/* Editorial Details Underneath */}
+                <div className="text-left mt-auto">
+                  <h3 className="text-xl sm:text-2xl font-black italic text-ted-red md:text-white md:group-hover:text-ted-red uppercase tracking-tight transition-colors duration-300 leading-tight">
+                    {speaker.name}
+                  </h3>
+                  
+                  {/* Designation */}
+                  <p className="text-white/50 text-[10px] sm:text-xs uppercase tracking-[0.15em] font-mono mt-1 group-hover:text-white/80 transition-colors duration-300">
+                    {speaker.topic}
+                  </p>
+                  
+                  {/* Active hover dash line */}
+                  <div className="h-[2px] bg-ted-red mt-4 transition-[width] duration-300 ease-out w-12 md:w-0 md:group-hover:w-12" />
                 </div>
               </motion.div>
             );
@@ -354,75 +413,130 @@ export default function Speakers() {
 
       </div>
 
-      {/* Speaker Inspection Modal */}
-      <AnimatePresence>
+      {/* Cinematic Left & Right Split-Screen Overlay */}
+      <AnimatePresence onExitComplete={() => {
+        if (resumeCanvasRef.current) {
+          resumeCanvasRef.current();
+        }
+      }}>
         {selectedSpeaker && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, pointerEvents: "none" }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
             onClick={() => setSelectedSpeaker(null)}
-            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+            className="fixed inset-0 z-50 bg-black/90 flex flex-col md:flex-row cursor-pointer overflow-hidden"
           >
-            <motion.div
-              initial={{ scale: 0.92, y: 15, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.92, y: 15, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg bg-ted-dark-gray/95 border border-white/10 rounded-3xl p-8 relative cursor-default overflow-hidden backdrop-blur-xl shadow-2xl"
+            {/* Close Button - Fixed in the top-left corner of the screen */}
+            <button 
+              onClick={() => setSelectedSpeaker(null)}
+              className="fixed top-4 left-4 md:top-6 md:left-6 text-white/70 hover:text-white transition-colors p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 z-50 border border-white/10 cursor-pointer"
             >
-              {/* Radial glow background accent */}
-              <div className="absolute top-0 right-0 w-36 h-36 bg-ted-red/15 rounded-full blur-3xl pointer-events-none" />
+              <X className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
+
+            {/* Left Panel - Portrait & Info vignette */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full md:w-[45%] h-[38dvh] md:h-full relative overflow-hidden bg-black flex flex-col justify-end p-6 md:p-8 cursor-default shrink-0 [will-change:transform]"
+            >
+              {/* Border Frame Overlay */}
+              <div className="absolute inset-0 border-2 border-ted-red/40 pointer-events-none z-30 border-b-0 md:border-b-2 md:border-r-0" />
+
+              {/* Giant Presenter Portrait */}
+              <img 
+                src={selectedSpeaker.photo} 
+                alt={selectedSpeaker.name} 
+                className="absolute inset-0 w-full h-full object-cover filter contrast-125 brightness-90 saturate-75"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent pointer-events-none z-10" />
               
-              {/* Close Button */}
-              <button 
-                onClick={() => setSelectedSpeaker(null)}
-                className="absolute top-5 right-5 text-white/40 hover:text-white transition-colors p-2 rounded-full hover:bg-white/5"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {/* Tech Metadata Tags */}
+              <div className="relative z-20 font-mono text-[10px] text-ted-red tracking-widest uppercase flex flex-col gap-2">
+                <span className="bg-ted-red/20 border border-ted-red/40 px-3 py-1 rounded w-fit">
+                  [ TARGET: DETECTED ]
+                </span>
+                <span className="text-white/60">
+                  // LIVE DOSSIER STREAM
+                </span>
+              </div>
+            </motion.div>
 
-              <div className="flex flex-col items-center text-center mt-4">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-ted-red/20 to-ted-red/5 border border-ted-red/35 flex items-center justify-center mb-6">
-                  <Mic className="w-9 h-9 text-ted-red" />
+            {/* Right Panel - Terminal Dashboard */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full md:w-[55%] h-[62dvh] md:h-full bg-[#0a0a0a] flex flex-col justify-start md:justify-center p-6 sm:p-12 md:p-16 cursor-default relative overflow-y-auto shrink-0 [will-change:transform]"
+            >
+              {/* Border Frame Overlay */}
+              <div className="absolute inset-0 border-2 border-ted-red/40 pointer-events-none z-30" />
+
+              <div className="max-w-2xl w-full mx-auto space-y-4 md:space-y-8 text-left py-2 md:py-0">
+                {/* Speaker's name in giant italic typography */}
+                <div>
+                  <span className="text-ted-red text-[10px] font-bold uppercase tracking-[0.2em] font-mono block mb-2">
+                    // SPEAKER SPECS
+                  </span>
+                  <h3 className="text-3xl sm:text-5xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">
+                    {selectedSpeaker.name}
+                  </h3>
                 </div>
-                
-                <h3 className="text-2xl font-black italic text-white mb-1">{selectedSpeaker.name}</h3>
-                <p className="text-xs uppercase tracking-[0.2em] text-ted-red font-bold mb-4">{selectedSpeaker.topic}</p>
-                
-                <p className="text-white/80 text-sm leading-relaxed max-w-md mb-6 italic">
-                  &ldquo;{selectedSpeaker.bio}&rdquo;
-                </p>
 
-                <p className="text-white/50 text-xs leading-relaxed max-w-md mb-8 border-t border-white/5 pt-4">
-                  {selectedSpeaker.details}
-                </p>
-                
-                <div className="flex gap-6 w-full justify-center text-[10px] uppercase font-bold tracking-wider">
+                {/* Talk topic with a red side-border accent */}
+                <div className="border-l-4 border-ted-red pl-4 py-1">
+                  <span className="text-ted-red font-mono text-[9px] uppercase tracking-widest block mb-1">
+                    Presentation Topic
+                  </span>
+                  <p className="text-white font-semibold text-sm sm:text-xl md:text-2xl leading-tight">
+                    {selectedSpeaker.topic}
+                  </p>
+                </div>
+
+                {/* Stylized biography quotes */}
+                <div className="space-y-2">
+                  <span className="text-white/30 text-[9px] uppercase font-mono tracking-widest block">Biography</span>
+                  <p className="text-white/90 text-xs sm:text-base leading-relaxed italic font-light">
+                    &ldquo;{selectedSpeaker.bio}&rdquo;
+                  </p>
+                </div>
+
+                {/* Qualifications & background details */}
+                <div className="space-y-2 border-t border-white/5 pt-4 md:pt-6">
+                  <span className="text-white/30 text-[9px] uppercase font-mono tracking-widest block">Credentials & details</span>
+                  <p className="text-white/60 text-[10px] sm:text-sm leading-relaxed font-light font-mono">
+                    {selectedSpeaker.details}
+                  </p>
+                </div>
+
+                {/* Full-width custom contact buttons */}
+                <div className="flex flex-row gap-2 pt-2 w-full">
                   <a 
                     href="#" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-white/40 hover:text-ted-red transition-all duration-300 flex items-center gap-1.5"
+                    className="flex-1 py-2.5 border border-white/10 hover:border-ted-red/40 bg-white/[0.02] hover:bg-ted-red/10 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white"
                   >
-                    <Linkedin className="w-4.5 h-4.5" />
+                    <Linkedin className="w-3.5 h-3.5 text-white/60" />
                     <span>LinkedIn</span>
                   </a>
                   <a 
                     href="#" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-white/40 hover:text-ted-red transition-all duration-300 flex items-center gap-1.5"
+                    className="flex-1 py-2.5 border border-white/10 hover:border-ted-red/40 bg-white/[0.02] hover:bg-ted-red/10 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white"
                   >
-                    <Instagram className="w-4.5 h-4.5" />
+                    <Instagram className="w-3.5 h-3.5 text-white/60" />
                     <span>Instagram</span>
                   </a>
                   <a 
                     href={`mailto:speakers@tedxgcem.com`} 
-                    className="text-white/40 hover:text-ted-red transition-all duration-300 flex items-center gap-1.5"
+                    className="flex-1 py-2.5 border border-white/10 hover:border-ted-red/40 bg-white/[0.02] hover:bg-ted-red/10 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white"
                   >
-                    <Mail className="w-4.5 h-4.5" />
+                    <Mail className="w-3.5 h-3.5 text-white/60" />
                     <span>Email PR</span>
                   </a>
                 </div>
