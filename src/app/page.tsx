@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TabNav, { TabId } from "@/components/ui/TabNav";
 import Hero from "@/components/sections/Hero";
@@ -16,7 +16,246 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [showIntro, setShowIntro] = useState(true);
+  const [triggerExplosion, setTriggerExplosion] = useState(false);
+  const introCanvasRef = useRef<HTMLCanvasElement>(null);
 
+  useEffect(() => {
+    if (!showIntro) return;
+
+    const canvas = introCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let triggeredExplosion = false;
+    let isTerminated = false;
+
+    interface Dot {
+      x: number;
+      y: number;
+      cx: number;
+      cy: number;
+      vx: number;
+      vy: number;
+      alpha: number;
+      color: string;
+      isScattered: boolean;
+      size: number;
+    }
+
+    interface Debris {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      size: number;
+      angle: number;
+      va: number;
+      alpha: number;
+      color: string;
+    }
+
+    const dots: Dot[] = [];
+    const debris: Debris[] = [];
+    const spacing = 35; // pixel spacing of the dots grid
+
+    const handleResize = () => {
+      canvas.width = canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth;
+      canvas.height = canvas.parentElement ? canvas.parentElement.clientHeight : window.innerHeight;
+      initGrid();
+    };
+
+    const initGrid = () => {
+      dots.length = 0;
+      const cols = Math.ceil(canvas.width / spacing) + 1;
+      const rows = Math.ceil(canvas.height / spacing) + 1;
+      const startX = (canvas.width - (cols - 1) * spacing) / 2;
+      const startY = (canvas.height - (rows - 1) * spacing) / 2;
+
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          const x = startX + c * spacing;
+          const y = startY + r * spacing;
+          
+          const isRed = Math.random() > 0.93;
+          dots.push({
+            x,
+            y,
+            cx: x,
+            cy: y,
+            vx: 0,
+            vy: 0,
+            alpha: isRed ? 0.25 : 0.08,
+            color: isRed ? "235, 0, 40" : "255, 255, 255",
+            isScattered: false,
+            size: isRed ? 1.6 : 0.8
+          });
+        }
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    const duration = 1500; // 1.5 seconds square rotation & grid scan
+    const startTime = Date.now();
+
+    const draw = () => {
+      if (isTerminated) return;
+
+      // Draw solid black background
+      ctx.fillStyle = "rgb(0, 0, 0)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(100, (elapsed / duration) * 100);
+
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+
+      // 1. Draw Central Shutter (grows & spins)
+      if (progress < 100) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        
+        const rotationSpeed = 0.002 + (progress / 100) * 0.018;
+        const angle = elapsed * rotationSpeed;
+        ctx.rotate(angle);
+
+        const size = 10 + (progress / 100) * 35;
+        
+        // Outer Brutalist Framing Square
+        ctx.strokeStyle = "rgba(235, 0, 40, 0.7)";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(-size - 6, -size - 6, (size + 6) * 2, (size + 6) * 2);
+
+        // Core Solid Red Shutter
+        ctx.fillStyle = "rgb(235, 0, 40)";
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "rgb(235, 0, 40)";
+        ctx.fillRect(-size, -size, size * 2, size * 2);
+
+        // White hot center insert
+        ctx.fillStyle = "rgb(255, 255, 255)";
+        ctx.shadowBlur = 0;
+        ctx.fillRect(-size * 0.3, -size * 0.3, size * 0.6, size * 0.6);
+
+        ctx.restore();
+      }
+
+      // 2. Draw Dot Matrix Grid & Handle Disintegration
+      const waveRadius = progress >= 100 ? (elapsed - duration) * 1.8 : 0;
+
+      for (let i = 0; i < dots.length; i++) {
+        const dot = dots[i];
+        
+        if (progress >= 100) {
+          const dx = dot.cx - cx;
+          const dy = dot.cy - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (!dot.isScattered) {
+            if (dist < waveRadius) {
+              dot.isScattered = true;
+              const angle = Math.atan2(dy, dx);
+              const speed = Math.random() * 8 + 4;
+              dot.vx = Math.cos(angle) * speed;
+              dot.vy = Math.sin(angle) * speed;
+            } else {
+              // Fade out un-scattered dots slightly
+              dot.alpha -= 0.004;
+            }
+          } else {
+            // Update scattered dots physics
+            dot.cx += dot.vx;
+            dot.cy += dot.vy;
+            dot.vx *= 0.94;
+            dot.vy *= 0.94;
+            dot.alpha -= 0.012;
+          }
+        } else {
+          // Subtle idle breathing wave effect before explosion
+          const dx = dot.x - cx;
+          const dy = dot.y - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const wave = Math.sin(dist / 60 - elapsed / 180) * 0.04;
+          dot.alpha = Math.max(0.02, (dot.color === "235, 0, 40" ? 0.25 : 0.08) + wave);
+        }
+
+        if (dot.alpha > 0) {
+          ctx.fillStyle = `rgba(${dot.color}, ${dot.alpha})`;
+          ctx.fillRect(dot.cx - dot.size / 2, dot.cy - dot.size / 2, dot.size, dot.size);
+        }
+      }
+
+      // 3. Draw Shutter Debris
+      for (let i = debris.length - 1; i >= 0; i--) {
+        const d = debris[i];
+        d.x += d.vx;
+        d.y += d.vy;
+        d.angle += d.va;
+        d.vx *= 0.95;
+        d.vy *= 0.95;
+        d.alpha -= 0.016;
+
+        if (d.alpha <= 0) {
+          debris.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.translate(d.x, d.y);
+        ctx.rotate(d.angle);
+        ctx.fillStyle = `rgba(${d.color}, ${d.alpha})`;
+        ctx.fillRect(-d.size / 2, -d.size / 2, d.size, d.size);
+        ctx.restore();
+      }
+
+      // Continue drawing loop
+      animationFrameId = requestAnimationFrame(draw);
+
+      // Trigger the explosion states when the gathering finishes
+      if (progress >= 100 && !triggeredExplosion) {
+        triggeredExplosion = true;
+        setTriggerExplosion(true);
+        
+        // Spawn shutter block debris
+        for (let i = 0; i < 40; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 10 + 4;
+          debris.push({
+            x: cx,
+            y: cy,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            size: Math.random() * 6 + 3,
+            angle: Math.random() * Math.PI,
+            va: Math.random() * 0.2 - 0.1,
+            alpha: 1.0,
+            color: Math.random() > 0.25 ? "235, 0, 40" : "255, 255, 255"
+          });
+        }
+        
+        // Finish the intro sequence and transition to the full site reveal
+        setTimeout(() => {
+          isTerminated = true;
+          if (ctx && canvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+          setShowIntro(false);
+        }, 1600);
+      }
+    };
+
+    draw();
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [showIntro]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -80,7 +319,44 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
+      {/* First-time Opening Cinematic Intro Ripple Loader */}
+      {showIntro && (
+        <motion.div
+          initial={{ opacity: 1 }}
+          className="fixed inset-0 bg-black z-[99990] flex flex-col items-center justify-center select-none overflow-hidden"
+        >
+          {/* Canvas for Dot-Matrix Shutter */}
+          <canvas 
+            ref={introCanvasRef} 
+            className="absolute inset-0 w-full h-full pointer-events-none z-0" 
+          />
 
+          {/* Ambient Background Glow */}
+          <div className="absolute w-[300px] h-[300px] bg-ted-red/10 rounded-full blur-[100px] pointer-events-none z-0" />
+
+          {/* Shockwaves */}
+          {triggerExplosion && (
+            <>
+              {/* Concentric Glowing Ring 1 */}
+              <motion.div 
+                key="shockwave-ring-1"
+                initial={{ scale: 1, opacity: 0.8, x: "-50%", y: "-50%" }}
+                animate={{ scale: 220, opacity: [0.8, 0.6, 0], x: "-50%", y: "-50%" }}
+                transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+                className="absolute top-1/2 left-1/2 w-4 h-4 border border-ted-red rounded-full shadow-[0_0_15px_rgba(235,0,40,0.6)] pointer-events-none z-10"
+              />
+              {/* Concentric Glowing Ring 2 */}
+              <motion.div 
+                key="shockwave-ring-2"
+                initial={{ scale: 1, opacity: 0.6, x: "-50%", y: "-50%" }}
+                animate={{ scale: 260, opacity: [0.6, 0], x: "-50%", y: "-50%" }}
+                transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+                className="absolute top-1/2 left-1/2 w-4 h-4 border border-white/20 rounded-full pointer-events-none z-10"
+              />
+            </>
+          )}
+        </motion.div>
+      )}
 
       {/* Interactive Cursor Spotlight Glow */}
       <div 
@@ -114,10 +390,19 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Main Website Wrapper */}
+      {/* Main Website Wrapper with Expanding Portal Reveal */}
       <motion.div
+        initial={{ clipPath: "circle(0vmax at 50% 50%)" }}
+        animate={{ 
+          clipPath: !showIntro 
+            ? "circle(99999px at 50% 50%)" 
+            : triggerExplosion 
+              ? "circle(150vmax at 50% 50%)" 
+              : "circle(0vmax at 50% 50%)" 
+        }}
+        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] as const }}
         className="relative w-full min-h-screen bg-black"
-        style={{ zIndex: isTransitioning ? 10 : 1 }}
+        style={{ zIndex: isTransitioning ? 10 : 99995 }}
       >
         {/* Navigation */}
         <TabNav activeTab={activeTab} onTabChange={handleTabChange} />
