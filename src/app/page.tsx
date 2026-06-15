@@ -18,7 +18,6 @@ export default function Home() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
   const [triggerExplosion, setTriggerExplosion] = useState(false);
-  const [portalZIndex, setPortalZIndex] = useState(99995);
   const introCanvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -226,11 +225,6 @@ export default function Home() {
         setTimeout(() => {
           setShowIntro(false);
         }, 1600);
-
-        // Lower the website portal's z-index only after the black curtain has completely unmounted
-        setTimeout(() => {
-          setPortalZIndex(10);
-        }, 1800);
       }
     };
 
@@ -305,53 +299,51 @@ export default function Home() {
   return (
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
       {/* First-time Opening Cinematic Intro Ripple Loader */}
-      <AnimatePresence>
-        {showIntro && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            className="fixed inset-0 bg-black z-[99990] flex flex-col items-center justify-center select-none overflow-hidden"
-          >
-            {/* Canvas for Naruto Chakra Gathering & Explosion */}
-            <canvas 
-              ref={introCanvasRef} 
-              className="absolute inset-0 w-full h-full pointer-events-none z-0" 
-            />
+      {showIntro && (
+        <motion.div
+          initial={{ opacity: 1 }}
+          className="fixed inset-0 bg-black z-[99990] flex flex-col items-center justify-center select-none overflow-hidden"
+        >
+          {/* Canvas for Naruto Chakra Gathering & Explosion */}
+          <canvas 
+            ref={introCanvasRef} 
+            className="absolute inset-0 w-full h-full pointer-events-none z-0" 
+          />
 
-            {/* Ambient Background Glow */}
-            <div className="absolute w-[300px] h-[300px] bg-ted-red/10 rounded-full blur-[100px] pointer-events-none z-0" />
+          {/* Ambient Background Glow */}
+          <div className="absolute w-[300px] h-[300px] bg-ted-red/10 rounded-full blur-[100px] pointer-events-none z-0" />
 
-            {/* Shockwaves (Exploding outward from the center) */}
-            {triggerExplosion && (
-              <>
-                {/* Concentric Solid Core Shockwave */}
-                <motion.div 
-                  key="shockwave-solid-core"
-                  initial={{ scale: 1, opacity: 1, x: "-50%", y: "-50%" }}
-                  animate={{ scale: 180, opacity: [1, 1, 0], x: "-50%", y: "-50%" }}
-                  transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute top-1/2 left-1/2 w-4 h-4 bg-ted-red rounded-full pointer-events-none z-10"
-                />
-                {/* Concentric Glowing Ring 1 */}
-                <motion.div 
-                  key="shockwave-glowing-ring-1"
-                  initial={{ scale: 1, opacity: 0.8, x: "-50%", y: "-50%" }}
-                  animate={{ scale: 220, opacity: [0.8, 0.6, 0], x: "-50%", y: "-50%" }}
-                  transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
-                  className="absolute top-1/2 left-1/2 w-4 h-4 border border-ted-red rounded-full shadow-[0_0_15px_rgba(235,0,40,0.6)] pointer-events-none z-10"
-                />
-                {/* Concentric Glowing Ring 2 */}
-                <motion.div 
-                  key="shockwave-glowing-ring-2"
-                  initial={{ scale: 1, opacity: 0.6, x: "-50%", y: "-50%" }}
-                  animate={{ scale: 260, opacity: [0.6, 0], x: "-50%", y: "-50%" }}
-                  transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-                  className="absolute top-1/2 left-1/2 w-4 h-4 border border-white/20 rounded-full pointer-events-none z-10"
-                />
-              </>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {/* Shockwaves (Exploding outward from the center) */}
+          {triggerExplosion && (
+            <>
+              {/* Concentric Solid Core Shockwave */}
+              <motion.div 
+                key="shockwave-solid-core"
+                initial={{ scale: 1, opacity: 1, x: "-50%", y: "-50%" }}
+                animate={{ scale: 180, opacity: [1, 1, 0], x: "-50%", y: "-50%" }}
+                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute top-1/2 left-1/2 w-4 h-4 bg-ted-red rounded-full pointer-events-none z-10"
+              />
+              {/* Concentric Glowing Ring 1 */}
+              <motion.div 
+                key="shockwave-glowing-ring-1"
+                initial={{ scale: 1, opacity: 0.8, x: "-50%", y: "-50%" }}
+                animate={{ scale: 220, opacity: [0.8, 0.6, 0], x: "-50%", y: "-50%" }}
+                transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+                className="absolute top-1/2 left-1/2 w-4 h-4 border border-ted-red rounded-full shadow-[0_0_15px_rgba(235,0,40,0.6)] pointer-events-none z-10"
+              />
+              {/* Concentric Glowing Ring 2 */}
+              <motion.div 
+                key="shockwave-glowing-ring-2"
+                initial={{ scale: 1, opacity: 0.6, x: "-50%", y: "-50%" }}
+                animate={{ scale: 260, opacity: [0.6, 0], x: "-50%", y: "-50%" }}
+                transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+                className="absolute top-1/2 left-1/2 w-4 h-4 border border-white/20 rounded-full pointer-events-none z-10"
+              />
+            </>
+          )}
+        </motion.div>
+      )}
 
       {/* Interactive Cursor Spotlight Glow */}
       <div 
@@ -396,7 +388,7 @@ export default function Home() {
         transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
         className="relative w-full min-h-screen bg-black"
         style={{ 
-          zIndex: portalZIndex,
+          zIndex: isTransitioning ? 10 : 99995,
           clipPath: showIntro ? undefined : "none" 
         }}
       >
