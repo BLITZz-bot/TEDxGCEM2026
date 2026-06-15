@@ -16,7 +16,7 @@ const partners = [
 
 export default function Partners() {
   return (
-    <section className="min-h-screen pt-32 pb-20 px-6 max-w-6xl mx-auto">
+    <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 max-w-6xl mx-auto">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

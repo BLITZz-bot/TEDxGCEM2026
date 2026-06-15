@@ -8,7 +8,7 @@ export default function Contact() {
   const googleMapsLink = "https://www.google.com/maps/search/Gopalan+College+of+Engineering+and+Management"; 
 
   return (
-    <section className="min-h-screen pt-32 pb-20 px-6 max-w-6xl mx-auto flex flex-col">
+    <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 max-w-6xl mx-auto flex flex-col">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

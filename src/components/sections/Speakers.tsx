@@ -144,6 +144,46 @@ export default function Speakers() {
     photo: string;
   } | null>(null);
 
+  const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
+  const mousePosRef = useRef({ x: -1000, y: -1000 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mousePosRef.current = { x: e.clientX, y: e.clientY };
+      checkHoveredElement(e.clientX, e.clientY);
+    };
+
+    const handleScroll = () => {
+      checkHoveredElement(mousePosRef.current.x, mousePosRef.current.y);
+    };
+
+    const checkHoveredElement = (clientX: number, clientY: number) => {
+      if (clientX < 0 || clientY < 0) return;
+      const element = document.elementFromPoint(clientX, clientY);
+      if (!element) {
+        setHoveredCardIndex(null);
+        return;
+      }
+      const card = element.closest(".speaker-card");
+      if (card) {
+        const indexStr = card.getAttribute("data-index");
+        if (indexStr !== null) {
+          setHoveredCardIndex(parseInt(indexStr, 10));
+          return;
+        }
+      }
+      setHoveredCardIndex(null);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   const selectedSpeakerRef = useRef<typeof selectedSpeaker>(null);
   selectedSpeakerRef.current = selectedSpeaker;
 
@@ -325,7 +365,7 @@ export default function Speakers() {
   }, []);
 
   return (
-    <section className="min-h-screen pt-32 pb-20 px-6 relative overflow-hidden bg-black select-none">
+    <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 relative overflow-hidden bg-black select-none">
       
       {/* Fullscreen Particle Constellation Canvas */}
       <canvas 
@@ -364,6 +404,7 @@ export default function Speakers() {
           style={{ maxWidth: gridMaxWidth }}
         >
           {speakers.map((speaker, index) => {
+            const isCardHovered = hoveredCardIndex === index;
             return (
               <motion.div
                 key={speaker.id}
@@ -372,8 +413,13 @@ export default function Speakers() {
                 viewport={{ once: false }}
                 transition={{ duration: 0.5, delay: index * 0.08 }}
                 onClick={() => setSelectedSpeaker(speaker)}
-                className="group relative border border-white/15 bg-white/[0.01] hover:bg-white/[0.02] hover:border-ted-red/50 rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-[border-color,background-color] duration-300 cursor-pointer select-none w-full mx-auto"
+                className={`group relative border rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-[border-color,background-color] duration-300 cursor-pointer select-none w-full mx-auto speaker-card ${
+                  isCardHovered
+                    ? "border-ted-red/50 bg-white/[0.02]"
+                    : "border-white/15 bg-white/[0.01] hover:bg-white/[0.02] hover:border-ted-red/50"
+                }`}
                 style={{ maxWidth: BOX_SETTINGS.width, height: BOX_SETTINGS.height }}
+                data-index={index}
               >
                 {/* Asymmetric Polaroid Frame Container (Portrait Aspect Ratio) */}
                 <div 
@@ -381,31 +427,49 @@ export default function Speakers() {
                   style={{ aspectRatio: BOX_SETTINGS.aspectRatio }}
                 >
                   {/* Behind Shadow Layer */}
-                  <div className="absolute inset-0 bg-ted-red rounded-2xl transform translate-x-2.5 translate-y-2.5 md:translate-x-0 md:translate-y-0 md:group-hover:translate-x-2.5 md:group-hover:translate-y-2.5 transition-transform duration-300 ease-out z-0" />
+                  <div className={`absolute inset-0 bg-ted-red rounded-2xl transform transition-transform duration-300 ease-out z-0 ${
+                    isCardHovered 
+                      ? "translate-x-2.5 translate-y-2.5" 
+                      : "translate-x-2.5 translate-y-2.5 md:translate-x-0 md:translate-y-0 md:group-hover:translate-x-2.5 md:group-hover:translate-y-2.5"
+                  }`} />
                   
                   {/* Front Image Frame */}
-                  <div className="absolute inset-0 rounded-2xl overflow-hidden border border-white/15 group-hover:border-ted-red/30 bg-zinc-900 z-10 transition-[transform,border-color] duration-300 ease-out -translate-x-1 -translate-y-1 md:translate-x-0 md:translate-y-0 md:group-hover:-translate-x-1 md:group-hover:-translate-y-1">
+                  <div className={`absolute inset-0 rounded-2xl overflow-hidden border bg-zinc-900 z-10 transition-[transform,border-color] duration-300 ease-out ${
+                    isCardHovered
+                      ? "border-ted-red/30 -translate-x-1 -translate-y-1"
+                      : "border-white/15 group-hover:border-ted-red/30 -translate-x-1 -translate-y-1 md:translate-x-0 md:translate-y-0 md:group-hover:-translate-x-1 md:group-hover:-translate-y-1"
+                  }`}>
                     <img 
                       src={speaker.photo} 
                       alt={speaker.name} 
-                      className="w-full h-full object-cover filter grayscale-0 md:grayscale md:group-hover:grayscale-0 md:group-hover:scale-105 transition-[transform,filter] duration-300 ease-out transform-gpu [will-change:transform,filter]"
+                      className={`w-full h-full object-cover transition-[transform,filter] duration-300 ease-out transform-gpu [will-change:transform,filter] ${
+                        isCardHovered
+                          ? "grayscale-0 scale-105"
+                          : "grayscale-0 md:grayscale md:group-hover:grayscale-0 md:group-hover:scale-105"
+                      }`}
                     />
                   </div>
                 </div>
 
                 {/* Editorial Details Underneath */}
                 <div className="text-left mt-auto">
-                  <h3 className="text-xl sm:text-2xl font-black italic text-ted-red md:text-white md:group-hover:text-ted-red uppercase tracking-tight transition-colors duration-300 leading-tight">
+                  <h3 className={`text-xl sm:text-2xl font-black italic uppercase tracking-tight transition-colors duration-300 leading-tight ${
+                    isCardHovered ? "text-ted-red" : "text-ted-red md:text-white md:group-hover:text-ted-red"
+                  }`}>
                     {speaker.name}
                   </h3>
                   
                   {/* Designation */}
-                  <p className="text-white/50 text-[10px] sm:text-xs uppercase tracking-[0.15em] font-mono mt-1 group-hover:text-white/80 transition-colors duration-300">
+                  <p className={`text-white/50 text-[10px] sm:text-xs uppercase tracking-[0.15em] font-mono mt-1 transition-colors duration-300 ${
+                    isCardHovered ? "text-white/80" : "group-hover:text-white/80"
+                  }`}>
                     {speaker.topic}
                   </p>
                   
                   {/* Active hover dash line */}
-                  <div className="h-[2px] bg-ted-red mt-4 transition-[width] duration-300 ease-out w-12 md:w-0 md:group-hover:w-12" />
+                  <div className={`h-[2px] bg-ted-red mt-4 transition-[width] duration-300 ease-out ${
+                    isCardHovered ? "w-12" : "w-12 md:w-0 md:group-hover:w-12"
+                  }`} />
                 </div>
               </motion.div>
             );
