@@ -18,13 +18,15 @@ export default function Home() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
   const [triggerExplosion, setTriggerExplosion] = useState(false);
-  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [leftCanvas, setLeftCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [rightCanvas, setRightCanvas] = useState<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     if (!showIntro) return;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!leftCanvas || !rightCanvas) return;
+    const leftCtx = leftCanvas.getContext("2d");
+    const rightCtx = rightCanvas.getContext("2d");
+    if (!leftCtx || !rightCtx) return;
 
     let animationFrameId: number;
     let triggeredExplosion = false;
@@ -64,8 +66,10 @@ export default function Home() {
       const w = window.innerWidth;
       const h = window.innerHeight;
 
-      canvas.width = w;
-      canvas.height = h;
+      leftCanvas.width = w;
+      leftCanvas.height = h;
+      rightCanvas.width = w;
+      rightCanvas.height = h;
 
       initGrid(w, h);
     };
@@ -111,8 +115,8 @@ export default function Home() {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(100, (elapsed / duration) * 100);
 
-      const w = canvas.width;
-      const h = canvas.height;
+      const w = leftCanvas.width;
+      const h = leftCanvas.height;
       const cx = w / 2;
       const cy = h / 2;
 
@@ -218,7 +222,8 @@ export default function Home() {
         // Finish the intro sequence and transition to the full site reveal
         setTimeout(() => {
           isTerminated = true;
-          ctx.clearRect(0, 0, w, h);
+          leftCtx.clearRect(0, 0, w, h);
+          rightCtx.clearRect(0, 0, w, h);
           setShowIntro(false);
         }, 1600);
       }
@@ -234,8 +239,19 @@ export default function Home() {
           ctx.fillRect(0, 0, w, h);
         }
 
-        // A. Draw central text & zoom entry (before explosion)
-        if (progress < 100) {
+        // A. Draw central text & zoom entry (fades out as panels split)
+        const postExplosionTime = progress >= 100 ? (elapsed - duration) : 0;
+        let textAlpha = 1.0;
+        
+        if (progress >= 100) {
+          textAlpha = Math.max(0, 1 - postExplosionTime / 800); // fade out over 800ms during split
+        } else if (elapsed < 600) {
+          const t = elapsed / 600;
+          const ease = 1 - Math.pow(1 - t, 3);
+          textAlpha = ease;
+        }
+
+        if (textAlpha > 0) {
           ctx.save();
           ctx.translate(cx, cy);
 
@@ -249,14 +265,12 @@ export default function Home() {
           const startX = -totalWidth / 2;
 
           let textScale = 1.0;
-          let textAlpha = 1.0;
           let shake = 0;
 
-          if (elapsed < 600) {
+          if (progress < 100 && elapsed < 600) {
             const t = elapsed / 600;
             const ease = 1 - Math.pow(1 - t, 3);
             textScale = 8.0 - ease * 7.0;
-            textAlpha = ease;
             shake = (1.0 - ease) * 8;
           }
 
@@ -265,25 +279,27 @@ export default function Home() {
           }
 
           let glitchOffset = 0;
-          if (Math.random() > 0.94) {
+          if (progress < 100 && Math.random() > 0.94) {
             glitchOffset = Math.random() * 10 - 5;
           }
 
           ctx.save();
           ctx.scale(textScale, textScale);
 
-          ctx.shadowBlur = 12;
+          ctx.shadowBlur = progress < 100 ? 12 : 0;
           ctx.shadowColor = "rgba(235, 0, 40, 0.6)";
 
+          // Draw TEDx
           ctx.fillStyle = `rgba(235, 0, 40, ${textAlpha})`;
           ctx.fillText("TEDx", startX + glitchOffset, 0);
 
+          // Draw GCEM
           ctx.fillStyle = `rgba(255, 255, 255, ${textAlpha})`;
           ctx.shadowColor = "rgba(255, 255, 255, 0.3)";
           ctx.fillText("GCEM", startX + tedxWidth + glitchOffset, 0);
           ctx.restore();
 
-          if (elapsed < 600) {
+          if (progress < 100 && elapsed < 600) {
             const t = elapsed / 600;
             const ease = 1 - Math.pow(1 - t, 3);
             const echoScale = textScale * 1.4;
@@ -371,8 +387,9 @@ export default function Home() {
         }
       };
 
-      // Draw onto context
-      render(ctx);
+      // Draw onto both contexts
+      render(leftCtx);
+      render(rightCtx);
 
       animationFrameId = requestAnimationFrame(draw);
     };
@@ -383,7 +400,7 @@ export default function Home() {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [showIntro, canvas]);
+  }, [showIntro, leftCanvas, rightCanvas]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -457,7 +474,12 @@ export default function Home() {
             transition={{ duration: 1.3, ease: [0.85, 0, 0.15, 1] }}
             style={{ clipPath: "inset(0 50% 0 0)" }}
             className="absolute inset-0 bg-black pointer-events-auto"
-          />
+          >
+            <canvas 
+              ref={setLeftCanvas} 
+              className="absolute inset-0 w-full h-full pointer-events-none" 
+            />
+          </motion.div>
 
           {/* Right Shutter Panel */}
           <motion.div
@@ -466,13 +488,12 @@ export default function Home() {
             transition={{ duration: 1.3, ease: [0.85, 0, 0.15, 1] }}
             style={{ clipPath: "inset(0 0 0 50%)" }}
             className="absolute inset-0 bg-black pointer-events-auto"
-          />
-
-          {/* Canvas for Dot-Matrix Shutter & Text Blast (placed stationary over panels) */}
-          <canvas 
-            ref={setCanvas} 
-            className="absolute inset-0 w-full h-full pointer-events-none z-10" 
-          />
+          >
+            <canvas 
+              ref={setRightCanvas} 
+              className="absolute inset-0 w-full h-full pointer-events-none" 
+            />
+          </motion.div>
 
           {/* Ambient Background Glow */}
           {!triggerExplosion && (
