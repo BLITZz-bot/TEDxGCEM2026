@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TabNav, { TabId } from "@/components/ui/TabNav";
 import Hero from "@/components/sections/Hero";
@@ -11,6 +11,7 @@ import Partners from "@/components/sections/Partners";
 import RegisterNow from "@/components/sections/RegisterNow";
 import GetMyPass from "@/components/sections/GetMyPass";
 import Contact from "@/components/sections/Contact";
+import IntroAnimation from "@/components/ui/IntroAnimation";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
@@ -23,43 +24,11 @@ export default function Home() {
   // Set up isMounted and localStorage check
   useEffect(() => {
     setIsMounted(true);
-    const hasSeenIntro = localStorage.getItem("tedx-intro-seen");
+    const hasSeenIntro = localStorage.getItem("tedx_intro_seen");
     if (hasSeenIntro === "true") {
       setShowIntro(false);
-    }
-  }, []);
-
-  // Timer sequences for cinematic intro
-  useEffect(() => {
-    if (!showIntro) return;
-
-    // Split text and panels after 1.7 seconds (1.2s logo zoom/overshoot + 500ms pause)
-    const splitTimer = setTimeout(() => {
       setTriggerSplit(true);
-    }, 1700);
-
-    // Unmount intro completely after 3.5 seconds (1.7s split + 1.8s luxurious slide transition)
-    const unmountTimer = setTimeout(() => {
-      setShowIntro(false);
-      localStorage.setItem("tedx-intro-seen", "true");
-    }, 3500);
-
-    return () => {
-      clearTimeout(splitTimer);
-      clearTimeout(unmountTimer);
-    };
-  }, [showIntro]);
-
-  // Skip intro via Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setShowIntro(false);
-        localStorage.setItem("tedx-intro-seen", "true");
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    }
   }, []);
 
   useEffect(() => {
@@ -126,83 +95,13 @@ export default function Home() {
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
       {/* First-time Opening Cinematic Intro Shutter Loader */}
       {isMounted && showIntro && (
-        <div 
-          onClick={() => {
+        <IntroAnimation 
+          onStartSplit={() => setTriggerSplit(true)}
+          onComplete={() => {
             setShowIntro(false);
-            localStorage.setItem("tedx-intro-seen", "true");
+            setTriggerSplit(true);
           }}
-          className="fixed inset-0 z-[99999] select-none overflow-hidden bg-transparent cursor-pointer"
-        >
-          {/* Skip Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowIntro(false);
-              localStorage.setItem("tedx-intro-seen", "true");
-            }}
-            className="absolute top-6 right-6 z-[99999] px-4 py-2 border border-white/10 bg-black/40 text-white/50 hover:text-white hover:border-white transition-all duration-200 font-mono text-[10px] tracking-widest uppercase cursor-pointer"
-          >
-            Skip Intro [ESC]
-          </button>
-
-          {/* Left Shutter Panel */}
-          <motion.div
-            initial={{ x: "0%" }}
-            animate={triggerSplit ? { x: "-100%" } : { x: "0%" }}
-            transition={{ duration: 1.8, ease: [0.85, 0, 0.15, 1] }}
-            className="absolute top-0 left-0 w-1/2 h-full overflow-hidden bg-black border-r border-white/5"
-          >
-            {/* 100vw content box aligned to viewport 0px */}
-            <div className="absolute top-0 left-0 w-screen h-full flex items-center justify-center">
-              <motion.div
-                initial={{ scale: 3.0, filter: "blur(20px)", opacity: 0 }}
-                animate={{
-                  scale: [3.0, 1.0, 1.15, 0.95, 1.0],
-                  filter: ["blur(20px)", "blur(0px)", "blur(0px)", "blur(0px)", "blur(0px)"],
-                  opacity: [0, 1, 1, 1, 1]
-                }}
-                transition={{
-                  duration: 1.2,
-                  times: [0, 0.35, 0.5, 0.7, 1.0],
-                  ease: ["easeOut", "easeOut", "easeInOut", "easeOut"]
-                }}
-                className="text-5xl md:text-8xl font-black italic tracking-tighter uppercase text-center"
-              >
-                <span className="text-ted-red inline-block pr-1">TEDx</span>
-                <span className="text-white inline-block pl-1">GCEM</span>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Right Shutter Panel */}
-          <motion.div
-            initial={{ x: "0%" }}
-            animate={triggerSplit ? { x: "100%" } : { x: "0%" }}
-            transition={{ duration: 1.8, ease: [0.85, 0, 0.15, 1] }}
-            className="absolute top-0 right-0 w-1/2 h-full overflow-hidden bg-black border-l border-white/5"
-          >
-            {/* 100vw content box shifted right to align with viewport center */}
-            <div className="absolute top-0 right-0 w-screen h-full flex items-center justify-center">
-              <motion.div
-                initial={{ scale: 3.0, filter: "blur(20px)", opacity: 0 }}
-                animate={{
-                  scale: [3.0, 1.0, 1.15, 0.95, 1.0],
-                  filter: ["blur(20px)", "blur(0px)", "blur(0px)", "blur(0px)", "blur(0px)"],
-                  opacity: [0, 1, 1, 1, 1]
-                }}
-                transition={{
-                  duration: 1.2,
-                  times: [0, 0.35, 0.5, 0.7, 1.0],
-                  ease: ["easeOut", "easeOut", "easeInOut", "easeOut"]
-                }}
-                className="text-5xl md:text-8xl font-black italic tracking-tighter uppercase text-center"
-              >
-                <span className="text-ted-red inline-block pr-1">TEDx</span>
-                <span className="text-white inline-block pl-1">GCEM</span>
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
+        />
       )}
 
       {/* Interactive Cursor Spotlight Glow */}
@@ -239,13 +138,11 @@ export default function Home() {
 
       {/* Main Website Wrapper */}
       <motion.div
-        initial={{ opacity: 0, y: 15 }}
+        initial={{ opacity: 0, y: 40 }}
         animate={
-          !showIntro 
+          !showIntro || triggerSplit 
             ? { opacity: 1, y: 0 } 
-            : triggerSplit 
-              ? { opacity: 1, y: 0 } 
-              : { opacity: 0, y: 15 }
+            : { opacity: 0, y: 40 }
         }
         transition={{ 
           duration: 1.8, 
