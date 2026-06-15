@@ -30,20 +30,20 @@ export default function Home() {
   const handleTabChange = (id: TabId) => {
     if (id === activeTab) return;
     
-    // Only apply red curtain transition on desktop/laptop sizes (md breakpoint)
+    // Only apply red/black curtain transition on desktop/laptop sizes (md breakpoint)
     const isDesktop = window.innerWidth >= 768;
     if (isDesktop) {
       setIsTransitioning(true);
       
-      // Switch the page content at 350ms (when screen is fully covered by red)
+      // Switch the page content at 580ms (when screen is fully covered by red and black layers)
       setTimeout(() => {
         setActiveTab(id);
-      }, 350);
+      }, 580);
       
-      // Slide the curtain off the screen at 400ms
+      // Slide the curtains off the screen at 640ms
       setTimeout(() => {
         setIsTransitioning(false);
-      }, 400);
+      }, 640);
     } else {
       // Mobile changes tab content immediately (mobile menu has its own transition)
       setActiveTab(id);
@@ -83,16 +83,27 @@ export default function Home() {
         }}
       />
 
-      {/* Desktop Page Transition Curtain Overlay */}
+      {/* Desktop Page Transition Curtain Overlay (Dual-layered staggered) */}
       <AnimatePresence>
         {isTransitioning && (
-          <motion.div
-            initial={{ x: "-100%" }}
-            animate={{ x: "0%" }}
-            exit={{ x: "100%" }}
-            transition={{ duration: 0.4, ease: [0.76, 0, 0.24, 1] }}
-            className="fixed inset-0 bg-ted-red z-[9999] pointer-events-none hidden md:block"
-          />
+          <>
+            {/* Layer 1: Red Curtain */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: "0%" }}
+              exit={{ x: "100%" }}
+              transition={{ duration: 0.45, ease: [0.76, 0, 0.24, 1] }}
+              className="fixed inset-0 bg-ted-red z-[9998] pointer-events-none hidden md:block"
+            />
+            {/* Layer 2: Black Curtain (Staggered slide-in coming 150ms later) */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: "0%" }}
+              exit={{ x: "100%" }}
+              transition={{ duration: 0.45, ease: [0.76, 0, 0.24, 1], delay: 0.15 }}
+              className="fixed inset-0 bg-black z-[9999] pointer-events-none hidden md:block"
+            />
+          </>
         )}
       </AnimatePresence>
 
@@ -101,13 +112,12 @@ export default function Home() {
 
       {/* Main Content with Animated Transitions */}
       <div className="relative z-10">
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, scale: 0.98 }}
+            initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
           >
             {renderSection()}
           </motion.div>
