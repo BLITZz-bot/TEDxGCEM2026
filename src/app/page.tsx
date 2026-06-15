@@ -122,7 +122,7 @@ export default function Home() {
           leftCtx.clearRect(0, 0, w, h);
           rightCtx.clearRect(0, 0, w, h);
           setShowIntro(false);
-        }, 1600);
+        }, 2700);
       }
 
       // 3. Render drawing states on context
@@ -141,7 +141,7 @@ export default function Home() {
         let textAlpha = 1.0;
         
         if (progress >= 100) {
-          textAlpha = Math.max(0, 1 - postSplitTime / 800); // fade out over 800ms during split
+          textAlpha = Math.max(0, 1 - postSplitTime / 1600); // fade out over 1600ms during split
         } else if (elapsed < 600) {
           const t = elapsed / 600;
           const ease = 1 - Math.pow(1 - t, 3);
@@ -311,7 +311,7 @@ export default function Home() {
           <motion.div
             initial={{ x: "0%" }}
             animate={{ x: triggerExplosion ? "-100%" : "0%" }}
-            transition={{ duration: 1.3, ease: [0.85, 0, 0.15, 1] }}
+            transition={{ duration: 2.4, ease: [0.85, 0, 0.15, 1] }}
             style={{ clipPath: "inset(0 50% 0 0)" }}
             className="absolute inset-0 bg-black pointer-events-auto"
           >
@@ -325,7 +325,7 @@ export default function Home() {
           <motion.div
             initial={{ x: "0%" }}
             animate={{ x: triggerExplosion ? "100%" : "0%" }}
-            transition={{ duration: 1.3, ease: [0.85, 0, 0.15, 1] }}
+            transition={{ duration: 2.4, ease: [0.85, 0, 0.15, 1] }}
             style={{ clipPath: "inset(0 0 0 50%)" }}
             className="absolute inset-0 bg-black pointer-events-auto"
           >
