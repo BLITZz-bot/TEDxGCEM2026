@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TabNav, { TabId } from "@/components/ui/TabNav";
 import Hero from "@/components/sections/Hero";
@@ -16,232 +16,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [showIntro, setShowIntro] = useState(true);
-  const [triggerExplosion, setTriggerExplosion] = useState(false);
-  const introCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
-    if (!showIntro) return;
-
-    const canvas = introCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animationFrameId: number;
-    let triggeredExplosion = false;
-    let isTerminated = false;
-    const particles: Array<{
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      alpha: number;
-      isExplosion?: boolean;
-      color?: string;
-      size?: number;
-    }> = [];
-
-    const handleResize = () => {
-      canvas.width = canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth;
-      canvas.height = canvas.parentElement ? canvas.parentElement.clientHeight : window.innerHeight;
-    };
-    window.addEventListener("resize", handleResize);
-    handleResize();
-
-    const duration = 1800; // 1.8 seconds chakra gathering
-    const startTime = Date.now();
-
-    const draw = () => {
-      if (isTerminated) return;
-
-      // Create trailing motion blur effect by drawing transparent black overlay
-      ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(100, (elapsed / duration) * 100);
-
-      const cx = canvas.width / 2;
-      const cy = canvas.height / 2;
-
-      // Spawn chakra streaks (frequency builds up as progress approaches 100)
-      if (progress < 100) {
-        const spawnCount = Math.floor(1 + (progress / 20)); // Spawn 1 to 6 particles per frame
-        for (let i = 0; i < spawnCount; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          // Spawn at varying distances to create a continuous stream
-          const dist = Math.max(canvas.width, canvas.height) * (0.2 + Math.random() * 0.6);
-          const x = cx + Math.cos(angle) * dist;
-          const y = cy + Math.sin(angle) * dist;
-          
-          // Initial tangential swirling velocity
-          const swirlDir = Math.random() > 0.5 ? 1 : -1;
-          const speed = Math.random() * 2 + 1;
-          const swirl = Math.random() * 3 + 2;
-          
-          const vx = -Math.cos(angle) * speed - Math.sin(angle) * swirl * swirlDir;
-          const vy = -Math.sin(angle) * speed + Math.cos(angle) * swirl * swirlDir;
-          
-          particles.push({
-            x,
-            y,
-            vx,
-            vy,
-            alpha: Math.random() * 0.4 + 0.6,
-            isExplosion: false,
-            color: Math.random() > 0.25 ? "rgb(235, 0, 40)" : "rgb(255, 255, 255)", // Crimson red with some hot white streaks
-            size: Math.random() * 1.5 + 1.0
-          });
-        }
-      }
-
-      // Update & Draw streaks
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        const dx = cx - p.x;
-        const dy = cy - p.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (p.isExplosion) {
-          // Explosion particles: fly outward, slow down, and fade away
-          p.vx *= 0.94;
-          p.vy *= 0.94;
-          p.x += p.vx;
-          p.y += p.vy;
-          p.alpha -= 0.012;
-
-          if (p.alpha <= 0) {
-            particles.splice(i, 1);
-            continue;
-          }
-        } else {
-          // Normal chakra particles: spiral inwards to the center
-          if (dist < 12) {
-            particles.splice(i, 1);
-            continue;
-          }
-
-          // Gravitational pull to center (gets stronger closer in)
-          const force = 0.3 + (120 / (dist + 40));
-          const dirX = dx / dist;
-          const dirY = dy / dist;
-          
-          p.vx += dirX * force;
-          p.vy += dirY * force;
-          
-          // Vortex swirl effect (tangential force)
-          const swirlForce = 0.22;
-          const velAngle = Math.atan2(p.vy, p.vx);
-          p.vx += Math.cos(velAngle + Math.PI / 2) * swirlForce;
-          p.vy += Math.sin(velAngle + Math.PI / 2) * swirlForce;
-
-          // Drag
-          p.vx *= 0.93;
-          p.vy *= 0.93;
-
-          p.x += p.vx;
-          p.y += p.vy;
-        }
-
-        // Draw long capsule/streak line along velocity vector
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        const vel = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-        const lineLen = p.isExplosion ? Math.max(4, vel * 2) : Math.max(8, vel * 3.5);
-        ctx.lineTo(p.x - (p.vx / (vel || 1)) * lineLen, p.y - (p.vy / (vel || 1)) * lineLen);
-        
-        ctx.strokeStyle = p.color === "rgb(255, 255, 255)"
-          ? `rgba(255, 255, 255, ${p.alpha * 0.9})`
-          : `rgba(235, 0, 40, ${p.alpha})`;
-        ctx.lineWidth = p.size || 1.5;
-        ctx.lineCap = "round";
-        ctx.stroke();
-      }
-
-      // Draw the central glowing core
-      if (progress < 100) {
-        ctx.save();
-        ctx.beginPath();
-        const baseRadius = 5 + (progress / 100) * 9; // Core grows from 5px to 14px as it absorbs energy
-        const pulse = Math.sin(Date.now() / 50) * 1.5;
-        const r = Math.max(2, baseRadius + pulse);
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        
-        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-        grad.addColorStop(0, "rgb(255, 255, 255)");
-        grad.addColorStop(0.2, "rgb(255, 20, 50)");
-        grad.addColorStop(1, "rgba(235, 0, 40, 0)");
-        
-        ctx.fillStyle = grad;
-        ctx.shadowBlur = 15 + (progress / 100) * 25;
-        ctx.shadowColor = "rgb(235, 0, 40)";
-        ctx.fill();
-        ctx.restore();
-      } else {
-        // Draw the core bursting/expanding in a flash during explosion phase
-        const explosionAge = Date.now() - (startTime + duration);
-        if (explosionAge < 400) {
-          ctx.save();
-          ctx.beginPath();
-          const r = 14 + (explosionAge / 400) * 120;
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          
-          const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-          grad.addColorStop(0, `rgba(255, 255, 255, ${1 - explosionAge / 400})`);
-          grad.addColorStop(0.3, `rgba(255, 20, 50, ${(1 - explosionAge / 400) * 0.8})`);
-          grad.addColorStop(1, "rgba(235, 0, 40, 0)");
-          
-          ctx.fillStyle = grad;
-          ctx.shadowBlur = 30 * (1 - explosionAge / 400);
-          ctx.shadowColor = "rgb(235, 0, 40)";
-          ctx.fill();
-          ctx.restore();
-        }
-      }
-
-      // Continue drawing loop as long as the intro is active
-      animationFrameId = requestAnimationFrame(draw);
-
-      // Trigger the explosion states when the gathering finishes
-      if (progress >= 100 && !triggeredExplosion) {
-        triggeredExplosion = true;
-        setTriggerExplosion(true);
-        
-        // Spawn 80 high-velocity explosion particles flying outward from the center
-        for (let i = 0; i < 80; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          const speed = Math.random() * 12 + 4;
-          particles.push({
-            x: cx,
-            y: cy,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            alpha: Math.random() * 0.4 + 0.6,
-            isExplosion: true,
-            color: Math.random() > 0.2 ? "rgb(235, 0, 40)" : "rgb(255, 255, 255)",
-            size: Math.random() * 2 + 1.2
-          });
-        }
-        
-        // Finish the intro sequence and transition to the full site reveal
-        setTimeout(() => {
-          isTerminated = true;
-          if (ctx && canvas) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-          }
-          setShowIntro(false);
-        }, 1600);
-      }
-    };
-
-    draw();
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [showIntro]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -305,52 +80,7 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
-      {/* First-time Opening Cinematic Intro Ripple Loader */}
-      {showIntro && (
-        <motion.div
-          initial={{ opacity: 1 }}
-          className="fixed inset-0 bg-black z-[99990] flex flex-col items-center justify-center select-none overflow-hidden"
-        >
-          {/* Canvas for Naruto Chakra Gathering & Explosion */}
-          <canvas 
-            ref={introCanvasRef} 
-            className="absolute inset-0 w-full h-full pointer-events-none z-0" 
-          />
 
-          {/* Ambient Background Glow */}
-          <div className="absolute w-[300px] h-[300px] bg-ted-red/10 rounded-full blur-[100px] pointer-events-none z-0" />
-
-          {/* Shockwaves (Exploding outward from the center) */}
-          {triggerExplosion && (
-            <>
-              {/* Concentric Solid Core Shockwave */}
-              <motion.div 
-                key="shockwave-solid-core"
-                initial={{ scale: 1, opacity: 1, x: "-50%", y: "-50%" }}
-                animate={{ scale: 180, opacity: [1, 1, 0], x: "-50%", y: "-50%" }}
-                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                className="absolute top-1/2 left-1/2 w-4 h-4 bg-ted-red rounded-full pointer-events-none z-10"
-              />
-              {/* Concentric Glowing Ring 1 */}
-              <motion.div 
-                key="shockwave-glowing-ring-1"
-                initial={{ scale: 1, opacity: 0.8, x: "-50%", y: "-50%" }}
-                animate={{ scale: 220, opacity: [0.8, 0.6, 0], x: "-50%", y: "-50%" }}
-                transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
-                className="absolute top-1/2 left-1/2 w-4 h-4 border border-ted-red rounded-full shadow-[0_0_15px_rgba(235,0,40,0.6)] pointer-events-none z-10"
-              />
-              {/* Concentric Glowing Ring 2 */}
-              <motion.div 
-                key="shockwave-glowing-ring-2"
-                initial={{ scale: 1, opacity: 0.6, x: "-50%", y: "-50%" }}
-                animate={{ scale: 260, opacity: [0.6, 0], x: "-50%", y: "-50%" }}
-                transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-                className="absolute top-1/2 left-1/2 w-4 h-4 border border-white/20 rounded-full pointer-events-none z-10"
-              />
-            </>
-          )}
-        </motion.div>
-      )}
 
       {/* Interactive Cursor Spotlight Glow */}
       <div 
@@ -384,19 +114,10 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Main Website Wrapper with Expanding Portal Reveal */}
+      {/* Main Website Wrapper */}
       <motion.div
-        initial={{ clipPath: "circle(0vmax at 50% 50%)" }}
-        animate={{ 
-          clipPath: !showIntro 
-            ? "circle(99999px at 50% 50%)" 
-            : triggerExplosion 
-              ? "circle(150vmax at 50% 50%)" 
-              : "circle(0vmax at 50% 50%)" 
-        }}
-        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] as const }}
         className="relative w-full min-h-screen bg-black"
-        style={{ zIndex: isTransitioning ? 10 : 99995 }}
+        style={{ zIndex: isTransitioning ? 10 : 1 }}
       >
         {/* Navigation */}
         <TabNav activeTab={activeTab} onTabChange={handleTabChange} />
