@@ -187,11 +187,11 @@ export default function About() {
 
                 {/* Details */}
                 <div className="mt-2">
-                  <div className="flex items-center gap-1.5 md:gap-2 mb-1">
-                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-ted-red shrink-0" />
-                    <h4 className="text-sm md:text-lg font-black italic text-white uppercase tracking-tight font-mono truncate">{member.name}</h4>
+                  <div className="flex items-start gap-1.5 md:gap-2 mb-1">
+                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-ted-red shrink-0 mt-[6px] md:mt-[9px]" />
+                    <h4 className="text-sm md:text-lg font-black italic text-white uppercase tracking-tight font-mono leading-tight break-words">{member.name}</h4>
                   </div>
-                  <p className="text-[10px] md:text-xs text-white/40 font-mono tracking-wider truncate">
+                  <p className="text-[10px] md:text-xs text-white/40 font-mono tracking-wider break-words leading-tight pl-[12px] md:pl-[16px]">
                     {member.role}
                   </p>
                 </div>
