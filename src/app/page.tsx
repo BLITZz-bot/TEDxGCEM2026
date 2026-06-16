@@ -289,6 +289,42 @@ export default function Home() {
               </span>
             </div>
           </div>
+
+          {/* Developer Credit - Only visible on the Contact page, centered below the footer box */}
+          {activeTab === "contact" && (
+            <div className="mt-12 flex flex-col items-center justify-center gap-3 text-center z-10 relative">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-mono">
+                designed & developed by <span className="text-ted-red font-black">M M BHARATH</span>
+              </span>
+              <div className="flex items-center justify-center gap-6 text-[10px] font-mono uppercase tracking-[0.2em] text-white/40">
+                <a
+                  href="https://www.linkedin.com/in/bharath-m-m-a9960b309"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors duration-150 flex items-center gap-1.5 group"
+                >
+                  <svg className="w-3.5 h-3.5 group-hover:text-ted-red transition-colors duration-150" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                    <rect x="2" y="9" width="4" height="12" />
+                    <circle cx="4" cy="4" r="2" />
+                  </svg>
+                  <span>LinkedIn</span>
+                </a>
+                <a
+                  href="https://mail.google.com/mail/?view=cm&fs=1&to=bharatha9483@gmail.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors duration-150 flex items-center gap-1.5 group"
+                >
+                  <svg className="w-3.5 h-3.5 group-hover:text-ted-red transition-colors duration-150" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
+                  <span>Gmail</span>
+                </a>
+              </div>
+            </div>
+          )}
         </footer>
       </div>
     </main>

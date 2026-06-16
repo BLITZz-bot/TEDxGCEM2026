@@ -7,7 +7,11 @@ export default function Contact() {
   const [showContactForm, setShowContactForm] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const mapUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.7735829891867!2d77.71457027490598!3d12.986328487330406!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae11920e734dc9%3A0xefdf9d49329b63e8!2sGopalan%20College%20of%20Engineering%20and%20Management!5e0!3m2!1sen!2sin!4v1780655596097!5m2!1sen!2sin";
+  const [mapView, setMapView] = useState<"roadmap" | "satellite">("roadmap");
+
+  const mapUrl = mapView === "roadmap"
+    ? "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.7735829891867!2d77.71457027490598!3d12.986328487330406!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae11920e734dc9%3A0xefdf9d49329b63e8!2sGopalan%20College%20of%20Engineering%20and%20Management!5e0!3m2!1sen!2sin!4v1780655596097!5m2!1sen!2sin"
+    : "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.7735829891867!2d77.71457027490598!3d12.986328487330406!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae11920e734dc9%3A0xefdf9d49329b63e8!2sGopalan%20College%20of%20Engineering%20and%20Management!5e1!3m2!1sen!2sin!4v1780655596097!5m2!1sen!2sin";
   const googleMapsLink = "https://www.google.com/maps/search/Gopalan+College+of+Engineering+and+Management"; 
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -48,14 +52,19 @@ export default function Contact() {
         >
           <div className="mb-8">
             <h4 className="text-ted-red font-bold uppercase tracking-widest text-xs mb-4">Location</h4>
-            <p className="text-2xl font-black mb-2">GCEM Bengaluru</p>
+            <p className="text-2xl font-black mb-2">GOPALAN COLLEGE OF ENGINEERING AND MANAGEMENT</p>
             <p className="text-white/50 text-sm leading-relaxed mb-6">
              
               Bengaluru, Karnataka 560048
             </p>
 
             <div className="space-y-6">
-              <a href="mailto:tedxgcem@gmail.com" className="flex items-center gap-4 group cursor-pointer w-fit">
+              <a 
+                href="https://mail.google.com/mail/?view=cm&fs=1&to=tedxgcem@gmail.com" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-4 group cursor-pointer w-fit"
+              >
                 <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/50 group-hover:border-ted-red/50 group-hover:text-ted-red group-hover:bg-ted-red/10 transition-all duration-300">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 </div>
@@ -86,6 +95,35 @@ export default function Contact() {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             ></iframe>
+            {/* 3D Satellite Toggle Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setMapView(prev => prev === "roadmap" ? "satellite" : "roadmap");
+              }}
+              className="absolute bottom-4 left-4 z-20 w-14 h-14 rounded-2xl border border-white/25 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center shadow-lg hover:border-ted-red/50 hover:bg-black transition-all duration-300 cursor-pointer group/toggle"
+              title={mapView === "roadmap" ? "Switch to 3D Satellite View" : "Switch to 2D Map View"}
+            >
+              <div className="relative w-full h-full flex flex-col items-center justify-center p-1">
+                {mapView === "roadmap" ? (
+                  <svg className="w-5 h-5 text-white/70 group-hover/toggle:text-ted-red transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+                    <path d="M2 12h20" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-white/70 group-hover/toggle:text-ted-red transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                    <line x1="9" y1="3" x2="9" y2="18" />
+                    <line x1="15" y1="6" x2="15" y2="21" />
+                  </svg>
+                )}
+                <span className="text-[7px] font-black tracking-widest uppercase mt-1 text-white/50 group-hover/toggle:text-white transition-colors">
+                  {mapView === "roadmap" ? "3D Earth" : "2D Map"}
+                </span>
+              </div>
+            </button>
             {/* Overlay to make it clickable */}
             <a 
               href={googleMapsLink} 

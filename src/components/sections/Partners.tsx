@@ -112,7 +112,9 @@ export default function Partners() {
 
           <div className="pt-4">
             <a 
-              href="mailto:tedxgcem@gmail.com"
+              href="https://mail.google.com/mail/?view=cm&fs=1&to=tedxgcem@gmail.com"
+              target="_blank" 
+              rel="noopener noreferrer"
               className="group relative inline-flex items-center gap-3 px-8 py-4.5 bg-ted-red text-white font-black rounded-2xl text-xs shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.5)] hover:bg-white hover:text-ted-red transition-all duration-300 uppercase tracking-widest cursor-pointer"
             >
               <span>Partner With Us</span>
