@@ -125,6 +125,37 @@ export default function Home() {
 
       {/* Main Website Wrapper */}
       <div className="relative w-full min-h-screen bg-black z-10">
+        {/* Cinematic Background Image Overlay (X-Wing theme) - Active on all pages except Home */}
+        <AnimatePresence>
+          {activeTab !== "home" && (
+            <>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.18 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="fixed inset-0 pointer-events-none z-0"
+                style={{
+                  backgroundImage: "url('/X_wing.png')",
+                  backgroundPosition: "center center",
+                  backgroundSize: "80%",
+                  backgroundRepeat: "no-repeat",
+                }}
+              />
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="fixed inset-0 pointer-events-none z-0"
+                style={{
+                  background: "radial-gradient(circle at center, transparent 10%, rgba(0, 0, 0, 0.75) 75%, black 100%)"
+                }}
+              />
+            </>
+          )}
+        </AnimatePresence>
+
         {/* Navigation */}
         <TabNav activeTab={activeTab} onTabChange={handleTabChange} />
 

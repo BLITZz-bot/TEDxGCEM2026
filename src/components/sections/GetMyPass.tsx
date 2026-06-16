@@ -26,15 +26,27 @@ export default function GetMyPass({ onTabChange }: GetMyPassProps) {
   };
 
   return (
-    <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col items-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-12 text-center"
-      >
-        <h2 className="text-ted-red font-bold text-xl uppercase tracking-widest mb-2">Access Pass</h2>
-        <h3 className="text-4xl md:text-6xl font-black italic uppercase">GET MY PASS</h3>
-      </motion.div>
+    <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col">
+      {/* Hero Banner Manifesto */}
+      <div className="w-full mb-24 flex flex-col justify-between items-start gap-6 border-b border-white/10 pb-16">
+        <motion.h2 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-4xl md:text-6xl font-black italic tracking-tighter leading-[0.95] uppercase"
+        >
+          RETRIEVE YOUR <br />
+          ATTENDEE <span className="text-ted-red">PASS</span>
+        </motion.h2>
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="text-white/60 text-lg md:text-xl font-light leading-relaxed max-w-xl"
+        >
+          Check your registration status, download your official attendee pass, or generate your unique ticket ID.
+        </motion.p>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}

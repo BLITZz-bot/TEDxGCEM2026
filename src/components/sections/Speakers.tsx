@@ -189,15 +189,18 @@ export default function Speakers() {
 
   const resumeCanvasRef = useRef<(() => void) | null>(null);
 
-  // Disable body scroll when modal is open
+  // Disable body scroll and hide mobile hamburger when modal is open
   useEffect(() => {
     if (selectedSpeaker) {
       document.body.style.overflow = "hidden";
+      document.body.classList.add("modal-open");
     } else {
       document.body.style.overflow = "";
+      document.body.classList.remove("modal-open");
     }
     return () => {
       document.body.style.overflow = "";
+      document.body.classList.remove("modal-open");
     };
   }, [selectedSpeaker]);
 
@@ -365,7 +368,7 @@ export default function Speakers() {
   }, []);
 
   return (
-    <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 relative overflow-hidden bg-black select-none">
+    <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 relative overflow-hidden select-none">
       
       {/* Fullscreen Particle Constellation Canvas */}
       <canvas 
@@ -413,10 +416,10 @@ export default function Speakers() {
                 viewport={{ once: false }}
                 transition={{ duration: 0.5, delay: index * 0.08 }}
                 onClick={() => setSelectedSpeaker(speaker)}
-                className={`group relative border rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-[border-color,background-color] duration-300 cursor-pointer select-none w-full mx-auto speaker-card ${
+                className={`group relative border rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 cursor-pointer select-none w-full mx-auto speaker-card backdrop-blur-md ${
                   isCardHovered
-                    ? "border-ted-red/50 bg-white/[0.02]"
-                    : "border-white/15 bg-white/[0.01] hover:bg-white/[0.02] hover:border-ted-red/50"
+                    ? "border-ted-red/50 bg-white/[0.07] shadow-[0_0_25px_rgba(235,0,40,0.08)]"
+                    : "border-white/15 bg-white/[0.04] hover:bg-white/[0.07] hover:border-ted-red/50"
                 }`}
                 style={{ maxWidth: BOX_SETTINGS.width, height: BOX_SETTINGS.height }}
                 data-index={index}
@@ -493,10 +496,10 @@ export default function Speakers() {
             onClick={() => setSelectedSpeaker(null)}
             className="fixed inset-0 z-50 bg-black/90 flex flex-col md:flex-row cursor-pointer overflow-hidden"
           >
-            {/* Close Button - Fixed in the top-left corner of the screen */}
+            {/* Close Button - Fixed in the top-right corner of the screen */}
             <button 
               onClick={() => setSelectedSpeaker(null)}
-              className="fixed top-4 left-4 md:top-6 md:left-6 text-white/70 hover:text-white transition-colors p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 z-50 border border-white/10 cursor-pointer"
+              className="fixed top-4 right-4 md:top-6 md:right-6 text-white/70 hover:text-white transition-colors p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 z-50 border border-white/10 cursor-pointer"
             >
               <X className="w-5 h-5 md:w-6 md:h-6" />
             </button>

@@ -17,7 +17,7 @@ export default function About() {
   ];
 
   return (
-    <section className="min-h-screen pt-20 md:pt-32 pb-24 px-6 relative bg-black text-white overflow-hidden font-sans select-none">
+    <section className="min-h-screen pt-20 md:pt-32 pb-24 px-6 relative text-white overflow-hidden font-sans select-none">
       
       {/* Editorial Vertical Grid Lines */}
       <div className="absolute inset-0 grid grid-cols-4 pointer-events-none opacity-[0.03] z-0">

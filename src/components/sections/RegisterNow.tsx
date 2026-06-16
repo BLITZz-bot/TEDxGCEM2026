@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { TabId } from "@/components/ui/TabNav";
 
 interface RegisterNowProps {
@@ -14,12 +14,13 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
     email: "",
     phone: "",
     organization: "",
-    motivation: "",
+    linkedin: "",
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -38,7 +39,11 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
     }
     
     if (!formData.organization.trim()) newErrors.organization = "College / Organization is required";
-    if (!formData.motivation.trim()) newErrors.motivation = "Please tell us why you want to attend";
+    
+    // Validate LinkedIn URL format only if provided
+    if (formData.linkedin.trim() && !/^https?:\/\/(www\.)?linkedin\.com\/in\/.+/i.test(formData.linkedin.trim())) {
+      newErrors.linkedin = "Please enter a valid LinkedIn URL (e.g. https://linkedin.com/in/username)";
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -70,15 +75,27 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
   };
 
   return (
-    <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col items-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-12 text-center"
-      >
-        <h2 className="text-ted-red font-bold text-xl uppercase tracking-widest mb-2">Join the Conversation</h2>
-        <h3 className="text-4xl md:text-6xl font-black italic uppercase">REGISTER NOW</h3>
-      </motion.div>
+    <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col">
+      {/* Hero Banner Manifesto */}
+      <div className="w-full mb-24 flex flex-col justify-between items-start gap-6 border-b border-white/10 pb-16">
+        <motion.h2 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-4xl md:text-6xl font-black italic tracking-tighter leading-[0.95] uppercase"
+        >
+          JOIN THE <br />
+          CONVERSATION <span className="text-ted-red">TODAY</span>
+        </motion.h2>
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="text-white/60 text-lg md:text-xl font-light leading-relaxed max-w-xl"
+        >
+          Secure your spot at TEDxGCEM 2026. Limited seats are available for selected applicants. Apply now to be part of the experience.
+        </motion.p>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -90,100 +107,224 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
         <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-ted-red/10 blur-[80px] rounded-full" />
         
         {!isSuccess ? (
-          <form onSubmit={handleSubmit} className="relative z-10 space-y-8">
-            <div className="text-center mb-6">
-              <p className="text-white/60">
-                Complete the form below to register for <span className="text-ted-red uppercase font-bold">TED</span><span className="text-ted-red lowercase font-bold">x</span><span className="text-white uppercase font-bold">GCEM</span> 2026. Limited seats available.
-              </p>
-            </div>
+          <AnimatePresence mode="wait">
+            {!showForm ? (
+              <motion.div
+                key="intro"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.35, ease: "easeInOut" }}
+                className="relative z-10 space-y-10 py-2"
+              >
+                {/* Top Badge */}
+                <div className="flex justify-center">
+                  <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-ted-red/10 border border-ted-red/20 text-ted-red text-[11px] uppercase tracking-[0.2em] font-black font-mono shadow-[0_0_15px_rgba(235,0,40,0.1)]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-ted-red animate-pulse" />
+                    Pass Application Open
+                  </span>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Full Name */}
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Full Name</label>
-                <input 
-                  type="text" 
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  placeholder="John Doe" 
-                  className={`w-full bg-black/40 border ${errors.fullName ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
-                />
-                {errors.fullName && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.fullName}</p>}
-              </div>
+                {/* Main Headline & Engaging Copy */}
+                <div className="text-center space-y-4 max-w-2xl mx-auto">
+                  <h4 className="text-3xl md:text-4xl font-black italic uppercase tracking-tight leading-tight text-white">
+                    BE IN THE ROOM WHERE <br />
+                    <span className="inline-block px-2 py-1 text-transparent bg-clip-text bg-gradient-to-r from-ted-red via-red-500 to-white">
+                      IDEAS IGNITE
+                    </span>
+                  </h4>
+                  <p className="text-white/75 text-sm md:text-base leading-relaxed font-light">
+                    TEDxGCEM 2026 is more than a stage. It&apos;s a convergence of visionaries, catalysts, and innovators pushing the boundaries of what is possible. Join us for a day filled with mind-expanding talks, electrifying performances, and networking opportunities that could redefine your trajectory.
+                  </p>
+                </div>
 
-              {/* Email Address */}
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Email Address</label>
-                <input 
-                  type="email" 
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="john@example.com" 
-                  className={`w-full bg-black/40 border ${errors.email ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
-                />
-                {errors.email && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.email}</p>}
-              </div>
+                {/* Highlight Pillars */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto pt-2">
+                  {[
+                    {
+                      num: "01",
+                      title: "Inspiring Talks",
+                      desc: "8+ select speakers sharing game-changing insights.",
+                    },
+                    {
+                      num: "02",
+                      title: "Curated Kits",
+                      desc: "Official TEDx badge, certificate, and exclusive event goodies.",
+                    },
+                    {
+                      num: "03",
+                      title: "Elite Network",
+                      desc: "Connect directly with mentors, professionals, and peers.",
+                    },
+                  ].map((item, index) => (
+                    <div
+                      key={index}
+                      className="relative bg-black/30 border border-white/5 p-6 rounded-2xl text-left backdrop-blur-md group hover:border-ted-red/30 hover:bg-ted-red/[0.02] transition-all duration-300"
+                    >
+                      <span className="absolute top-4 right-4 text-[10px] font-mono text-white/20 group-hover:text-ted-red/40 transition-colors font-bold">
+                        {item.num}
+                      </span>
+                      <h5 className="text-white font-bold text-sm uppercase tracking-wider mb-1.5 group-hover:text-ted-red transition-colors">
+                        {item.title}
+                      </h5>
+                      <p className="text-white/50 text-[12px] leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
+                  ))}
+                </div>
 
-              {/* Phone Number */}
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Phone Number</label>
-                <input 
-                  type="tel" 
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="+91 9876543210" 
-                  className={`w-full bg-black/40 border ${errors.phone ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
-                />
-                {errors.phone && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.phone}</p>}
-              </div>
+                {/* Action Area */}
+                <div className="flex flex-col items-center gap-4 pt-4">
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className="group relative px-10 py-5 bg-ted-red text-white font-black rounded-2xl text-base shadow-[0_0_25px_rgba(235,0,40,0.35)] hover:shadow-[0_0_35px_rgba(235,0,40,0.55)] hover:bg-white hover:text-ted-red transition-all duration-300 uppercase tracking-[0.15em] flex items-center gap-3 cursor-pointer"
+                  >
+                    <span>Request Attendee Pass</span>
+                    <svg
+                      className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
+                  <span className="text-[10px] text-white/40 uppercase tracking-widest font-mono font-bold flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping" />
+                    LIVE NOW
+                  </span>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.form
+                key="form"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.35, ease: "easeInOut" }}
+                onSubmit={handleSubmit}
+                className="relative z-10 space-y-8"
+              >
+                {/* Form Back Button & Progress */}
+                <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="group flex items-center gap-2 text-xs uppercase tracking-widest text-white/50 hover:text-white transition-all cursor-pointer font-bold font-mono"
+                  >
+                    <svg
+                      className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Back</span>
+                  </button>
+                  <span className="text-[10px] uppercase tracking-widest font-mono text-ted-red font-black">
+                    Step 2 of 2: Details
+                  </span>
+                </div>
 
-              {/* Organization */}
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Organization / College</label>
-                <input 
-                  type="text" 
-                  name="organization"
-                  value={formData.organization}
-                  onChange={handleChange}
-                  placeholder="GCEM" 
-                  className={`w-full bg-black/40 border ${errors.organization ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
-                />
-                {errors.organization && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.organization}</p>}
-              </div>
-            </div>
+                <div className="text-center mb-6">
+                  <p className="text-white/60">
+                    Complete the form below to register for <span className="text-ted-red uppercase font-bold">TED</span><span className="text-ted-red lowercase font-bold">x</span><span className="text-white uppercase font-bold">GCEM</span> 2026. Limited seats available.
+                  </p>
+                </div>
 
-            {/* Motivation */}
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Why do you want to attend?</label>
-              <textarea 
-                name="motivation"
-                value={formData.motivation}
-                onChange={handleChange}
-                rows={4}
-                placeholder="Tell us what excites you about TEDxGCEM..." 
-                className={`w-full bg-black/40 border ${errors.motivation ? 'border-ted-red' : 'border-white/10'} rounded-3xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white resize-none`}
-              />
-              {errors.motivation && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.motivation}</p>}
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Full Name */}
+                  <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Full Name</label>
+                    <input 
+                      type="text" 
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      placeholder="John Doe" 
+                      className={`w-full bg-black/40 border ${errors.fullName ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
+                    />
+                    {errors.fullName && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.fullName}</p>}
+                  </div>
 
-            <button 
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-5 bg-ted-red text-white font-black rounded-2xl text-lg shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.5)] transition-all uppercase tracking-widest flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Submit Registration"
-              )}
-            </button>
-          </form>
+                  {/* Email Address */}
+                  <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Email Address</label>
+                    <input 
+                      type="email" 
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="john@example.com" 
+                      className={`w-full bg-black/40 border ${errors.email ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
+                    />
+                    {errors.email && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.email}</p>}
+                  </div>
+
+                  {/* Phone Number */}
+                  <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Phone Number</label>
+                    <input 
+                      type="tel" 
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="+91 9876543210" 
+                      className={`w-full bg-black/40 border ${errors.phone ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
+                    />
+                    {errors.phone && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.phone}</p>}
+                  </div>
+
+                  {/* Organization */}
+                  <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Organization / College</label>
+                    <input 
+                      type="text" 
+                      name="organization"
+                      value={formData.organization}
+                      onChange={handleChange}
+                      placeholder="GCEM" 
+                      className={`w-full bg-black/40 border ${errors.organization ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
+                    />
+                    {errors.organization && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.organization}</p>}
+                  </div>
+                </div>
+
+                {/* LinkedIn Profile */}
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">LinkedIn Profile (Optional)</label>
+                  <input 
+                    type="url" 
+                    name="linkedin"
+                    value={formData.linkedin}
+                    onChange={handleChange}
+                    placeholder="https://linkedin.com/in/username" 
+                    className={`w-full bg-black/40 border ${errors.linkedin ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
+                  />
+                  {errors.linkedin && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.linkedin}</p>}
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-5 bg-ted-red text-white font-black rounded-2xl text-lg shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.5)] transition-all uppercase tracking-widest flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Submit Registration"
+                  )}
+                </button>
+              </motion.form>
+            )}
+          </AnimatePresence>
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -226,7 +367,8 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
               <button 
                 onClick={() => {
                   setIsSuccess(false);
-                  setFormData({ fullName: "", email: "", phone: "", organization: "", motivation: "" });
+                  setShowForm(false);
+                  setFormData({ fullName: "", email: "", phone: "", organization: "", linkedin: "" });
                 }}
                 className="px-8 py-4.5 bg-transparent border border-white/10 text-white/60 font-bold rounded-2xl text-base hover:bg-white/5 transition-all uppercase tracking-widest cursor-pointer"
               >

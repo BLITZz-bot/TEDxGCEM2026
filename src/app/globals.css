@@ -69,3 +69,10 @@ body {
   scrollbar-width: none;
 }
 
+/* Hide mobile hamburger and logo when modal is open */
+body.modal-open .mobile-nav-hamburger,
+body.modal-open .mobile-nav-logo {
+  opacity: 0;
+  pointer-events: none;
+}
+

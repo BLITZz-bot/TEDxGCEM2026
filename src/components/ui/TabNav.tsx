@@ -67,6 +67,21 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
 
   return (
     <>
+      {/* Top Left Logo */}
+      <div 
+        className={cn(
+          "fixed top-6 left-6 z-50 flex items-center pointer-events-auto cursor-pointer transition-opacity duration-300 mobile-nav-logo",
+          isOpen ? "opacity-0 pointer-events-none" : "opacity-100"
+        )}
+        onClick={() => onTabChange("home")}
+      >
+        <img 
+          src="/logo-white.png" 
+          alt="TEDxGCEM Logo" 
+          className="h-10 md:h-12 w-auto object-contain" 
+        />
+      </div>
+
       {/* Desktop Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 hidden md:flex justify-center p-6 pointer-events-none">
         <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 bg-ted-dark-gray/80 p-1.5 rounded-3xl sm:rounded-full border border-white/10 max-w-full overflow-x-auto no-scrollbar pointer-events-auto">
@@ -93,7 +108,7 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
       </nav>
 
       {/* Mobile Hamburger Button */}
-      <div className="fixed top-6 right-6 z-50 flex md:hidden pointer-events-auto">
+      <div className="fixed top-6 right-6 z-50 flex md:hidden pointer-events-auto mobile-nav-hamburger transition-opacity duration-300">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="w-12 h-12 rounded-full bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white cursor-pointer shadow-lg hover:bg-black/85 transition-all duration-300"
