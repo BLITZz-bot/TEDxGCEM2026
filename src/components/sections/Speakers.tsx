@@ -24,7 +24,7 @@ export default function Speakers() {
         className="mb-16 text-center sm:text-left"
       >
         <h2 className="text-ted-red font-bold text-xl uppercase tracking-[0.2em] mb-2 font-mono">The Visionaries</h2>
-        <h3 className="text-4xl md:text-6xl font-black italic tracking-tighter">FEATURED SPEAKERS</h3>
+        <h3 className="text-4xl md:text-6xl font-black italic tracking-tighter text-black">FEATURED SPEAKERS</h3>
       </motion.div>
 
       {/* Accordion Flex-based Grid */}
@@ -40,27 +40,27 @@ export default function Speakers() {
                 flex: isHovered ? 2.5 : 1,
               }}
               transition={{ type: "spring", stiffness: 120, damping: 18 }}
-              className="relative rounded-[2.5rem] overflow-hidden bg-ted-dark-gray border border-white/5 p-8 flex flex-col justify-between cursor-pointer group hover:border-ted-red/35"
+              className="relative rounded-[2.5rem] overflow-hidden bg-white border border-black/5 p-8 flex flex-col justify-between cursor-pointer group hover:border-ted-red/35 shadow-sm"
             >
               {/* Animated Glow Backdrop */}
               <div 
-                className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black z-1 transition-opacity duration-300"
+                className="absolute inset-0 bg-gradient-to-b from-transparent via-white/40 to-white/90 z-1 transition-opacity duration-300"
               />
               <div 
-                className={`absolute inset-0 bg-ted-red/5 z-0 transition-opacity duration-500 ${isHovered ? "opacity-100" : "opacity-0"}`}
+                className={`absolute inset-0 bg-ted-red/[0.02] z-0 transition-opacity duration-500 ${isHovered ? "opacity-100" : "opacity-0"}`}
               />
 
               {/* Top Slot: Index / Role */}
               <div className="relative z-10 flex justify-between items-start">
                 <span className="text-ted-red font-mono font-black text-xl">0{speaker.id}</span>
-                <span className="text-[9px] uppercase tracking-widest text-white/30 font-mono mt-1 group-hover:text-white/50 transition-colors">
+                <span className="text-[9px] uppercase tracking-widest text-black/30 font-mono mt-1 group-hover:text-black/50 transition-colors">
                   {speaker.role.split(" & ")[0]}
                 </span>
               </div>
 
               {/* Bottom Slot: Info Panel */}
               <div className="relative z-10">
-                <h4 className="text-2xl md:text-3xl font-black tracking-tight text-white mb-2 group-hover:text-ted-red transition-colors">
+                <h4 className="text-2xl md:text-3xl font-black tracking-tight text-black mb-2 group-hover:text-ted-red transition-colors">
                   {speaker.name}
                 </h4>
                 
@@ -74,7 +74,7 @@ export default function Speakers() {
                   className="overflow-hidden"
                 >
                   <p className="text-ted-red text-sm font-bold tracking-tight mb-2">{speaker.topic}</p>
-                  <p className="text-white/60 text-xs leading-relaxed max-w-sm mt-2">{speaker.description}</p>
+                  <p className="text-black/60 text-xs leading-relaxed max-w-sm mt-2">{speaker.description}</p>
                 </motion.div>
               </div>
             </motion.div>

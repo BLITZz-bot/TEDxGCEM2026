@@ -27,7 +27,7 @@ export default function Partners() {
         className="mb-16 text-center"
       >
         <h2 className="text-ted-red font-bold text-xl uppercase tracking-[0.2em] mb-2 font-mono">Support Network</h2>
-        <h3 className="text-4xl md:text-6xl font-black italic tracking-tighter">OUR PARTNERS</h3>
+        <h3 className="text-4xl md:text-6xl font-black italic tracking-tighter text-black">OUR PARTNERS</h3>
       </motion.div>
 
       {/* Infinite Scrolling Marquees */}
@@ -38,9 +38,9 @@ export default function Partners() {
             {[...row1, ...row1, ...row1].map((partner, i) => (
               <div
                 key={i}
-                className="w-[280px] h-32 bg-ted-dark-gray border border-white/5 rounded-[2rem] flex items-center justify-center p-6 hover:border-ted-red/20 transition-colors duration-300"
+                className="w-[280px] h-32 bg-white border border-black/5 rounded-[2rem] flex items-center justify-center p-6 hover:border-ted-red/20 transition-colors duration-300 shadow-sm"
               >
-                <div className="text-lg font-black text-white/20 tracking-tight uppercase select-none group-hover:text-white/40">
+                <div className="text-lg font-black text-black/15 tracking-tight uppercase select-none group-hover:text-black/40">
                   {partner.name}
                 </div>
               </div>
@@ -54,9 +54,9 @@ export default function Partners() {
             {[...row2, ...row2, ...row2].map((partner, i) => (
               <div
                 key={i}
-                className="w-[280px] h-32 bg-ted-dark-gray border border-white/5 rounded-[2rem] flex items-center justify-center p-6 hover:border-ted-red/20 transition-colors duration-300"
+                className="w-[280px] h-32 bg-white border border-black/5 rounded-[2rem] flex items-center justify-center p-6 hover:border-ted-red/20 transition-colors duration-300 shadow-sm"
               >
-                <div className="text-lg font-black text-white/20 tracking-tight uppercase select-none group-hover:text-white/40">
+                <div className="text-lg font-black text-black/15 tracking-tight uppercase select-none group-hover:text-black/40">
                   {partner.name}
                 </div>
               </div>

@@ -125,13 +125,13 @@ export default function Hero({ onTabChange }: HeroProps) {
   return (
     <section 
       ref={containerRef}
-      className="min-h-screen relative flex flex-col justify-center items-center px-6 overflow-hidden bg-black text-center"
+      className="min-h-screen relative flex flex-col justify-center items-center px-6 overflow-hidden bg-background text-center"
     >
       {/* Spotlight overlay */}
       <div 
         className="pointer-events-none absolute inset-0 z-0 opacity-25 hidden md:block"
         style={{
-          background: `radial-gradient(800px at ${mousePos.x}px ${mousePos.y}px, rgba(235, 0, 40, 0.18), transparent 80%)`
+          background: `radial-gradient(800px at ${mousePos.x}px ${mousePos.y}px, rgba(235, 0, 40, 0.08), transparent 80%)`
         }}
       />
 
@@ -140,7 +140,7 @@ export default function Hero({ onTabChange }: HeroProps) {
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="grid" width="45" height="45" patternUnits="userSpaceOnUse">
-              <path d="M 45 0 L 0 0 0 45" fill="none" stroke="white" strokeWidth="0.5"/>
+              <path d="M 45 0 L 0 0 0 45" fill="none" stroke="black" strokeWidth="0.5"/>
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)" />
@@ -151,36 +151,41 @@ export default function Hero({ onTabChange }: HeroProps) {
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
 
       {/* Futuristic Geometric Backdrop Rings */}
-      <div className="absolute z-0 pointer-events-none opacity-20 w-[400px] h-[400px] md:w-[600px] md:h-[600px] border border-white/5 rounded-full animate-[spin_60s_linear_infinite]" />
-      <div className="absolute z-0 pointer-events-none opacity-10 w-[300px] h-[300px] md:w-[500px] md:h-[500px] border border-dashed border-ted-red/20 rounded-full animate-[spin_30s_linear_infinite_reverse]" />
+      <div className="absolute z-0 pointer-events-none opacity-20 w-[400px] h-[400px] md:w-[600px] md:h-[600px] border border-black/5 rounded-full animate-[spin_60s_linear_infinite]" />
+      <div className="absolute z-0 pointer-events-none opacity-10 w-[300px] h-[300px] md:w-[500px] md:h-[500px] border border-dashed border-ted-red/10 rounded-full animate-[spin_30s_linear_infinite_reverse]" />
 
       {/* 3D Tilt Wrapper */}
       <motion.div 
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
         className="relative z-10 flex flex-col items-center max-w-4xl"
       >
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, type: "spring" }}
+        <div 
           style={{ transform: "translateZ(50px)" }}
           className="flex items-center gap-3 mb-6"
         >
-          <img
-            src="/logo-white.png"
+          <motion.img
+            layoutId="logo-splash-transition"
+            src="/logo-black.png"
             alt="TEDxGCEM"
             className="h-10 md:h-12 w-auto"
-            style={{ mixBlendMode: "screen", filter: "brightness(1.15)" }}
+            transition={{ type: "spring", stiffness: 90, damping: 18 }}
           />
-          <span className="text-ted-red text-sm font-black uppercase tracking-[0.3em] font-mono px-3 py-1 bg-ted-red/10 border border-ted-red/20 rounded-full">2026</span>
-        </motion.div>
+          <motion.span 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="text-ted-red text-sm font-black uppercase tracking-[0.3em] font-mono px-3 py-1 bg-ted-red/10 border border-ted-red/20 rounded-full"
+          >
+            2026
+          </motion.span>
+        </div>
 
         <motion.h1 
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.8 }}
           style={{ transform: "translateZ(80px)" }}
-          className="text-7xl md:text-9xl font-black uppercase tracking-tighter leading-none select-none text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff_25%,#EB0028_48%,#EB0028_52%,#ffffff_75%)] bg-[length:250%_100%] animate-shimmer"
+          className="text-7xl md:text-9xl font-black uppercase tracking-tighter leading-none select-none text-transparent bg-clip-text bg-[linear-gradient(110deg,#0d0d0d_25%,#EB0028_48%,#EB0028_52%,#0d0d0d_75%)] bg-[length:250%_100%] animate-shimmer"
         >
           RIPPLE
         </motion.h1>
@@ -190,7 +195,7 @@ export default function Hero({ onTabChange }: HeroProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.8 }}
           style={{ transform: "translateZ(40px)" }}
-          className="text-white/60 text-lg md:text-xl font-medium max-w-xl mt-6 leading-relaxed"
+          className="text-black/60 text-lg md:text-xl font-medium max-w-xl mt-6 leading-relaxed"
         >
           One catalyst idea, echoing outwards, challenging the status quo, forming connections, and building community momentum.
         </motion.p>
@@ -204,19 +209,19 @@ export default function Hero({ onTabChange }: HeroProps) {
           className="flex flex-col sm:flex-row gap-4 mt-10 justify-center w-full max-w-md"
         >
           <motion.button
-            whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(235,0,40,0.6)" }}
+            whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(235,0,40,0.4)" }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onTabChange("register")}
-            className="px-10 py-5 bg-ted-red text-white font-black rounded-2xl text-base transition-all uppercase tracking-widest cursor-pointer shadow-[0_0_20px_rgba(235,0,40,0.3)] text-center flex-1"
+            className="px-10 py-5 bg-ted-red text-white font-black rounded-2xl text-base transition-all uppercase tracking-widest cursor-pointer shadow-[0_0_20px_rgba(235,0,40,0.2)] text-center flex-1"
           >
             Get Tickets
           </motion.button>
           
           <motion.button
-            whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.06)" }}
+            whileHover={{ scale: 1.05, backgroundColor: "rgba(0,0,0,0.03)" }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onTabChange("about")}
-            className="px-10 py-5 bg-transparent border border-white/10 text-white font-bold rounded-2xl text-base transition-all uppercase tracking-widest cursor-pointer text-center flex-1"
+            className="px-10 py-5 bg-transparent border border-black/10 text-black font-bold rounded-2xl text-base transition-all uppercase tracking-widest cursor-pointer text-center flex-1"
           >
             Learn More
           </motion.button>

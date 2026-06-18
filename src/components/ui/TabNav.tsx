@@ -52,13 +52,13 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
 
   return (
     <>
-      {/* Desktop Futuristic Glass Dock */}
+      {/* Desktop Light Glass Dock */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 hidden md:block pointer-events-none">
         <motion.div 
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 100, damping: 15 }}
-          className="flex items-center gap-1.5 bg-black/60 backdrop-blur-2xl px-4 py-2.5 rounded-full border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] pointer-events-auto group hover:border-ted-red/20 transition-all duration-300"
+          className="flex items-center gap-1.5 bg-white/70 backdrop-blur-2xl px-4 py-2.5 rounded-full border border-black/5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] pointer-events-auto group hover:border-ted-red/20 transition-all duration-300"
         >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -70,7 +70,7 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
                 whileTap={{ scale: 0.95 }}
                 className={cn(
                   "relative p-3 rounded-full transition-colors duration-300 cursor-pointer flex items-center justify-center gap-2",
-                  isActive ? "text-white bg-ted-red shadow-[0_0_20px_rgba(235,0,40,0.4)]" : "text-white/40 hover:text-white/80 hover:bg-white/5"
+                  isActive ? "text-white bg-ted-red shadow-[0_0_20px_rgba(235,0,40,0.2)]" : "text-black/40 hover:text-black/80 hover:bg-black/5"
                 )}
                 title={tab.label}
               >
@@ -91,16 +91,15 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
       </div>
 
       {/* Mobile Sticky Top Bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex md:hidden items-center justify-between px-6 py-4 bg-black/70 backdrop-blur-xl border-b border-white/5">
+      <div className="fixed top-0 left-0 right-0 z-50 flex md:hidden items-center justify-between px-6 py-4 bg-white/70 backdrop-blur-xl border-b border-black/5">
         <img
-          src="/logo-white.png"
+          src="/logo-black.png"
           alt="TEDxGCEM"
           className="h-6 w-auto"
-          style={{ mixBlendMode: "screen" }}
         />
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white cursor-pointer"
+          className="w-10 h-10 rounded-full bg-black/5 border border-black/10 flex items-center justify-center text-black cursor-pointer"
         >
           {isOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
@@ -114,7 +113,7 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.1 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-40 bg-black/95 backdrop-blur-3xl md:hidden flex flex-col justify-center items-center px-6 pt-24"
+            className="fixed inset-0 z-40 bg-white/95 backdrop-blur-3xl md:hidden flex flex-col justify-center items-center px-6 pt-24"
           >
             <div className="flex flex-col gap-4 w-full max-w-sm">
               {tabs.map((tab, idx) => {
@@ -131,7 +130,7 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
                     }}
                     className={cn(
                       "w-full flex items-center gap-4 py-4 px-6 rounded-2xl border transition-all text-left cursor-pointer",
-                      isActive ? "bg-ted-red border-ted-red text-white shadow-lg" : "bg-white/5 border-white/5 text-white/50 hover:bg-white/10"
+                      isActive ? "bg-ted-red border-ted-red text-white shadow-lg" : "bg-black/5 border-black/5 text-black/50 hover:bg-black/10"
                     )}
                   >
                     {tab.icon}

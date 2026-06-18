@@ -36,7 +36,7 @@ export default function About() {
         className="mb-16 text-center"
       >
         <h2 className="text-ted-red font-bold text-xl uppercase tracking-[0.2em] mb-2 font-mono">Our Foundation</h2>
-        <h3 className="text-4xl md:text-6xl font-black italic tracking-tighter">ABOUT THE PLATFORM</h3>
+        <h3 className="text-4xl md:text-6xl font-black italic tracking-tighter text-black">ABOUT THE PLATFORM</h3>
       </motion.div>
 
       {/* Interactive Segment Selection */}
@@ -46,7 +46,7 @@ export default function About() {
             key={card.id}
             onClick={() => setActiveCard(card.id)}
             className={`px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
-              activeCard === card.id ? "bg-ted-red text-white shadow-lg shadow-ted-red/20" : "bg-white/5 text-white/50 hover:bg-white/10"
+              activeCard === card.id ? "bg-ted-red text-white shadow-lg shadow-ted-red/20" : "bg-black/5 text-black/50 hover:bg-black/10"
             }`}
           >
             {card.title.split(" ")[0]}
@@ -64,11 +64,11 @@ export default function About() {
               animate={{ opacity: 1, rotateY: 0, scale: 1 }}
               exit={{ opacity: 0, rotateY: -90, scale: 0.9 }}
               transition={{ duration: 0.4 }}
-              className="absolute inset-0 bg-ted-dark-gray border border-white/5 p-8 md:p-12 rounded-[2.5rem] flex flex-col justify-center shadow-2xl backdrop-blur-md"
+              className="absolute inset-0 bg-white border border-black/5 p-8 md:p-12 rounded-[2.5rem] flex flex-col justify-center shadow-2xl backdrop-blur-md"
             >
               <span className="text-ted-red text-xs font-bold uppercase tracking-widest font-mono mb-2">{card.subtitle}</span>
-              <h4 className="text-2xl md:text-3xl font-black mb-4 tracking-tight text-white">{card.title}</h4>
-              <p className="text-white/70 leading-relaxed text-sm md:text-base">{card.body}</p>
+              <h4 className="text-2xl md:text-3xl font-black mb-4 tracking-tight text-black">{card.title}</h4>
+              <p className="text-black/70 leading-relaxed text-sm md:text-base">{card.body}</p>
             </motion.div>
           ))}
         </AnimatePresence>
@@ -82,7 +82,7 @@ export default function About() {
         className="mt-32 text-center mb-16"
       >
         <h2 className="text-ted-red font-bold text-xl uppercase tracking-[0.2em] mb-2 font-mono">The Architects</h2>
-        <h3 className="text-4xl md:text-5xl font-black italic tracking-tighter">OUR ORGANIZING TEAM</h3>
+        <h3 className="text-4xl md:text-5xl font-black italic tracking-tighter text-black">OUR ORGANIZING TEAM</h3>
       </motion.div>
 
       {/* Futuristic Hover-Tilt Grid */}
@@ -104,13 +104,13 @@ export default function About() {
             viewport={{ once: true }}
             transition={{ delay: index * 0.05 }}
             whileHover={{ scale: 1.03, rotateX: 5, rotateY: -5 }}
-            className="group bg-ted-dark-gray border border-white/5 p-6 rounded-[2rem] hover:border-ted-red/20 transition-all duration-300"
+            className="group bg-white border border-black/5 p-6 rounded-[2rem] hover:border-ted-red/20 transition-all duration-300 shadow-sm"
           >
-            <div className="relative aspect-square mb-4 rounded-2xl overflow-hidden bg-black flex items-center justify-center border border-white/5">
-              <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-white/10 group-hover:text-ted-red/40 transition-colors duration-300"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <div className="relative aspect-square mb-4 rounded-2xl overflow-hidden bg-black/5 flex items-center justify-center border border-black/5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-black/10 group-hover:text-ted-red/40 transition-colors duration-300"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
-            <h4 className="text-md font-bold text-white tracking-tight">{member.name}</h4>
-            <p className="text-[9px] uppercase tracking-widest text-white/30 font-mono mt-1">{member.role}</p>
+            <h4 className="text-md font-bold text-black tracking-tight">{member.name}</h4>
+            <p className="text-[9px] uppercase tracking-widest text-black/30 font-mono mt-1">{member.role}</p>
           </motion.div>
         ))}
       </div>

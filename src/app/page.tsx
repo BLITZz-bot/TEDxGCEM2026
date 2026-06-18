@@ -17,6 +17,15 @@ export default function Home() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2400);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -67,7 +76,7 @@ export default function Home() {
     }
 
     const animate = () => {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+      ctx.fillStyle = "rgba(249, 249, 251, 0.08)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ripples.forEach((r, idx) => {
@@ -86,7 +95,6 @@ export default function Home() {
       setMousePos({ x: e.clientX, y: e.clientY });
     };
 
-    // Spawn random ripples periodically
     const interval = setInterval(() => {
       if (ripples.length < 8) {
         ripples.push(new Ripple(
@@ -130,40 +138,71 @@ export default function Home() {
   };
 
   return (
-    <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
-      {/* Global Background Canvas for Red Ripples */}
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
-
-      {/* Interactive Cursor Spotlight Glow */}
-      <div 
-        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300 opacity-10 hidden md:block"
-        style={{
-          background: `radial-gradient(600px at ${mousePos.x}px ${mousePos.y}px, rgba(235, 0, 40, 0.15), transparent 80%)`
-        }}
-      />
-
-      {/* Navigation */}
-      <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
-
-      {/* Main Content with Animated Transitions */}
-      <div className="relative z-10">
-        <AnimatePresence mode="wait">
+    <main className="relative min-h-screen bg-background text-foreground overflow-x-hidden">
+      <AnimatePresence mode="wait">
+        {showSplash ? (
           <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
+            key="splash"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="fixed inset-0 bg-background z-50 flex flex-col items-center justify-center pointer-events-auto"
           >
-            {renderSection()}
+            {/* Ambient Red Glow behind logo */}
+            <div className="absolute w-64 h-64 bg-ted-red/5 blur-[90px] rounded-full" />
+            
+            <motion.img
+              layoutId="logo-splash-transition"
+              src="/logo-black.png"
+              alt="TEDxGCEM"
+              initial={{ scale: 0.4, opacity: 0 }}
+              animate={{ scale: [0.4, 1.4, 1.1], opacity: [0, 1, 1] }}
+              transition={{ duration: 2.0, ease: "easeInOut" }}
+              className="h-20 w-auto relative z-10"
+            />
           </motion.div>
-        </AnimatePresence>
-      </div>
+        ) : (
+          <motion.div
+            key="main-app"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Global Background Canvas for Red Ripples */}
+            <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
+
+            {/* Interactive Cursor Spotlight Glow */}
+            <div 
+              className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300 opacity-20 hidden md:block"
+              style={{
+                background: `radial-gradient(600px at ${mousePos.x}px ${mousePos.y}px, rgba(235, 0, 40, 0.06), transparent 80%)`
+              }}
+            />
+
+            {/* Navigation */}
+            <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+            {/* Main Content with Animated Transitions */}
+            <div className="relative z-10">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.02 }}
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
+                >
+                  {renderSection()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Persistent Compliance Footer */}
-      <footer className="py-12 border-t border-white/5 bg-black/80 backdrop-blur-sm text-center px-6 relative z-10">
+      <footer className="py-12 border-t border-black/5 bg-white/70 backdrop-blur-sm text-center px-6 relative z-10">
         <div className="max-w-4xl mx-auto">
-          <p className="text-sm text-white/40 mb-8">
+          <p className="text-sm text-black/40 mb-8">
             This independent TEDx event is operated under license from TED.
           </p>
 
@@ -174,7 +213,7 @@ export default function Home() {
               rel="noopener noreferrer"
               className="group flex flex-col items-center gap-2"
             >
-              <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:border-ted-red group-hover:bg-ted-red transition-all duration-300">
+              <div className="w-12 h-12 rounded-full border border-black/10 flex items-center justify-center group-hover:border-ted-red group-hover:bg-ted-red transition-all duration-300">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -185,14 +224,14 @@ export default function Home() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-white"
+                  className="text-black group-hover:text-white transition-colors"
                 >
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                 </svg>
               </div>
-              <span className="text-[10px] uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">Instagram</span>
+              <span className="text-[10px] uppercase tracking-widest text-black/40 group-hover:text-black transition-colors">Instagram</span>
             </a>
 
             <a 
@@ -201,7 +240,7 @@ export default function Home() {
               rel="noopener noreferrer"
               className="group flex flex-col items-center gap-2"
             >
-              <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:border-ted-red group-hover:bg-ted-red transition-all duration-300">
+              <div className="w-12 h-12 rounded-full border border-black/10 flex items-center justify-center group-hover:border-ted-red group-hover:bg-ted-red transition-all duration-300">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -212,25 +251,25 @@ export default function Home() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-white"
+                  className="text-black group-hover:text-white transition-colors"
                 >
                   <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
                   <rect x="2" y="9" width="4" height="12"></rect>
                   <circle cx="4" cy="4" r="2"></circle>
                 </svg>
               </div>
-              <span className="text-[10px] uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">LinkedIn</span>
+              <span className="text-[10px] uppercase tracking-widest text-black/40 group-hover:text-black transition-colors">LinkedIn</span>
             </a>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-xs uppercase tracking-[0.2em] text-white/60">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-xs uppercase tracking-[0.2em] text-black/60">
             <button className="hover:text-ted-red transition-colors" onClick={() => setActiveTab("contact")}>
               Contact Us
             </button>
           </div>
-          <p className="mt-8 text-[10px] text-white/20 tracking-widest flex items-center justify-center gap-1.5 flex-wrap">
+          <p className="mt-8 text-[10px] text-black/20 tracking-widest flex items-center justify-center gap-1.5 flex-wrap">
             © {new Date().getFullYear()}
-            <img src="/logo-white.png" alt="TEDxGCEM" className="h-3.5 w-auto inline-block align-middle" style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }} />
+            <img src="/logo-black.png" alt="TEDxGCEM" className="h-3.5 w-auto inline-block align-middle" />
             All Rights Reserved.
           </p>
         </div>
