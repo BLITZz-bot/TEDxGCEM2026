@@ -1,61 +1,85 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 
 const speakers = [
-  { id: 1, name: "Dr. Sarah Chen", topic: "The Future of AI Ethics", size: "large" },
-  { id: 2, name: "Marcus Thorne", topic: "Urban Rewilding", size: "small" },
-  { id: 3, name: "Aisha Roberts", topic: "Quantum Storytelling", size: "medium" },
-  { id: 4, name: "Julian Voss", topic: "The Sound of Silence", size: "small" },
-  { id: 5, name: "Elena Rodriguez", topic: "Bionic Architecture", size: "medium" },
-  { id: 6, name: "Kenji Tanaka", topic: "Minimalist Mathematics", size: "small" },
+  { id: 1, name: "Dr. Sarah Chen", topic: "The Future of AI Ethics", role: "AI Ethicist & Researcher", description: "Dr. Chen focuses on building standard guidelines for humane automated architectures.", size: "large" },
+  { id: 2, name: "Marcus Thorne", topic: "Urban Rewilding & Architecture", role: "Environmental Designer", description: "Marcus creates bio-mimetic urban ecosystems that synthesize concrete layouts with local flora.", size: "small" },
+  { id: 3, name: "Aisha Roberts", topic: "Quantum Storytelling", role: "Theoretical Physicist & Novelist", description: "Aisha bridges the complexity of quantum states with creative modern narratives.", size: "medium" },
+  { id: 4, name: "Julian Voss", topic: "The Power of Ambient Silence", role: "Acoustic Architect", description: "Julian designs silent environments within industrial hubs to recover neurological focus.", size: "small" },
+  { id: 5, name: "Elena Rodriguez", topic: "Bionic Infrastructure", role: "Bio-Materials Engineer", description: "Elena develops bionic shell systems capable of self-healing under local pressure changes.", size: "medium" },
+  { id: 6, name: "Kenji Tanaka", topic: "Minimalist Mathematics", role: "Theoretical Topologist", description: "Kenji simplifies intricate geometric logic into elegant patterns for aesthetic coding.", size: "small" },
 ];
 
 export default function Speakers() {
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
+
   return (
-    <section className="min-h-screen pt-32 pb-20 px-6 max-w-7xl mx-auto">
+    <section className="min-h-screen pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col justify-center">
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="mb-12 text-center sm:text-left"
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="mb-16 text-center sm:text-left"
       >
-        <h2 className="text-ted-red font-bold text-xl uppercase tracking-widest mb-2">The Lineup</h2>
-        <h3 className="text-4xl md:text-6xl font-black italic">FEATURED SPEAKERS</h3>
+        <h2 className="text-ted-red font-bold text-xl uppercase tracking-[0.2em] mb-2 font-mono">The Visionaries</h2>
+        <h3 className="text-4xl md:text-6xl font-black italic tracking-tighter">FEATURED SPEAKERS</h3>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[250px]">
-        {speakers.map((speaker, index) => (
-          <motion.div
-            key={speaker.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className={`group relative rounded-3xl overflow-hidden border border-white/10 bg-ted-dark-gray flex flex-col justify-end p-8 transition-all hover:border-ted-red/50 ${
-              speaker.size === "large" ? "md:col-span-2 md:row-span-2" : 
-              speaker.size === "medium" ? "md:col-span-1 md:row-span-2" : "md:col-span-1 md:row-span-1"
-            }`}
-          >
-            {/* Background Gradient/Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-1" />
-            
-            {/* Animated hover background */}
-            <div className="absolute inset-0 bg-ted-red opacity-0 group-hover:opacity-5 transition-opacity duration-500 z-0" />
+      {/* Accordion Flex-based Grid */}
+      <div className="flex flex-col lg:flex-row gap-4 h-[600px] w-full">
+        {speakers.map((speaker, index) => {
+          const isHovered = hoveredId === speaker.id || (hoveredId === null && index === 0);
+          return (
+            <motion.div
+              key={speaker.id}
+              onMouseEnter={() => setHoveredId(speaker.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              animate={{
+                flex: isHovered ? 2.5 : 1,
+              }}
+              transition={{ type: "spring", stiffness: 120, damping: 18 }}
+              className="relative rounded-[2.5rem] overflow-hidden bg-ted-dark-gray border border-white/5 p-8 flex flex-col justify-between cursor-pointer group hover:border-ted-red/35"
+            >
+              {/* Animated Glow Backdrop */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black z-1 transition-opacity duration-300"
+              />
+              <div 
+                className={`absolute inset-0 bg-ted-red/5 z-0 transition-opacity duration-500 ${isHovered ? "opacity-100" : "opacity-0"}`}
+              />
 
-            <div className="relative z-10">
-              <span className="text-ted-red text-sm font-bold uppercase tracking-tighter block mb-1">Speaker</span>
-              <h4 className="text-2xl font-bold mb-1">{speaker.name}</h4>
-              <p className="text-white/60 text-sm group-hover:text-white transition-colors">{speaker.topic}</p>
-            </div>
-            
-            {/* Corner Icon */}
-            <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center">
-                <span className="text-ted-red text-xs">→</span>
+              {/* Top Slot: Index / Role */}
+              <div className="relative z-10 flex justify-between items-start">
+                <span className="text-ted-red font-mono font-black text-xl">0{speaker.id}</span>
+                <span className="text-[9px] uppercase tracking-widest text-white/30 font-mono mt-1 group-hover:text-white/50 transition-colors">
+                  {speaker.role.split(" & ")[0]}
+                </span>
               </div>
-            </div>
-          </motion.div>
-        ))}
+
+              {/* Bottom Slot: Info Panel */}
+              <div className="relative z-10">
+                <h4 className="text-2xl md:text-3xl font-black tracking-tight text-white mb-2 group-hover:text-ted-red transition-colors">
+                  {speaker.name}
+                </h4>
+                
+                {/* Expandable Info on Hover */}
+                <motion.div
+                  initial={false}
+                  animate={{
+                    height: isHovered ? "auto" : 0,
+                    opacity: isHovered ? 1 : 0,
+                  }}
+                  className="overflow-hidden"
+                >
+                  <p className="text-ted-red text-sm font-bold tracking-tight mb-2">{speaker.topic}</p>
+                  <p className="text-white/60 text-xs leading-relaxed max-w-sm mt-2">{speaker.description}</p>
+                </motion.div>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
     </section>
   );

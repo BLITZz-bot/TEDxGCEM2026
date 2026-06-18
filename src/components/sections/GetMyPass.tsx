@@ -1,148 +1,133 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { TabId } from "@/components/ui/TabNav";
+import { KeyRound, CreditCard, Download, RefreshCw } from "lucide-react";
 
 interface GetMyPassProps {
   onTabChange: (id: TabId) => void;
 }
 
 export default function GetMyPass({ onTabChange }: GetMyPassProps) {
-  const [email, setEmail] = React.useState("");
-  const [isSearching, setIsSearching] = React.useState(false);
-  const [passFound, setPassFound] = React.useState(false);
+  const [email, setEmail] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [passFound, setPassFound] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSearching(true);
-    // Simulate a lookup delay
     setTimeout(() => {
       setIsSearching(false);
       if (email.toLowerCase().includes("@")) {
         setPassFound(true);
       }
-    }, 1500);
+    }, 1600);
   };
 
   return (
-    <section className="min-h-screen pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col items-center">
+    <section className="min-h-screen pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col justify-center items-center">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-12 text-center"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="mb-16 text-center"
       >
-        <h2 className="text-ted-red font-bold text-xl uppercase tracking-widest mb-2">Access Pass</h2>
-        <h3 className="text-4xl md:text-6xl font-black italic uppercase">GET MY PASS</h3>
+        <h2 className="text-ted-red font-bold text-xl uppercase tracking-[0.2em] mb-2 font-mono">Verify Status</h2>
+        <h3 className="text-4xl md:text-6xl font-black italic tracking-tighter">GET MY PASS</h3>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full bg-ted-dark-gray/50 border border-white/10 p-8 md:p-12 rounded-[2.5rem] shadow-2xl backdrop-blur-sm relative overflow-hidden"
-      >
-        {/* Decorative Background Element */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-ted-red/10 blur-[80px] rounded-full" />
-        
-        {!passFound ? (
-          <form onSubmit={handleSearch} className="relative z-10 space-y-8">
-            <div className="text-center mb-8">
-              <p className="text-white/60 text-lg flex items-center justify-center gap-2 flex-wrap">
-                Enter the Email address used during registration to retrieve your official
-                <img src="/logo-white.png" alt="TEDxGCEM" className="h-5 w-auto inline-block align-middle" style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }} />
-                access pass.
-              </p>
-            </div>
+      <div className="w-full max-w-md bg-ted-dark-gray border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+        {/* Glow detail */}
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-ted-red/5 blur-[80px] rounded-full" />
 
-            <div className="max-w-md mx-auto space-y-4">
-              <div className="relative group">
-                <input 
-                  type="email" 
+        <AnimatePresence mode="wait">
+          {!passFound ? (
+            <motion.form
+              key="search-form"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              onSubmit={handleSearch}
+              className="space-y-6 relative z-10"
+            >
+              <p className="text-white/60 text-center text-sm">
+                Enter your registered email address to fetch your custom digital ticket pass.
+              </p>
+              
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-widest text-white/40 font-mono ml-2 flex items-center gap-1.5">
+                  <KeyRound size={12} /> Email Address
+                </label>
+                <input
+                  type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="TEDxGCEM@gmail.com" 
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-5 outline-none focus:border-ted-red transition-all text-white text-lg"
+                  placeholder="tedxgcem@gmail.com"
+                  className="w-full bg-black/50 border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-ted-red transition-all text-white"
                 />
               </div>
 
-              <button 
+              <button
                 type="submit"
                 disabled={isSearching}
-                className="w-full py-5 bg-ted-red border border-ted-red text-white font-black rounded-2xl text-lg shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest flex items-center justify-center gap-3 disabled:opacity-50"
+                className="w-full py-4 bg-ted-red text-white font-black rounded-xl hover:shadow-[0_0_20px_rgba(235,0,40,0.3)] transition-all uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2"
               >
                 {isSearching ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <RefreshCw size={16} className="animate-spin" />
                     Searching...
                   </>
                 ) : (
                   "Find My Pass"
                 )}
               </button>
-            </div>
-          </form>
-        ) : (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 text-center space-y-8"
-          >
-            <div className="w-20 h-20 bg-green-500/20 border border-green-500/50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-            
-            <div>
-              <h4 className="text-3xl font-black mb-2 text-white">Pass Found!</h4>
-              <p className="text-white/60">Your registration for {email} has been verified.</p>
-            </div>
-
-            <div className="bg-black/40 border border-white/5 rounded-3xl p-6 max-w-sm mx-auto">
-              <div className="flex justify-between items-center mb-4 pb-4 border-b border-white/5">
-                <span className="text-[10px] uppercase tracking-widest text-white/40">Event</span>
-                <span className="flex items-center gap-1">
-                    <img src="/logo-white.png" alt="TEDxGCEM" className="h-4 w-auto inline-block align-middle" style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }} />
-                    <span className="text-white font-bold">2026</span>
-                  </span>
+            </motion.form>
+          ) : (
+            <motion.div
+              key="pass-display"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="space-y-8 text-center relative z-10"
+            >
+              <div className="w-full aspect-[1.6/1] bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-ted-red/20 via-black to-black border border-white/10 rounded-[2rem] p-6 text-left flex flex-col justify-between shadow-xl relative overflow-hidden">
+                <div className="flex justify-between items-start">
+                  <img src="/logo-white.png" alt="TEDx" className="h-4 w-auto" />
+                  <span className="text-[9px] font-mono uppercase text-white/40 tracking-wider">Verified Pass</span>
+                </div>
+                <div>
+                  <span className="text-[8px] uppercase tracking-widest text-white/20 font-mono block">Attendee</span>
+                  <span className="text-lg font-black text-white block truncate">{email}</span>
+                </div>
+                <div className="flex justify-between items-end border-t border-white/5 pt-3">
+                  <div>
+                    <span className="text-[8px] uppercase tracking-widest text-white/20 font-mono block">Access Code</span>
+                    <span className="text-[10px] font-mono font-bold text-ted-red">GCEM-2026-TICKET</span>
+                  </div>
+                  <div className="flex gap-0.5 opacity-20">
+                    <div className="w-1 h-5 bg-white" />
+                    <div className="w-0.5 h-5 bg-white" />
+                    <div className="w-2 h-5 bg-white" />
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] uppercase tracking-widest text-white/40">Attendee</span>
-                <span className="text-xs font-bold text-white truncate max-w-[150px]">{email}</span>
+
+              <div className="flex gap-3">
+                <button className="flex-1 py-4 bg-ted-red text-white font-bold rounded-xl text-xs uppercase tracking-wider hover:bg-white hover:text-ted-red transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                  <Download size={14} /> Download Pass
+                </button>
+                <button
+                  onClick={() => { setPassFound(false); setEmail(""); }}
+                  className="px-6 py-4 bg-white/5 border border-white/5 text-white/60 font-bold rounded-xl text-xs uppercase tracking-wider hover:bg-white/10 transition-all cursor-pointer"
+                >
+                  Back
+                </button>
               </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <button className="px-8 py-5 bg-ted-red border border-ted-red text-white font-black rounded-2xl text-lg shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest flex items-center justify-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Download Pass
-              </button>
-              <button 
-                onClick={() => {setPassFound(false); setEmail("");}}
-                className="px-8 py-5 bg-transparent border border-white/10 text-white/60 font-bold rounded-2xl text-lg hover:bg-white/5 transition-all uppercase tracking-widest"
-              >
-                Back
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </motion.div>
-
-      <div className="mt-12 flex flex-col items-center gap-4">
-        <p className="text-white/30 text-xs text-center max-w-lg">
-          Didn&apos;t find your pass? If you haven&apos;t registered yet,
-        </p>
-        <button 
-          className="px-6 py-3 bg-ted-red border border-ted-red text-white font-bold rounded-full text-sm hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(235,0,40,0.2)] cursor-pointer"
-          onClick={() => {
-            onTabChange("register");
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-        >
-          Register Now
-        </button>
-        <p className="text-white/20 text-[10px] uppercase tracking-widest mt-4">
-          For technical issues, CONTACT US
-        </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   );

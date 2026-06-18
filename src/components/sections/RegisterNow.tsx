@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { TabId } from "@/components/ui/TabNav";
+import { CreditCard, User, Mail, Phone, Building } from "lucide-react";
 
 interface RegisterNowProps {
   onTabChange: (id: TabId) => void;
@@ -24,22 +25,17 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.fullName.trim()) newErrors.fullName = "Name is required";
-    
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = "Invalid email format";
     }
-    
     if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^\+?[\d\s-]{10,14}$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid phone number (minimum 10 digits)";
+      newErrors.phone = "Phone is required";
     }
-    
-    if (!formData.organization.trim()) newErrors.organization = "College / Organization is required";
-    if (!formData.motivation.trim()) newErrors.motivation = "Please tell us why you want to attend";
-    
+    if (!formData.organization.trim()) newErrors.organization = "Organization is required";
+    if (!formData.motivation.trim()) newErrors.motivation = "Motivation is required";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -49,17 +45,15 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    // Simulate API submission
     setTimeout(() => {
       setIsSubmitting(false);
       setIsSuccess(true);
-    }, 2000);
+    }, 1800);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error for field when user starts typing
     if (errors[name]) {
       setErrors((prev) => {
         const copy = { ...prev };
@@ -70,174 +64,185 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
   };
 
   return (
-    <section className="min-h-screen pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col items-center">
+    <section className="min-h-screen pt-32 pb-20 px-6 max-w-6xl mx-auto flex flex-col justify-center">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-12 text-center"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="mb-16 text-center"
       >
-        <h2 className="text-ted-red font-bold text-xl uppercase tracking-widest mb-2">Join the Conversation</h2>
-        <h3 className="text-4xl md:text-6xl font-black italic uppercase">REGISTER NOW</h3>
+        <h2 className="text-ted-red font-bold text-xl uppercase tracking-[0.2em] mb-2 font-mono">Join Us</h2>
+        <h3 className="text-4xl md:text-6xl font-black italic tracking-tighter">REGISTER NOW</h3>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-        className="w-full bg-ted-dark-gray/50 border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl backdrop-blur-sm relative overflow-hidden"
-      >
-        {/* Decorative Glow */}
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-ted-red/10 blur-[80px] rounded-full" />
-        
-        {!isSuccess ? (
-          <form onSubmit={handleSubmit} className="relative z-10 space-y-8">
-            <div className="text-center mb-6">
-              <p className="text-white/60 flex items-center justify-center gap-2 flex-wrap">
-                Complete the form below to register for
-                <img src="/logo-white.png" alt="TEDxGCEM" className="h-5 w-auto inline-block align-middle" style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }} />
-                2026. Limited seats available.
-              </p>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
+        {/* Left panel: Registration Form */}
+        <div className="lg:col-span-7 bg-ted-dark-gray border border-white/5 p-8 md:p-10 rounded-[2.5rem] relative overflow-hidden">
+          {!isSuccess ? (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Name */}
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-widest text-white/40 font-mono flex items-center gap-1.5 ml-2">
+                    <User size={12} /> Full Name
+                  </label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    placeholder="John Doe"
+                    className={`w-full bg-black/50 border ${errors.fullName ? 'border-ted-red' : 'border-white/5'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red transition-all`}
+                  />
+                  {errors.fullName && <span className="text-ted-red text-[10px] ml-2">{errors.fullName}</span>}
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Full Name */}
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Full Name</label>
-                <input 
-                  type="text" 
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  placeholder="John Doe" 
-                  className={`w-full bg-black/40 border ${errors.fullName ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
-                />
-                {errors.fullName && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.fullName}</p>}
+                {/* Email */}
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-widest text-white/40 font-mono flex items-center gap-1.5 ml-2">
+                    <Mail size={12} /> Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="john@example.com"
+                    className={`w-full bg-black/50 border ${errors.email ? 'border-ted-red' : 'border-white/5'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red transition-all`}
+                  />
+                  {errors.email && <span className="text-ted-red text-[10px] ml-2">{errors.email}</span>}
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-widest text-white/40 font-mono flex items-center gap-1.5 ml-2">
+                    <Phone size={12} /> Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="+91 9876543210"
+                    className={`w-full bg-black/50 border ${errors.phone ? 'border-ted-red' : 'border-white/5'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red transition-all`}
+                  />
+                  {errors.phone && <span className="text-ted-red text-[10px] ml-2">{errors.phone}</span>}
+                </div>
+
+                {/* Organization */}
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-widest text-white/40 font-mono flex items-center gap-1.5 ml-2">
+                    <Building size={12} /> College / Org
+                  </label>
+                  <input
+                    type="text"
+                    name="organization"
+                    value={formData.organization}
+                    onChange={handleChange}
+                    placeholder="GCEM"
+                    className={`w-full bg-black/50 border ${errors.organization ? 'border-ted-red' : 'border-white/5'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red transition-all`}
+                  />
+                  {errors.organization && <span className="text-ted-red text-[10px] ml-2">{errors.organization}</span>}
+                </div>
               </div>
 
-              {/* Email Address */}
+              {/* Motivation */}
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Email Address</label>
-                <input 
-                  type="email" 
-                  name="email"
-                  value={formData.email}
+                <label className="text-xs uppercase tracking-widest text-white/40 font-mono ml-2">Why do you want to attend?</label>
+                <textarea
+                  name="motivation"
+                  value={formData.motivation}
                   onChange={handleChange}
-                  placeholder="john@example.com" 
-                  className={`w-full bg-black/40 border ${errors.email ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
+                  rows={4}
+                  placeholder="Tell us what excites you about TEDxGCEM..."
+                  className={`w-full bg-black/50 border ${errors.motivation ? 'border-ted-red' : 'border-white/5'} rounded-[1.5rem] px-6 py-4 outline-none focus:border-ted-red transition-all resize-none`}
                 />
-                {errors.email && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.email}</p>}
+                {errors.motivation && <span className="text-ted-red text-[10px] ml-2">{errors.motivation}</span>}
               </div>
 
-              {/* Phone Number */}
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Phone Number</label>
-                <input 
-                  type="tel" 
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="+91 9876543210" 
-                  className={`w-full bg-black/40 border ${errors.phone ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
-                />
-                {errors.phone && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.phone}</p>}
-              </div>
-
-              {/* Organization */}
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Organization / College</label>
-                <input 
-                  type="text" 
-                  name="organization"
-                  value={formData.organization}
-                  onChange={handleChange}
-                  placeholder="GCEM" 
-                  className={`w-full bg-black/40 border ${errors.organization ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
-                />
-                {errors.organization && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.organization}</p>}
-              </div>
-            </div>
-
-            {/* Motivation */}
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Why do you want to attend?</label>
-              <textarea 
-                name="motivation"
-                value={formData.motivation}
-                onChange={handleChange}
-                rows={4}
-                placeholder="Tell us what excites you about TEDxGCEM..." 
-                className={`w-full bg-black/40 border ${errors.motivation ? 'border-ted-red' : 'border-white/10'} rounded-3xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white resize-none`}
-              />
-              {errors.motivation && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.motivation}</p>}
-            </div>
-
-            <button 
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-5 bg-ted-red text-white font-black rounded-2xl text-lg shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.5)] transition-all uppercase tracking-widest flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-5 bg-ted-red text-white font-black rounded-2xl hover:shadow-[0_0_30px_rgba(235,0,40,0.4)] transition-all uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? "Processing..." : "Submit Registration"}
+              </button>
+            </form>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center space-y-6 py-10"
             >
-              {isSubmitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Submit Registration"
-              )}
-            </button>
-          </form>
-        ) : (
+              <div className="w-16 h-16 bg-green-500/10 border border-green-500/20 rounded-full flex items-center justify-center mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <h4 className="text-2xl font-black text-white">Registered Successfully!</h4>
+              <p className="text-white/60 text-sm max-w-sm mx-auto">
+                Thank you, {formData.fullName}. Check your inbox for the official entry pass soon.
+              </p>
+              <button 
+                onClick={() => onTabChange("get-pass")}
+                className="px-6 py-3 bg-ted-red text-white font-bold rounded-xl text-xs uppercase tracking-wider cursor-pointer"
+              >
+                Access Tickets Tab
+              </button>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Right panel: Real-time Ticket Preview */}
+        <div className="lg:col-span-5 flex flex-col justify-center items-center h-full">
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 text-center space-y-8 py-6"
+            layout
+            className="w-full max-w-sm aspect-[1.6/1] bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-ted-red/20 via-black to-black border border-white/10 rounded-[2.5rem] p-8 shadow-2xl relative flex flex-col justify-between overflow-hidden"
           >
-            <div className="w-20 h-20 bg-green-500/20 border border-green-500/50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            {/* Hologram details */}
+            <div className="absolute top-0 right-0 w-24 h-24 bg-ted-red/10 blur-[30px] rounded-full" />
+            
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-2">
+                <img src="/logo-white.png" alt="TEDx" className="h-4 w-auto" />
+                <span className="text-white/40 text-[9px] uppercase tracking-widest font-mono font-bold mt-1">2026</span>
+              </div>
+              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-mono uppercase text-white/50 tracking-wider">
+                Attendee
+              </span>
             </div>
 
             <div>
-              <h4 className="text-3xl font-black mb-3">Registration Submitted!</h4>
-              <p className="text-white/60 max-w-md mx-auto">
-                Thank you for registering, <span className="text-white font-bold">{formData.fullName}</span>. We are processing your request. Keep an eye on your inbox (<span className="text-ted-red font-medium">{formData.email}</span>) for your entry pass.
-              </p>
+              <span className="text-[9px] uppercase tracking-widest text-white/30 font-mono block">Ticket Holder</span>
+              <span className="text-lg font-black text-white block truncate h-7">
+                {formData.fullName || "YOUR FULL NAME"}
+              </span>
+              <span className="text-xs font-bold text-ted-red block font-mono tracking-tight mt-1">
+                {formData.organization.toUpperCase() || "INSTITUTION/COLLEGE"}
+              </span>
             </div>
 
-            <div className="bg-black/40 border border-white/5 rounded-3xl p-6 max-w-sm mx-auto text-left space-y-3">
-              <div className="flex justify-between items-center text-xs pb-2 border-b border-white/5">
-                <span className="text-white/40">Status</span>
-                <span className="text-green-500 font-bold uppercase tracking-wider">Pending Approval</span>
+            <div className="flex justify-between items-end border-t border-white/5 pt-4">
+              <div>
+                <span className="text-[8px] uppercase tracking-widest text-white/30 font-mono block">Status</span>
+                <span className="text-[10px] font-bold text-green-500 uppercase tracking-wider font-mono">
+                  {isSuccess ? "Verified" : "Draft Ticket"}
+                </span>
               </div>
-              <div className="flex justify-between items-center text-xs pb-2 border-b border-white/5">
-                <span className="text-white/40">Ticket Type</span>
-                <span className="text-white font-bold">Attendee Pass</span>
+              {/* Fake barcode block */}
+              <div className="flex gap-0.5 opacity-20">
+                <div className="w-1 h-6 bg-white" />
+                <div className="w-0.5 h-6 bg-white" />
+                <div className="w-2 h-6 bg-white" />
+                <div className="w-1 h-6 bg-white" />
+                <div className="w-0.5 h-6 bg-white" />
+                <div className="w-1.5 h-6 bg-white" />
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-white/40">Institution</span>
-                <span className="text-white font-bold">{formData.organization}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <button 
-                onClick={() => onTabChange("get-pass")}
-                className="px-8 py-4.5 bg-ted-red border border-ted-red text-white font-black rounded-2xl text-base shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest cursor-pointer"
-              >
-                Access Passes Tab
-              </button>
-              <button 
-                onClick={() => {
-                  setIsSuccess(false);
-                  setFormData({ fullName: "", email: "", phone: "", organization: "", motivation: "" });
-                }}
-                className="px-8 py-4.5 bg-transparent border border-white/10 text-white/60 font-bold rounded-2xl text-base hover:bg-white/5 transition-all uppercase tracking-widest cursor-pointer"
-              >
-                New Register
-              </button>
             </div>
           </motion.div>
-        )}
-      </motion.div>
+          <span className="text-[10px] uppercase font-mono tracking-widest text-white/30 mt-4 block">
+            Real-time Ticket Generation Matrix
+          </span>
+        </div>
+      </div>
     </section>
   );
 }

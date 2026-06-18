@@ -15,14 +15,94 @@ import Contact from "@/components/sections/Contact";
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationId: number;
+    let ripples: Ripple[] = [];
+
+    const resize = () => {
+      if (canvas && canvas.parentElement) {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+      }
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    class Ripple {
+      x = 0;
+      y = 0;
+      radius = 0;
+      maxRadius = 0;
+      alpha = 1;
+      speed = 1.2;
+
+      constructor(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+        this.radius = 1;
+        this.maxRadius = Math.random() * 120 + 80;
+        this.alpha = 0.25;
+      }
+
+      update() {
+        this.radius += this.speed;
+        this.alpha = Math.max(0, 0.25 * (1 - this.radius / this.maxRadius));
+      }
+
+      draw() {
+        if (!ctx) return;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(235, 0, 40, ${this.alpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+
+    const animate = () => {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ripples.forEach((r, idx) => {
+        r.update();
+        r.draw();
+        if (r.alpha <= 0 || r.radius >= r.maxRadius) {
+          ripples.splice(idx, 1);
+        }
+      });
+
+      animationId = requestAnimationFrame(animate);
+    };
+    animate();
+
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
     };
+
+    // Spawn random ripples periodically
+    const interval = setInterval(() => {
+      if (ripples.length < 8) {
+        ripples.push(new Ripple(
+          Math.random() * canvas.width,
+          Math.random() * canvas.height
+        ));
+      }
+    }, 1200);
+
     window.addEventListener("mousemove", handleMouseMove);
+
     return () => {
+      window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", handleMouseMove);
+      clearInterval(interval);
+      cancelAnimationFrame(animationId);
     };
   }, []);
 
@@ -51,9 +131,12 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
+      {/* Global Background Canvas for Red Ripples */}
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
+
       {/* Interactive Cursor Spotlight Glow */}
       <div 
-        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300 opacity-20 hidden md:block"
+        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300 opacity-10 hidden md:block"
         style={{
           background: `radial-gradient(600px at ${mousePos.x}px ${mousePos.y}px, rgba(235, 0, 40, 0.15), transparent 80%)`
         }}

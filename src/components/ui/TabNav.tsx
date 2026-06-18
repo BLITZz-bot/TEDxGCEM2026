@@ -3,7 +3,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Home, Info, Users, Calendar, Award, Ticket, CreditCard, Mail } from "lucide-react";
 
 export type TabId = 
   | "home" 
@@ -18,30 +18,19 @@ export type TabId =
 interface Tab {
   id: TabId;
   label: string;
+  icon: React.ReactNode;
 }
 
 const tabs: Tab[] = [
-  { id: "home", label: "Home" },
-  { id: "about", label: "About" },
-  { id: "speakers", label: "Speakers" },
-  { id: "schedule", label: "Schedule" },
-  { id: "partners", label: "Partners" },
-  { id: "register", label: "Register Now" },
-  { id: "get-pass", label: "Get My Pass" },
-  { id: "contact", label: "Contact" },
+  { id: "home", label: "Home", icon: <Home size={18} /> },
+  { id: "about", label: "About", icon: <Info size={18} /> },
+  { id: "speakers", label: "Speakers", icon: <Users size={18} /> },
+  { id: "schedule", label: "Schedule", icon: <Calendar size={18} /> },
+  { id: "partners", label: "Partners", icon: <Award size={18} /> },
+  { id: "register", label: "Register", icon: <Ticket size={18} /> },
+  { id: "get-pass", label: "Passes", icon: <CreditCard size={18} /> },
+  { id: "contact", label: "Contact", icon: <Mail size={18} /> },
 ];
-
-// --- MANUAL SPACING ADJUSTMENTS (in pixels) ---
-// You can edit these numbers to fine-tune the mobile menu layout
-const mobileMenuConfig = {
-  overlayPaddingTop: 50,       // Space at the top of the menu screen
-  overlayPaddingBottom: 24,    // Space at the bottom of the menu screen
-  overlayPaddingLeftRight: 24,  // Space at the left/right sides of the menu screen
-  itemsGap: 7,                 // Space between each navigation option
-  itemPaddingY: 9,             // Vertical padding inside each menu item button
-  itemPaddingX: 10,            // Horizontal padding inside each menu item button
-  itemFontSize: 19,            // Font size of each menu item text (in pixels)
-};
 
 interface TabNavProps {
   activeTab: TabId;
@@ -59,219 +48,99 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
     }
-    return () => {
-      document.body.style.overflow = "";
-      document.documentElement.style.overflow = "";
-    };
   }, [isOpen]);
 
   return (
     <>
-      {/* Desktop Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 hidden md:flex justify-center p-6 pointer-events-none">
-        <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 bg-ted-dark-gray/80 p-1.5 rounded-3xl sm:rounded-full border border-white/10 max-w-full overflow-x-auto no-scrollbar pointer-events-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={cn(
-                "relative px-4 py-2 text-xs md:text-sm font-medium transition-colors duration-200 rounded-full outline-none whitespace-nowrap cursor-pointer",
-                activeTab === tab.id ? "text-white" : "text-white/50 hover:text-white/80"
-              )}
-            >
-              {activeTab === tab.id && (
-                <motion.div
-                  layoutId="active-tab"
-                  className="absolute inset-0 bg-ted-red rounded-full"
-                  transition={{ type: "spring", duration: 0.6 }}
-                />
-              )}
-              <span className="relative z-10">{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      {/* Desktop Futuristic Glass Dock */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 hidden md:block pointer-events-none">
+        <motion.div 
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100, damping: 15 }}
+          className="flex items-center gap-1.5 bg-black/60 backdrop-blur-2xl px-4 py-2.5 rounded-full border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] pointer-events-auto group hover:border-ted-red/20 transition-all duration-300"
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <motion.button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                whileHover={{ scale: 1.15, y: -6 }}
+                whileTap={{ scale: 0.95 }}
+                className={cn(
+                  "relative p-3 rounded-full transition-colors duration-300 cursor-pointer flex items-center justify-center gap-2",
+                  isActive ? "text-white bg-ted-red shadow-[0_0_20px_rgba(235,0,40,0.4)]" : "text-white/40 hover:text-white/80 hover:bg-white/5"
+                )}
+                title={tab.label}
+              >
+                {tab.icon}
+                {isActive && (
+                  <motion.span 
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: "auto", opacity: 1 }}
+                    className="text-xs font-bold uppercase tracking-wider pr-1 text-white block whitespace-nowrap overflow-hidden"
+                  >
+                    {tab.label}
+                  </motion.span>
+                )}
+              </motion.button>
+            );
+          })}
+        </motion.div>
+      </div>
 
-      {/* Mobile Hamburger Button */}
-      <div className="fixed top-6 right-6 z-50 flex md:hidden pointer-events-auto">
+      {/* Mobile Sticky Top Bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex md:hidden items-center justify-between px-6 py-4 bg-black/70 backdrop-blur-xl border-b border-white/5">
+        <img
+          src="/logo-white.png"
+          alt="TEDxGCEM"
+          className="h-6 w-auto"
+          style={{ mixBlendMode: "screen" }}
+        />
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-12 h-12 rounded-full bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white cursor-pointer shadow-lg hover:bg-black/85 transition-all duration-300"
-          aria-label="Toggle menu"
+          className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white cursor-pointer"
         >
-          {isOpen ? <X size={20} /> : <Menu size={20} />}
+          {isOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
       </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Overlay Navigation */}
       <AnimatePresence>
         {isOpen && (
-          <>
-            {/* Red accent transition slide */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 26, stiffness: 170, mass: 0.8 }}
-              className="fixed inset-0 z-39 bg-ted-red pointer-events-none md:hidden"
-            />
-            
-            {/* Main glassmorphic slide panel */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 160, mass: 0.9, delay: 0.05 }}
-              className="fixed inset-0 z-40 bg-black flex flex-col justify-between pointer-events-auto md:hidden overflow-y-auto"
-              style={{
-                paddingTop: `${mobileMenuConfig.overlayPaddingTop}px`,
-                paddingBottom: `${mobileMenuConfig.overlayPaddingBottom}px`,
-                paddingLeft: `${mobileMenuConfig.overlayPaddingLeftRight}px`,
-                paddingRight: `${mobileMenuConfig.overlayPaddingLeftRight}px`,
-              }}
-            >
-              {/* Premium Background Ambient Glow */}
-              <div className="absolute top-1/4 right-0 w-80 h-80 rounded-full bg-ted-red/10 blur-[120px] pointer-events-none" />
-              <div className="absolute bottom-1/4 left-0 w-64 h-64 rounded-full bg-white/5 blur-[100px] pointer-events-none" />
-
-              {/* Menu Header / Logo */}
-              <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="flex items-center justify-between border-b border-white/5 pb-4"
-              >
-                <div className="flex items-center gap-2">
-                  <img
-                    src="/logo-white.png"
-                    alt="TEDxGCEM"
-                    className="h-7 w-auto"
-                    style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }}
-                  />
-                  <span className="text-white/40 tracking-[0.2em] font-sans text-xs font-semibold">2026</span>
-                </div>
-                <div className="text-[9px] uppercase tracking-widest text-white/30 font-semibold font-mono">
-                  
-                </div>
-              </motion.div>
-
-              {/* Navigation Items */}
-              <div 
-                className="flex flex-col my-auto py-2"
-                style={{ gap: `${mobileMenuConfig.itemsGap}px` }}
-              >
-                {tabs.map((tab, idx) => {
-                  const isActive = activeTab === tab.id;
-                  const formattedNum = String(idx + 1).padStart(2, "0");
-                  
-                  return (
-                    <motion.button
-                      key={tab.id}
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 50 }}
-                      transition={{ delay: idx * 0.04 + 0.2 }}
-                      onClick={() => {
-                        onTabChange(tab.id);
-                        setIsOpen(false);
-                      }}
-                      className={cn(
-                        "relative flex items-center justify-between rounded-xl w-full text-left transition-all duration-300 group overflow-hidden cursor-pointer",
-                        isActive 
-                          ? "bg-white/5 border border-white/10 shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]" 
-                          : "border border-transparent hover:bg-white/[0.02]"
-                      )}
-                      style={{
-                        paddingTop: `${mobileMenuConfig.itemPaddingY}px`,
-                        paddingBottom: `${mobileMenuConfig.itemPaddingY}px`,
-                        paddingLeft: `${mobileMenuConfig.itemPaddingX}px`,
-                        paddingRight: `${mobileMenuConfig.itemPaddingX}px`,
-                      }}
-                    >
-                      {/* Active Background Glow */}
-                      {isActive && (
-                        <motion.div 
-                          layoutId="mobile-active-glow"
-                          className="absolute inset-0 bg-gradient-to-r from-ted-red/10 via-transparent to-transparent pointer-events-none"
-                        />
-                      )}
-
-                      <div className="flex items-center gap-6 z-10">
-                        {/* Huge Index Number */}
-                        <span className={cn(
-                          "text-xs font-mono font-bold tracking-wider transition-colors",
-                          isActive ? "text-ted-red" : "text-white/20 group-hover:text-white/40"
-                        )}>
-                          {formattedNum}
-                        </span>
-
-                        {/* Label */}
-                        <span 
-                          className={cn(
-                            "font-black uppercase tracking-[0.18em] transition-all duration-300",
-                            isActive 
-                              ? "text-white translate-x-1" 
-                              : "text-white/50 group-hover:text-white group-hover:translate-x-1"
-                          )}
-                          style={{ fontSize: `${mobileMenuConfig.itemFontSize}px` }}
-                        >
-                          {tab.label}
-                        </span>
-                      </div>
-
-                      {/* Right Indicator Icon */}
-                      <div className="flex items-center z-10">
-                        {isActive ? (
-                          <motion.div
-                            layoutId="mobile-active-line"
-                            className="w-1.5 h-1.5 rounded-full bg-ted-red shadow-[0_0_8px_#EB0028]"
-                          />
-                        ) : (
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white/30 text-xs translate-x-2 group-hover:translate-x-0">
-                            →
-                          </span>
-                        )}
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              {/* Menu Footer */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="border-t border-white/5 pt-4 flex flex-col gap-4"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[8px] uppercase tracking-widest text-white/30 font-semibold max-w-[200px]">
-                    This independent TEDx event is operated under license from TED.
-                  </span>
-                  
-                  {/* Mini Social Icons */}
-                  <div className="flex gap-4">
-                    <a 
-                      href="https://www.instagram.com/tedxgcem/" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:border-ted-red hover:bg-ted-red/10 transition-all text-white/60 hover:text-white"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                    </a>
-                    <a 
-                      href="https://www.linkedin.com/in/tedxgcem/" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:border-ted-red hover:bg-ted-red/10 transition-all text-white/60 hover:text-white"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-                    </a>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          </>
+          <motion.div
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-40 bg-black/95 backdrop-blur-3xl md:hidden flex flex-col justify-center items-center px-6 pt-24"
+          >
+            <div className="flex flex-col gap-4 w-full max-w-sm">
+              {tabs.map((tab, idx) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <motion.button
+                    key={tab.id}
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    onClick={() => {
+                      onTabChange(tab.id);
+                      setIsOpen(false);
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-4 py-4 px-6 rounded-2xl border transition-all text-left cursor-pointer",
+                      isActive ? "bg-ted-red border-ted-red text-white shadow-lg" : "bg-white/5 border-white/5 text-white/50 hover:bg-white/10"
+                    )}
+                  >
+                    {tab.icon}
+                    <span className="font-bold uppercase tracking-wider text-base">{tab.label}</span>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

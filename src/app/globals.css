@@ -6,7 +6,7 @@
   --ted-red: #EB0028;
   --ted-black: #000000;
   --ted-white: #ffffff;
-  --ted-dark-gray: #111111;
+  --ted-dark-gray: #0d0d0d;
 }
 
 @theme inline {
@@ -16,13 +16,14 @@
   --color-ted-black: var(--ted-black);
   --color-ted-white: var(--ted-white);
   --color-ted-dark-gray: var(--ted-dark-gray);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-outfit);
+  --font-mono: var(--font-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   overflow-x: hidden;
 }
 
@@ -54,10 +55,26 @@ body {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 .animate-marquee {
   display: inline-flex;
   white-space: nowrap;
   animation: marquee 25s linear infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 8s ease infinite;
 }
 
 /* Custom Hide Scrollbar Utility */
