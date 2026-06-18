@@ -12,8 +12,9 @@ export default function About() {
         className="mb-16 text-center"
       >
         <h2 className="text-ted-red font-bold text-xl uppercase tracking-widest mb-2">Our Mission</h2>
-        <h3 className="text-4xl md:text-6xl font-black italic">
-          ABOUT <span className="text-ted-red uppercase">TED</span><span className="text-ted-red lowercase">x</span><span className="text-white uppercase">GCEM</span>
+        <h3 className="text-4xl md:text-6xl font-black italic flex items-center justify-center gap-3 flex-wrap">
+          ABOUT
+          <img src="/logo-white.png" alt="TEDxGCEM" className="h-10 md:h-14 w-auto inline-block" style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }} />
         </h3>
       </motion.div>
 
@@ -26,7 +27,7 @@ export default function About() {
         >
           <div className="bg-ted-dark-gray/50 border border-white/10 p-8 rounded-3xl">
             <h4 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-ted-red italic uppercase">TED</span><span className="text-ted-red italic lowercase">x</span><span className="text-white uppercase">GCEM</span>
+              <img src="/logo-white.png" alt="TEDxGCEM" className="h-8 w-auto" style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }} />
             </h4>
             <p className="text-white/70 leading-relaxed">
               TEDxGCEM is a locally organized event that brings people together to share a TED-like experience at the Gopalan College of Engineering and Management. Our mission is to foster &quot;Ideas Worth Spreading&quot; within our campus and the wider community, sparking deep discussion and connection.

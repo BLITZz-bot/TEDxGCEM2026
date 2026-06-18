@@ -92,8 +92,10 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
         {!isSuccess ? (
           <form onSubmit={handleSubmit} className="relative z-10 space-y-8">
             <div className="text-center mb-6">
-              <p className="text-white/60">
-                Complete the form below to register for <span className="text-ted-red uppercase font-bold">TED</span><span className="text-ted-red lowercase font-bold">x</span><span className="text-white uppercase font-bold">GCEM</span> 2026. Limited seats available.
+              <p className="text-white/60 flex items-center justify-center gap-2 flex-wrap">
+                Complete the form below to register for
+                <img src="/logo-white.png" alt="TEDxGCEM" className="h-5 w-auto inline-block align-middle" style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }} />
+                2026. Limited seats available.
               </p>
             </div>
 

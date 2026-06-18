@@ -145,8 +145,10 @@ export default function Home() {
               Contact Us
             </button>
           </div>
-          <p className="mt-8 text-[10px] text-white/20 tracking-widest">
-            © {new Date().getFullYear()} <span className="text-ted-red uppercase font-black">TED</span><span className="text-ted-red lowercase font-black">x</span><span className="text-white uppercase font-black">GCEM</span>. All Rights Reserved.
+          <p className="mt-8 text-[10px] text-white/20 tracking-widest flex items-center justify-center gap-1.5 flex-wrap">
+            © {new Date().getFullYear()}
+            <img src="/logo-white.png" alt="TEDxGCEM" className="h-3.5 w-auto inline-block align-middle" style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }} />
+            All Rights Reserved.
           </p>
         </div>
       </footer>

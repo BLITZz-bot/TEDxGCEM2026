@@ -47,8 +47,10 @@ export default function GetMyPass({ onTabChange }: GetMyPassProps) {
         {!passFound ? (
           <form onSubmit={handleSearch} className="relative z-10 space-y-8">
             <div className="text-center mb-8">
-              <p className="text-white/60 text-lg">
-                Enter the Email address used during registration to retrieve your official <span className="text-ted-red uppercase font-bold">TED</span><span className="text-ted-red lowercase font-bold">x</span><span className="text-white uppercase font-bold">GCEM</span> access pass.
+              <p className="text-white/60 text-lg flex items-center justify-center gap-2 flex-wrap">
+                Enter the Email address used during registration to retrieve your official
+                <img src="/logo-white.png" alt="TEDxGCEM" className="h-5 w-auto inline-block align-middle" style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }} />
+                access pass.
               </p>
             </div>
 
@@ -98,9 +100,10 @@ export default function GetMyPass({ onTabChange }: GetMyPassProps) {
             <div className="bg-black/40 border border-white/5 rounded-3xl p-6 max-w-sm mx-auto">
               <div className="flex justify-between items-center mb-4 pb-4 border-b border-white/5">
                 <span className="text-[10px] uppercase tracking-widest text-white/40">Event</span>
-                <span className="text-xs font-bold text-white uppercase tracking-widest">
-                  <span className="text-ted-red uppercase">TED</span><span className="text-ted-red lowercase">x</span>GCEM 2026
-                </span>
+                <span className="flex items-center gap-1">
+                    <img src="/logo-white.png" alt="TEDxGCEM" className="h-4 w-auto inline-block align-middle" style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }} />
+                    <span className="text-white font-bold">2026</span>
+                  </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[10px] uppercase tracking-widest text-white/40">Attendee</span>
