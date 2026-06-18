@@ -315,11 +315,15 @@ export default function Hero({ onTabChange }: HeroProps) {
         transition={{ duration: 0.9, ease: "easeOut" }}
         className="relative z-10 max-w-xl flex flex-col items-start text-left space-y-6 -translate-y-48 md:-translate-y-4"
       >
-        <h2 className="text-xl md:text-2xl tracking-[0.25em] font-black uppercase font-sans leading-none">
-          <span className="text-ted-red">TED<span className="lowercase">x</span></span>
-          <span className="text-white">GCEM</span>
-          <span className="text-white/40 tracking-[0.25em] font-sans ml-2 font-bold align-middle" style={{ fontSize: `${bgSettings.themeYearSize}px` }}>2026</span>
-        </h2>
+        <div className="flex items-center gap-2">
+          <img
+            src="/logo-white.png"
+            alt="TEDxGCEM"
+            className="h-8 md:h-10 w-auto"
+            style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }}
+          />
+          <span className="text-white/40 tracking-[0.25em] font-sans font-bold align-middle" style={{ fontSize: `${bgSettings.themeYearSize}px` }}>2026</span>
+        </div>
         
         <h1 className="text-7xl md:text-9xl font-black leading-[0.9] tracking-tighter text-left uppercase select-none">
           <motion.span 

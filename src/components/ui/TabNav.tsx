@@ -141,10 +141,14 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
                 transition={{ delay: 0.15 }}
                 className="flex items-center justify-between border-b border-white/5 pb-4"
               >
-                <div className="text-lg tracking-[0.25em] font-black uppercase font-sans">
-                  <span className="text-ted-red">TED<span className="lowercase">x</span></span>
-                  <span className="text-white">GCEM</span>
-                  <span className="text-white/40 tracking-[0.2em] font-sans ml-1 text-xs">2026</span>
+                <div className="flex items-center gap-2">
+                  <img
+                    src="/logo-white.png"
+                    alt="TEDxGCEM"
+                    className="h-7 w-auto"
+                    style={{ mixBlendMode: "screen", filter: "brightness(1.1)" }}
+                  />
+                  <span className="text-white/40 tracking-[0.2em] font-sans text-xs font-semibold">2026</span>
                 </div>
                 <div className="text-[9px] uppercase tracking-widest text-white/30 font-semibold font-mono">
                   
