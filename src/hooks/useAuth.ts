@@ -43,7 +43,7 @@ export function useAuth() {
 
   const loginWithGoogle = async () => {
     try {
-      const res = await fetch("/api/auth/login");
+      const res = await fetch("/api/auth/login", { method: "POST" });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
