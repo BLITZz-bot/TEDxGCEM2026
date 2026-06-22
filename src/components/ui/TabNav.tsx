@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
@@ -22,15 +22,14 @@ interface Tab {
   label: string;
 }
 
-// --- MANUAL SPACING ADJUSTMENTS (in pixels) ---
 const mobileMenuConfig = {
-  overlayPaddingTop: 50,       // Space at the top of the menu screen
-  overlayPaddingBottom: 24,    // Space at the bottom of the menu screen
-  overlayPaddingLeftRight: 24,  // Space at the left/right sides of the menu screen
-  itemsGap: 7,                 // Space between each navigation option
-  itemPaddingY: 9,             // Vertical padding inside each menu item button
-  itemPaddingX: 10,            // Horizontal padding inside each menu item button
-  itemFontSize: 19,            // Font size of each menu item text (in pixels)
+  overlayPaddingTop: 50,       
+  overlayPaddingBottom: 24,    
+  overlayPaddingLeftRight: 24,  
+  itemsGap: 7,                 
+  itemPaddingY: 9,             
+  itemPaddingX: 10,            
+  itemFontSize: 19,            
 };
 
 interface TabNavProps {
@@ -39,7 +38,8 @@ interface TabNavProps {
 }
 
 export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { user, isAdmin, loginWithGoogle, logout } = useAuth();
 
   const tabs: Tab[] = [
@@ -51,7 +51,7 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
     { id: "register", label: "Register Now" },
     { id: "get-pass", label: "Get My Pass" },
     { id: "contact", label: "Contact" },
-    ...(isAdmin ? [{ id: "admin", label: "Admin Console" as string }] as Tab[] : []),
+    ...(isAdmin ? [{ id: "admin", label: "Admin Console" }] as Tab[] : []),
   ];
 
   React.useEffect(() => {
@@ -67,6 +67,9 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
       document.documentElement.style.overflow = "";
     };
   }, [isOpen]);
+
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const initials = user?.email?.substring(0, 2).toUpperCase() || "US";
 
   return (
     <>
@@ -107,37 +110,80 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
               <span className="relative z-10">{tab.label}</span>
             </button>
           ))}
-
-          {/* User Auth Pill */}
-          <div className="h-6 w-[1.5px] bg-white/10 mx-2" />
-          {user ? (
-            <div className="flex items-center gap-2 pr-2">
-              <span className="text-[10px] font-mono text-white/50 truncate max-w-[80px] uppercase font-bold" title={user.email}>
-                {user.email?.split("@")[0]}
-              </span>
-              <button
-                onClick={logout}
-                className="px-3 py-1 bg-white/5 border border-white/10 hover:border-ted-red/50 hover:bg-ted-red/10 hover:text-ted-red text-white text-[10px] font-bold font-mono rounded-full uppercase transition-all cursor-pointer"
-              >
-                Logout
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={loginWithGoogle}
-              className="px-3 py-1 bg-white/5 border border-white/10 hover:bg-white hover:text-black text-white text-[10px] font-bold font-mono rounded-full uppercase transition-all flex items-center gap-1.5 cursor-pointer pr-3"
-            >
-              <svg className="w-3 h-3 text-white group-hover:text-black" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-              </svg>
-              <span>Login</span>
-            </button>
-          )}
         </div>
       </nav>
+
+      {/* Desktop Auth Widget (Top Right Corner) */}
+      <div className="fixed top-6 right-6 z-50 hidden md:flex items-center pointer-events-auto">
+        {user ? (
+          <div className="relative">
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-ted-red/80 focus:border-ted-red focus:outline-none transition-all shadow-lg flex items-center justify-center bg-white/5 cursor-pointer"
+              aria-label="Toggle profile menu"
+            >
+              {avatarUrl ? (
+                <img 
+                  src={avatarUrl} 
+                  alt={user.user_metadata?.full_name || "Profile"} 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="text-xs font-mono font-bold text-white">{initials}</span>
+              )}
+            </button>
+
+            <AnimatePresence>
+              {showProfileMenu && (
+                <>
+                  {/* Backdrop click collector */}
+                  <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    className="absolute right-0 mt-3 w-64 bg-neutral-950/95 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl z-50 flex flex-col gap-3 text-left"
+                  >
+                    <div className="border-b border-white/5 pb-2">
+                      <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Active Account</p>
+                      <p className="text-xs font-bold text-white truncate max-w-full mt-0.5" title={user.user_metadata?.full_name}>
+                        {user.user_metadata?.full_name || "TEDx Attendee"}
+                      </p>
+                      <p className="text-[9px] font-mono text-white/50 truncate max-w-full mt-0.5">{user.email}</p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        logout();
+                      }}
+                      className="w-full py-2 bg-ted-red/10 border border-ted-red/20 text-ted-red text-[10px] font-bold font-mono rounded-xl uppercase tracking-wider hover:bg-ted-red hover:text-white transition-all text-center cursor-pointer"
+                    >
+                      Logout Session
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+        ) : (
+          <button
+            onClick={loginWithGoogle}
+            className="px-5 py-2.5 bg-white/5 border border-white/10 hover:bg-white hover:text-black hover:border-white text-white text-xs font-bold font-mono rounded-full uppercase tracking-widest transition-all flex items-center gap-2 cursor-pointer shadow-lg"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="currentColor"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="currentColor"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="currentColor"/>
+            </svg>
+            <span>Sign In</span>
+          </button>
+        )}
+      </div>
 
       {/* Mobile Hamburger Button */}
       <div className="fixed top-6 right-6 z-50 flex md:hidden pointer-events-auto mobile-nav-hamburger transition-opacity duration-300">
