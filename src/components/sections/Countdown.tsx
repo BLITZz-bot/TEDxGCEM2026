@@ -173,7 +173,7 @@ export default function Countdown({ onTabChange }: CountdownProps) {
             className="md:col-span-8 bg-black border-2 border-white p-6 md:p-8 flex flex-col justify-between shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer"
           >
             <div>
-              <span className="text-ted-red text-[8px] md:text-[9px] uppercase tracking-[0.2em] font-mono block mb-2">{"// EVENT_SPECS"}</span>
+             
               <h3 className="text-2xl md:text-3xl font-black italic uppercase text-white mb-4 leading-tight">
                 GCEM MAIN AUDITORIUM
               </h3>
@@ -202,7 +202,7 @@ export default function Countdown({ onTabChange }: CountdownProps) {
             className="md:col-span-4 bg-zinc-950 border-2 border-white p-6 md:p-8 flex flex-col justify-between shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 transition-all duration-300 group"
           >
             <div className="space-y-4">
-              <span className="text-ted-red text-[8px] md:text-[9px] uppercase tracking-[0.2em] font-mono block">{"// ATTEND"}</span>
+             
               <h4 className="text-xl font-black italic text-white uppercase leading-tight">
                 SECURE YOUR PASS
               </h4>
