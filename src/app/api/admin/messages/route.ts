@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 // Helper to check if current logged-in user is admin
 async function checkAdmin(supabase: any) {
   const { data: { user } } = await supabase.auth.getUser();
