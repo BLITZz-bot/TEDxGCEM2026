@@ -1,20 +1,77 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import demoImg from "../../../public/DEMO.png";
 
 export default function About() {
   const team = [
-    { name: "Aarav Sharma", role: "Licensee & Organizer" },
-    { name: "Diya Iyer", role: "Co-Organizer" },
-    { name: "Rohan Verma", role: "Curation Lead" },
-    { name: "Kavya Menon", role: "Design & Tech Lead" },
-    { name: "Vikram Sen", role: "Marketing & PR Lead" },
-    { name: "Ananya Rao", role: "Operations & Production Lead" },
-    { name: "Siddharth Nair", role: "Sponsorship & Finance Lead" },
-    { name: "Meera Patel", role: "Volunteer Coordinator" }
+    { 
+      name: "Aarav Sharma", 
+      role: "Licensee & Organizer", 
+      email: "aarav.sharma@tedxgcem.com", 
+      linkedin: "https://www.linkedin.com/in/aarav-sharma",
+      bio: "Passionate about building community platforms and showcasing local talent. Aarav oversees the overall execution and direction of TEDxGCEM."
+    },
+    { 
+      name: "Diya Iyer", 
+      role: "Co-Organizer", 
+      email: "diya.iyer@tedxgcem.com", 
+      linkedin: "https://www.linkedin.com/in/diya-iyer",
+      bio: "Coordinating operations and sponsorships, Diya bridges the gap between creative vision and administrative excellence."
+    },
+    { 
+      name: "Rohan Verma", 
+      role: "Curation Lead", 
+      email: "rohan.verma@tedxgcem.com", 
+      linkedin: "https://www.linkedin.com/in/rohan-verma",
+      bio: "Dedicated to seeking out stories that matter, Rohan works closely with our speakers to refine their ideas for the stage."
+    },
+    { 
+      name: "Kavya Menon", 
+      role: "Design & Tech Lead", 
+      email: "kavya.menon@tedxgcem.com", 
+      linkedin: "https://www.linkedin.com/in/kavya-menon",
+      bio: "Leading the development of the website and branding, Kavya blends tech and design to establish our digital footprint."
+    },
+    { 
+      name: "Vikram Sen", 
+      role: "Marketing & PR Lead", 
+      email: "vikram.sen@tedxgcem.com", 
+      linkedin: "https://www.linkedin.com/in/vikram-sen",
+      bio: "Spreading the word across all media, Vikram designs campaigns that engage the public and build excitement."
+    },
+    { 
+      name: "Ananya Rao", 
+      role: "Operations & Production Lead", 
+      email: "ananya.rao@tedxgcem.com", 
+      linkedin: "https://www.linkedin.com/in/ananya-rao",
+      bio: "Ananya keeps the gear turning behind the scenes, managing event logistics, schedules, and live stage production."
+    },
+    { 
+      name: "Siddharth Nair", 
+      role: "Sponsorship & Finance Lead", 
+      email: "siddharth.nair@tedxgcem.com", 
+      linkedin: "https://www.linkedin.com/in/siddharth-nair",
+      bio: "Handling financial partnerships and budget compliance to ensure a sustainable and high-quality conference experience."
+    },
+    { 
+      name: "Meera Patel", 
+      role: "Volunteer Coordinator", 
+      email: "meera.patel@tedxgcem.com", 
+      linkedin: "https://www.linkedin.com/in/meera-patel",
+      bio: "Meera organizes our team of student volunteers, coordinating on-ground operations to ensure a seamless attendee experience."
+    }
   ];
+
+  const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
+
+  const toggleFlip = (index: number) => {
+    setFlippedCards(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
 
   return (
     <section className="min-h-screen pt-20 md:pt-32 pb-24 px-6 relative text-white overflow-hidden font-sans select-none">
@@ -163,28 +220,136 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group relative w-full bg-black border-2 border-white rounded-none shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 transition-all duration-300 flex flex-col p-4 md:p-6 select-none"
+                style={{ perspective: "1000px" }}
+                className="w-full h-[310px] xs:h-[330px] sm:h-[360px] md:h-[400px] lg:h-[430px] select-none group"
               >
-                {/* Visual photo frame inside card */}
-                <div className="relative aspect-square w-full overflow-hidden border border-white mb-3 md:mb-4 pointer-events-none">
-                  <img 
-                    src={demoImg.src} 
-                    alt={member.name} 
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
+                <div
+                  onClick={() => toggleFlip(index)}
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    height: "100%",
+                    transformStyle: "preserve-3d",
+                    transition: "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+                    transform: flippedCards[index] ? "rotateY(180deg)" : "rotateY(0deg)",
+                    cursor: "pointer"
+                  }}
+                  className="w-full h-full relative"
+                >
+                  {/* FRONT FACE */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden"
+                    }}
+                    className="w-full h-full bg-black border-2 border-white p-4 md:p-5 flex flex-col justify-between shadow-[6px_6px_0px_0px_#EB0028] group-hover:shadow-[12px_12px_0px_0px_#EB0028] group-hover:-translate-x-1.5 group-hover:-translate-y-1.5 transition-all duration-300"
+                  >
+                    <div>
+                      {/* Visual photo frame inside card */}
+                      <div className="relative aspect-square w-full overflow-hidden border border-white mb-3 md:mb-4 pointer-events-none">
+                        <img 
+                          src={demoImg.src} 
+                          alt={member.name} 
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
 
-                {/* Details */}
-                <div className="mt-2">
-                  <div className="flex items-start gap-1.5 md:gap-2 mb-1">
-                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-ted-red shrink-0 mt-[6px] md:mt-[9px]" />
-                    <h4 className="text-sm md:text-lg font-black italic text-white uppercase tracking-tight font-mono leading-tight break-words">{member.name}</h4>
+                      {/* Details */}
+                      <div className="mt-2">
+                        <div className="flex items-start gap-1.5 md:gap-2 mb-1">
+                          <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-ted-red shrink-0 mt-[6px] md:mt-[9px]" />
+                          <h4 className="text-sm md:text-lg font-black italic text-white uppercase tracking-tight font-mono leading-tight break-words">{member.name}</h4>
+                        </div>
+                        <p className="text-[10px] md:text-xs text-white/40 font-mono tracking-wider break-words leading-tight pl-[12px] md:pl-[16px] mb-2">
+                          {member.role}
+                        </p>
+                        
+                        {/* Divider Line */}
+                        <div className="h-[1px] bg-white/10 my-2 ml-[12px] md:ml-[16px]" />
+                        
+                        {/* Interactive Mail & LinkedIn Connects on Front Face */}
+                        <div className="flex items-center gap-2 pl-[12px] md:pl-[16px]">
+                          <a
+                            href={`mailto:${member.email}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-white/40 hover:text-white hover:bg-white/5 transition-all duration-150 p-1.5 border border-white/10 hover:border-ted-red flex items-center justify-center"
+                            title={`Email ${member.name}`}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                          </a>
+                          <a
+                            href={member.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-white/40 hover:text-white hover:bg-white/5 transition-all duration-150 p-1.5 border border-white/10 hover:border-ted-red flex items-center justify-center"
+                            title={`${member.name}'s LinkedIn`}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[10px] md:text-xs text-white/40 font-mono tracking-wider break-words leading-tight pl-[12px] md:pl-[16px]">
-                    {member.role}
-                  </p>
-                </div>
 
+                  {/* BACK FACE */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                      transform: "rotateY(180deg)"
+                    }}
+                    className="w-full h-full bg-neutral-950 border-2 border-white p-4 md:p-5 flex flex-col justify-between shadow-[6px_6px_0px_0px_#EB0028] group-hover:shadow-[12px_12px_0px_0px_#EB0028] group-hover:-translate-x-1.5 group-hover:-translate-y-1.5 transition-all duration-300"
+                  >
+                    {/* Top: Biography */}
+                    <div className="space-y-2 overflow-y-auto pr-1 scrollbar-none max-h-[140px] xs:max-h-[160px] sm:max-h-[180px] md:max-h-[220px]">
+                      <span className="text-ted-red text-[8px] md:text-[9px] uppercase tracking-[0.2em] font-mono block">{"// PROFILE"}</span>
+                      <p className="text-[10px] md:text-[11px] lg:text-[12px] text-white/70 leading-relaxed font-light font-mono">
+                        {member.bio}
+                      </p>
+                    </div>
+
+                    {/* Bottom: Designation & Social Connects */}
+                    <div className="mt-4 border-t border-white/10 pt-3">
+                      <div className="flex items-start gap-1.5 md:gap-2 mb-1">
+                        <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-ted-red shrink-0 mt-[5px] md:mt-[7px]" />
+                        <h4 className="text-xs md:text-md lg:text-lg font-black italic text-white uppercase tracking-tight font-mono leading-tight break-words">{member.name}</h4>
+                      </div>
+                      <p className="text-[9px] md:text-[10px] text-white/40 font-mono tracking-wider break-words leading-tight pl-[12px] md:pl-[16px] mb-2">
+                        {member.role}
+                      </p>
+                      
+                      {/* Divider Line */}
+                      <div className="h-[1px] bg-white/10 my-2 ml-[12px] md:ml-[16px]" />
+
+                      {/* Interactive Mail & LinkedIn Connects */}
+                      <div className="flex items-center gap-2 pl-[12px] md:pl-[16px]">
+                        <a
+                          href={`mailto:${member.email}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-white/40 hover:text-white hover:bg-white/5 transition-all duration-150 p-1.5 border border-white/10 hover:border-ted-red flex items-center justify-center"
+                          title={`Email ${member.name}`}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        </a>
+                        <a
+                          href={member.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-white/40 hover:text-white hover:bg-white/5 transition-all duration-150 p-1.5 border border-white/10 hover:border-ted-red flex items-center justify-center"
+                          title={`${member.name}'s LinkedIn`}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>

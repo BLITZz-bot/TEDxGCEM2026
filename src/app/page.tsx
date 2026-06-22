@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TabNav, { TabId } from "@/components/ui/TabNav";
 import Hero from "@/components/sections/Hero";
@@ -11,12 +11,30 @@ import Partners from "@/components/sections/Partners";
 import RegisterNow from "@/components/sections/RegisterNow";
 import GetMyPass from "@/components/sections/GetMyPass";
 import Contact from "@/components/sections/Contact";
+import Countdown from "@/components/sections/Countdown";
+import Highlights from "@/components/sections/Highlights";
+import EventDate from "@/components/sections/EventDate";
+import AdminConsole from "@/components/sections/AdminConsole";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isMobile, setIsMobile] = useState(false);
+  const [showDevLinks, setShowDevLinks] = useState(false);
+  const devCreditRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (devCreditRef.current && !devCreditRef.current.contains(event.target as Node)) {
+        setShowDevLinks(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -69,7 +87,14 @@ export default function Home() {
   const renderSection = () => {
     switch (activeTab) {
       case "home":
-        return <Hero key="home" onTabChange={handleTabChange} />;
+        return (
+          <div key="home" className="flex flex-col w-full">
+            <Hero onTabChange={handleTabChange} />
+            <EventDate />
+            <Countdown onTabChange={handleTabChange} />
+            <Highlights />
+          </div>
+        );
       case "about":
         return <About key="about" />;
       case "speakers":
@@ -84,6 +109,8 @@ export default function Home() {
         return <GetMyPass key="get-pass" onTabChange={handleTabChange} />;
       case "contact":
         return <Contact key="contact" />;
+      case "admin":
+        return <AdminConsole key="admin" />;
       default:
         return <Hero key="home" onTabChange={handleTabChange} />;
     }
@@ -198,27 +225,27 @@ export default function Home() {
             <div className="absolute -bottom-[1.5px] -left-[1.5px] w-3.5 h-3.5 border-b-2 border-l-2 border-ted-red" />
             <div className="absolute -bottom-[1.5px] -right-[1.5px] w-3.5 h-3.5 border-b-2 border-r-2 border-ted-red" />
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-0 items-start">
+            <div className="grid grid-cols-12 gap-y-8 md:gap-y-0 items-start">
               
               {/* Column 1: Giant Logo & Mission Statement */}
-              <div className="md:col-span-5 md:border-r border-white/10 md:pr-12 pb-8 md:pb-0 space-y-4">
+              <div className="col-span-12 md:col-span-5 border-b md:border-b-0 md:border-r border-white/10 pb-8 md:pb-0 md:pr-12 space-y-4">
                 <div className="text-3xl font-black not-italic tracking-tighter uppercase select-none">
                   <span className="text-ted-red">TED<span className="lowercase">x</span></span>
                   <span className="text-white">GCEM</span>
                 </div>
-                <p className="text-xs md:text-sm text-white/50 font-light leading-relaxed max-w-sm">
+                <p className="text-xs md:text-sm text-white font-light leading-relaxed max-w-sm">
                   An independently organized TEDx event dedicated to finding and sharing ideas worth spreading that challenge and shape our community&apos;s future.
                 </p>
-                <div className="pt-2 flex items-center gap-2 text-[10px] font-mono text-white/30 uppercase tracking-widest">
+                <div className="pt-2 flex items-center gap-2 text-[10px] font-mono text-white uppercase tracking-widest">
                   <span className="w-1.5 h-1.5 rounded-full bg-ted-red animate-pulse" />
                   <span>Bangalore, India</span>
                 </div>
               </div>
 
               {/* Column 2: Quick Navigation Links */}
-              <div className="md:col-span-4 md:border-r border-white/10 md:px-12 pb-8 md:pb-0 space-y-4">
+              <div className="col-span-6 md:col-span-4 border-r border-white/10 pr-4 md:px-12 space-y-4">
                 <h4 className="text-[10px] uppercase tracking-[0.2em] text-ted-red font-bold font-mono">{"// Navigation"}</h4>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <div className="flex flex-col gap-3">
                   {[
                     { id: "home", label: "Home" },
                     { id: "about", label: "About" },
@@ -230,7 +257,7 @@ export default function Home() {
                     <button
                       key={link.id}
                       onClick={() => handleTabChange(link.id as TabId)}
-                      className="text-left text-white/40 hover:text-ted-red hover:pl-1.5 transition-[color,padding-left] duration-150 ease-out cursor-pointer uppercase font-mono text-[11px] tracking-widest flex items-center gap-1.5 group"
+                      className="text-left text-white hover:text-ted-red hover:pl-1.5 transition-[color,padding-left] duration-150 ease-out cursor-pointer uppercase font-mono text-[11px] tracking-widest flex items-center gap-1.5 group"
                     >
                       <span className="text-ted-red opacity-0 group-hover:opacity-100 transition-opacity duration-150 font-bold text-[9px]">▶</span>
                       <span>{link.label}</span>
@@ -240,14 +267,14 @@ export default function Home() {
               </div>
 
               {/* Column 3: Contact & Socials */}
-              <div className="md:col-span-3 md:pl-12 space-y-4">
+              <div className="col-span-6 md:col-span-3 pl-4 md:pl-12 space-y-4">
                 <h4 className="text-[10px] uppercase tracking-[0.2em] text-ted-red font-bold font-mono">{"// Connect"}</h4>
                 <div className="flex flex-col gap-3">
                   <a 
                     href="https://www.instagram.com/tedxgcem/" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-white/40 hover:text-white transition-[color] duration-150 group font-mono text-[11px] tracking-widest"
+                    className="flex items-center gap-3 text-white hover:text-white transition-[color] duration-150 group font-mono text-[11px] tracking-widest"
                   >
                     <div className="w-8 h-8 rounded-none border border-white/10 flex items-center justify-center group-hover:border-ted-red group-hover:bg-ted-red group-hover:text-white transition-[border-color,background-color,color] duration-150">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
@@ -258,16 +285,49 @@ export default function Home() {
                     href="https://www.linkedin.com/in/tedxgcem/" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-white/40 hover:text-white transition-[color] duration-150 group font-mono text-[11px] tracking-widest"
+                    className="flex items-center gap-3 text-white hover:text-white transition-[color] duration-150 group font-mono text-[11px] tracking-widest"
                   >
                     <div className="w-8 h-8 rounded-none border border-white/10 flex items-center justify-center group-hover:border-ted-red group-hover:bg-ted-red group-hover:text-white transition-[border-color,background-color,color] duration-150">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
                     </div>
                     <span className="group-hover:text-ted-red group-hover:translate-x-1 transition-[color,transform] duration-150">LINKEDIN</span>
                   </a>
+                  <a 
+                    href="https://x.com/tedxgcem" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-white hover:text-white transition-[color] duration-150 group font-mono text-[11px] tracking-widest"
+                  >
+                    <div className="w-8 h-8 rounded-none border border-white/10 flex items-center justify-center group-hover:border-ted-red group-hover:bg-ted-red group-hover:text-white transition-[border-color,background-color,color] duration-150">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+                    </div>
+                    <span className="group-hover:text-ted-red group-hover:translate-x-1 transition-[color,transform] duration-150">TWITTER</span>
+                  </a>
+                  <a 
+                    href="https://whatsapp.com/channel/0029Vb37kqMCBtxKXypYFt2q" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-white hover:text-white transition-[color] duration-150 group font-mono text-[11px] tracking-widest"
+                  >
+                    <div className="w-8 h-8 rounded-none border border-white/10 flex items-center justify-center group-hover:border-ted-red group-hover:bg-ted-red group-hover:text-white transition-[border-color,background-color,color] duration-150">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    </div>
+                    <span className="group-hover:text-ted-red group-hover:translate-x-1 transition-[color,transform] duration-150">WHATSAPP</span>
+                  </a>
+                  <a 
+                    href="https://www.youtube.com/@tedxgcem" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-white hover:text-white transition-[color] duration-150 group font-mono text-[11px] tracking-widest"
+                  >
+                    <div className="w-8 h-8 rounded-none border border-white/10 flex items-center justify-center group-hover:border-ted-red group-hover:bg-ted-red group-hover:text-white transition-[border-color,background-color,color] duration-150">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2a29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+                    </div>
+                    <span className="group-hover:text-ted-red group-hover:translate-x-1 transition-[color,transform] duration-150">YOUTUBE</span>
+                  </a>
                   <button 
                     onClick={() => handleTabChange("contact")}
-                    className="flex items-center gap-3 text-white/40 hover:text-white transition-[color] duration-150 group font-mono text-[11px] tracking-widest text-left cursor-pointer"
+                    className="flex items-center gap-3 text-white hover:text-white transition-[color] duration-150 group font-mono text-[11px] tracking-widest text-left cursor-pointer"
                   >
                     <div className="w-8 h-8 rounded-none border border-white/10 flex items-center justify-center group-hover:border-ted-red group-hover:bg-ted-red group-hover:text-white transition-[border-color,background-color,color] duration-150">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -281,10 +341,10 @@ export default function Home() {
 
             {/* Bottom Compliance & Copyright */}
             <div className="border-t border-white/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
-              <span className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-semibold font-mono max-w-lg leading-relaxed">
+              <span className="text-[9px] uppercase tracking-[0.15em] text-white font-semibold font-mono max-w-lg leading-relaxed">
                 This independent TEDx event is operated under license from TED.
               </span>
-              <span className="text-[9px] text-white/30 tracking-[0.15em] font-mono uppercase">
+              <span className="text-[9px] text-white tracking-[0.15em] font-mono uppercase">
                 © {new Date().getFullYear()} <span className="text-ted-red font-black">TED<span className="lowercase">x</span></span>GCEM. ALL RIGHTS RESERVED.
               </span>
             </div>
@@ -292,37 +352,57 @@ export default function Home() {
 
           {/* Developer Credit - Only visible on the Contact page, centered below the footer box */}
           {activeTab === "contact" && (
-            <div className="mt-12 flex flex-col items-center justify-center gap-3 text-center z-10 relative">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-mono">
-                designed & developed by <span className="text-ted-red font-black">M M BHARATH</span>
+            <div ref={devCreditRef} className="mt-12 flex flex-col items-center justify-center gap-3 text-center z-10 relative">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-white font-mono flex items-center justify-center gap-1.5 flex-wrap">
+                designed & developed by{" "}
+                <span className="relative inline-block">
+                  <button
+                    onClick={() => setShowDevLinks(!showDevLinks)}
+                    className="text-white font-black cursor-pointer hover:text-white/80 transition-colors duration-150 focus:outline-none relative inline-flex items-center uppercase tracking-[0.2em]"
+                    aria-label="Show developer contact links"
+                  >
+                    M M BHARATH
+                  </button>
+                  <AnimatePresence>
+                    {showDevLinks && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3.5 py-2 bg-neutral-950/95 backdrop-blur-md border border-white/10 rounded-lg shadow-2xl flex items-center gap-3 text-[10px] font-mono uppercase tracking-[0.15em] z-50 whitespace-nowrap"
+                      >
+                        <a
+                          href="https://www.linkedin.com/in/bharath-m-m-a9960b309"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-white/60 hover:text-white transition-colors duration-150 flex items-center gap-1.5 group px-1 py-0.5"
+                        >
+                          <svg className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors duration-150" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                            <rect x="2" y="9" width="4" height="12" />
+                            <circle cx="4" cy="4" r="2" />
+                          </svg>
+                          <span>LinkedIn</span>
+                        </a>
+                        <div className="w-[1px] h-3.5 bg-white/10" />
+                        <a
+                          href="https://mail.google.com/mail/?view=cm&fs=1&to=bharatha9483@gmail.com"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-white/60 hover:text-white transition-colors duration-150 flex items-center gap-1.5 group px-1 py-0.5"
+                        >
+                          <svg className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors duration-150" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                          </svg>
+                          <span>Gmail</span>
+                        </a>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </span>
               </span>
-              <div className="flex items-center justify-center gap-6 text-[10px] font-mono uppercase tracking-[0.2em] text-white/40">
-                <a
-                  href="https://www.linkedin.com/in/bharath-m-m-a9960b309"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white transition-colors duration-150 flex items-center gap-1.5 group"
-                >
-                  <svg className="w-3.5 h-3.5 group-hover:text-ted-red transition-colors duration-150" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-                    <rect x="2" y="9" width="4" height="12" />
-                    <circle cx="4" cy="4" r="2" />
-                  </svg>
-                  <span>LinkedIn</span>
-                </a>
-                <a
-                  href="https://mail.google.com/mail/?view=cm&fs=1&to=bharatha9483@gmail.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white transition-colors duration-150 flex items-center gap-1.5 group"
-                >
-                  <svg className="w-3.5 h-3.5 group-hover:text-ted-red transition-colors duration-150" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <polyline points="22,6 12,13 2,6" />
-                  </svg>
-                  <span>Gmail</span>
-                </a>
-              </div>
             </div>
           )}
         </footer>
