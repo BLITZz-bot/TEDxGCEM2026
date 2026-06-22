@@ -11,7 +11,6 @@ import {
   Mail, 
   X, 
   Cpu, 
-  Mic, 
   Compass, 
   Zap, 
   Activity
@@ -185,7 +184,9 @@ export default function Speakers() {
   }, []);
 
   const selectedSpeakerRef = useRef<typeof selectedSpeaker>(null);
-  selectedSpeakerRef.current = selectedSpeaker;
+  useEffect(() => {
+    selectedSpeakerRef.current = selectedSpeaker;
+  }, [selectedSpeaker]);
 
   const resumeCanvasRef = useRef<(() => void) | null>(null);
 
@@ -530,7 +531,7 @@ export default function Speakers() {
                   [ TARGET: DETECTED ]
                 </span>
                 <span className="text-white/60">
-                  // LIVE DOSSIER STREAM
+                  {"// LIVE DOSSIER STREAM"}
                 </span>
               </div>
             </motion.div>
@@ -551,7 +552,7 @@ export default function Speakers() {
                 {/* Speaker's name in giant italic typography */}
                 <div>
                   <span className="text-ted-red text-[10px] font-bold uppercase tracking-[0.2em] font-mono block mb-2">
-                    // SPEAKER SPECS
+                    {"// SPEAKER SPECS"}
                   </span>
                   <h3 className="text-3xl sm:text-5xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">
                     {selectedSpeaker.name}

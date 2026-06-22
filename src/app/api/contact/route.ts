@@ -30,8 +30,9 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Server Contact submission error:", error);
-    return NextResponse.json({ error: error.message || "Failed to submit message." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to submit message.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

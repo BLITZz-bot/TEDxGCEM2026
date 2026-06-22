@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
 // Helper to check if current logged-in user is admin
-async function checkAdmin(supabase: any) {
+async function checkAdmin(supabase: SupabaseClient) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !user.email) return false;
   const adminEmail = process.env.ADMIN_EMAIL || "tedxgcem@gmail.com";
@@ -26,9 +27,10 @@ export async function GET() {
     if (error) throw error;
 
     return NextResponse.json({ registrations: data || [] });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Admin registrations GET error:", error);
-    return NextResponse.json({ error: error.message || "Failed to load records." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to load records.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -52,9 +54,10 @@ export async function PATCH(request: Request) {
     if (error) throw error;
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Admin registrations PATCH error:", error);
-    return NextResponse.json({ error: error.message || "Failed to update record." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to update record.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -79,8 +82,9 @@ export async function DELETE(request: Request) {
     if (error) throw error;
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Admin registrations DELETE error:", error);
-    return NextResponse.json({ error: error.message || "Failed to delete record." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to delete record.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

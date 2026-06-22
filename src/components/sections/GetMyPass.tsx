@@ -9,10 +9,18 @@ interface GetMyPassProps {
   onTabChange: (id: TabId) => void;
 }
 
+interface Registration {
+  id: string;
+  full_name: string;
+  email: string;
+  organization: string;
+  ticket_status: string;
+}
+
 export default function GetMyPass({ onTabChange }: GetMyPassProps) {
   const { user, loading, loginWithGoogle } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
-  const [registration, setRegistration] = useState<any>(null);
+  const [registration, setRegistration] = useState<Registration | null>(null);
 
   const checkRegistration = async () => {
     setIsChecking(true);
@@ -33,10 +41,16 @@ export default function GetMyPass({ onTabChange }: GetMyPassProps) {
 
   useEffect(() => {
     if (user && user.email) {
-      checkRegistration();
+      const timer = setTimeout(() => {
+        checkRegistration();
+      }, 0);
+      return () => clearTimeout(timer);
     } else {
-      setRegistration(null);
-      setIsChecking(false);
+      const timer = setTimeout(() => {
+        setRegistration(null);
+        setIsChecking(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [user]);
 

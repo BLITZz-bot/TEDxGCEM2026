@@ -26,18 +26,21 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
 
   // Autofill user credentials when auth state loads
   useEffect(() => {
-    if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        email: user.email || "",
-        fullName: user.user_metadata?.full_name || prev.fullName,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        email: "",
-      }));
-    }
+    const timer = setTimeout(() => {
+      if (user) {
+        setFormData((prev) => ({
+          ...prev,
+          email: user.email || "",
+          fullName: user.user_metadata?.full_name || prev.fullName,
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          email: "",
+        }));
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [user]);
 
   const validateForm = () => {
@@ -103,11 +106,12 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
       }
 
       setIsSuccess(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error submitting registration:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to submit registration. Please try again.";
       setErrors((prev) => ({
         ...prev,
-        submit: err.message || "Failed to submit registration. Please try again.",
+        submit: errorMessage,
       }));
     } finally {
       setIsSubmitting(false);

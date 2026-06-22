@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, MapPin, Ticket, ShieldAlert } from "lucide-react";
+import { Calendar, MapPin, Ticket } from "lucide-react";
 import { TabId } from "@/components/ui/TabNav";
 
 interface CountdownProps {

@@ -1,13 +1,31 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+
+interface AdminRegistration {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  organization: string;
+  linkedin: string;
+  ticket_status: string;
+  created_at: string;
+}
+
+interface AdminMessage {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
+}
 
 export default function AdminConsole() {
   const { isAdmin, loading: authLoading } = useAuth();
-  const [registrations, setRegistrations] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
+  const [messages, setMessages] = useState<AdminMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages">("registrations");
   const [errorMsg, setErrorMsg] = useState("");
@@ -27,9 +45,10 @@ export default function AdminConsole() {
       const msgData = await msgRes.json();
       if (!msgRes.ok) throw new Error(msgData.error || "Failed to load inbox messages.");
       setMessages(msgData.messages || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error loading admin records:", err);
-      setErrorMsg(err.message || "Failed to load database records. Ensure backend setup is correct.");
+      const errorMessage = err instanceof Error ? err.message : "Failed to load database records. Ensure backend setup is correct.";
+      setErrorMsg(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -37,7 +56,10 @@ export default function AdminConsole() {
 
   useEffect(() => {
     if (isAdmin) {
-      fetchData();
+      const timer = setTimeout(() => {
+        fetchData();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isAdmin]);
 
@@ -57,8 +79,9 @@ export default function AdminConsole() {
       setRegistrations(prev => 
         prev.map(r => r.id === id ? { ...r, ticket_status: newStatus } : r)
       );
-    } catch (err: any) {
-      alert("Error updating status: " + err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error updating status: " + errorMessage);
     }
   };
 
@@ -73,8 +96,9 @@ export default function AdminConsole() {
       if (!res.ok) throw new Error(data.error || "Failed to delete record.");
 
       setRegistrations(prev => prev.filter(r => r.id !== id));
-    } catch (err: any) {
-      alert("Error deleting registration: " + err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error deleting registration: " + errorMessage);
     }
   };
 
@@ -89,8 +113,9 @@ export default function AdminConsole() {
       if (!res.ok) throw new Error(data.error || "Failed to delete message.");
 
       setMessages(prev => prev.filter(m => m.id !== id));
-    } catch (err: any) {
-      alert("Error deleting message: " + err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error deleting message: " + errorMessage);
     }
   };
 

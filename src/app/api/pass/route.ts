@@ -25,8 +25,9 @@ export async function GET() {
     }
 
     return NextResponse.json({ registration: data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Server Pass fetch error:", error);
-    return NextResponse.json({ error: error.message || "Failed to fetch pass." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to fetch pass.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

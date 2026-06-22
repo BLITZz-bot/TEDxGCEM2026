@@ -20,8 +20,9 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ url: data.url });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Server Login error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to generate Google Sign-In URL.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

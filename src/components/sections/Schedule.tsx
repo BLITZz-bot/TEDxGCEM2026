@@ -148,9 +148,9 @@ export default function Schedule() {
 
   const filters = [
     { id: "all", label: "ALL EVENTS" },
-    { id: "session", label: "TALKS & PANELS" },
-    { id: "break", label: "BREAKS & NETWORKS" }
-  ];
+    { id: "session", label: "TALKS & SPEAKERS" },
+    { id: "break", label: "BREAKS & NETWORKING" },
+  ] as const;
 
   return (
     <section className="relative min-h-screen pt-20 md:pt-32 pb-24 px-6 select-none text-white overflow-hidden">
@@ -178,7 +178,7 @@ export default function Schedule() {
               <button
                 key={f.id}
                 onClick={() => {
-                  setActiveFilter(f.id as any);
+                  setActiveFilter(f.id);
                   setExpandedSession(null);
                 }}
                 className={`w-full md:w-auto px-1 md:px-5 py-2.5 md:py-3 text-center font-mono text-[8px] xs:text-[9px] sm:text-xs uppercase tracking-wider sm:tracking-widest transition-all duration-300 border cursor-pointer rounded-none schedule-filter-btn shrink-0 ${
@@ -213,7 +213,6 @@ export default function Schedule() {
           <AnimatePresence mode="popLayout">
             {filteredSchedule.map((item, index) => {
               const isExpanded = expandedSession === index;
-              const originalIndex = schedule.findIndex(s => s.event === item.event);
               const isCardHovered = hoveredCardIndex === index;
               
               return (

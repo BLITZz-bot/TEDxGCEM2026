@@ -22,15 +22,18 @@ export default function Contact() {
 
   // Autofill user credentials when auth state loads
   useEffect(() => {
-    if (user) {
-      setEmail(user.email || "");
-      if (user.user_metadata?.full_name) {
-        setName(user.user_metadata.full_name);
+    const timer = setTimeout(() => {
+      if (user) {
+        setEmail(user.email || "");
+        if (user.user_metadata?.full_name) {
+          setName(user.user_metadata.full_name);
+        }
+      } else {
+        setEmail("");
+        setName("");
       }
-    } else {
-      setEmail("");
-      setName("");
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [user]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -57,9 +60,10 @@ export default function Contact() {
 
       setIsSubmitted(true);
       setMessage(""); // Clear message field
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error sending message:", err);
-      setSubmitError(err.message || "Failed to transmit message. Please check connection and try again.");
+      const errorMessage = err instanceof Error ? err.message : "Failed to transmit message. Please check connection and try again.";
+      setSubmitError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

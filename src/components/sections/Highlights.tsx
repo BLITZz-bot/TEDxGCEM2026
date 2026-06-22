@@ -91,7 +91,7 @@ export default function Highlights() {
               >
                 {/* Tech Code Index corner */}
                 <div className="absolute top-4 right-6 text-[10px] font-mono text-white/30 group-hover:text-ted-red transition-colors duration-300">
-                  // {item.num}
+                  {"// "}{item.num}
                 </div>
 
                 <div>
