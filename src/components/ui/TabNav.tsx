@@ -119,7 +119,7 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
           <div className="relative">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-ted-red/80 focus:border-ted-red focus:outline-none transition-all shadow-lg flex items-center justify-center bg-white/5 cursor-pointer"
+              className="w-12 h-12 rounded-full overflow-hidden border border-white/10 hover:border-ted-red/80 focus:border-ted-red focus:outline-none transition-all shadow-lg flex items-center justify-center bg-white/5 cursor-pointer"
               aria-label="Toggle profile menu"
             >
               {avatarUrl ? (
@@ -130,59 +130,72 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <span className="text-xs font-mono font-bold text-white">{initials}</span>
+                <span className="text-sm font-mono font-bold text-white">{initials}</span>
               )}
             </button>
-
-            <AnimatePresence>
-              {showProfileMenu && (
-                <>
-                  {/* Backdrop click collector */}
-                  <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
-                  
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="absolute right-0 mt-3 w-64 bg-neutral-950/95 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl z-50 flex flex-col gap-3 text-left"
-                  >
-                    <div className="border-b border-white/5 pb-2">
-                      <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Active Account</p>
-                      <p className="text-xs font-bold text-white truncate max-w-full mt-0.5" title={user.user_metadata?.full_name}>
-                        {user.user_metadata?.full_name || "TEDx Attendee"}
-                      </p>
-                      <p className="text-[9px] font-mono text-white/50 truncate max-w-full mt-0.5">{user.email}</p>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        logout();
-                      }}
-                      className="w-full py-2 bg-ted-red/10 border border-ted-red/20 text-ted-red text-[10px] font-bold font-mono rounded-xl uppercase tracking-wider hover:bg-ted-red hover:text-white transition-all text-center cursor-pointer"
-                    >
-                      Logout Session
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
-        ) : (
-          <button
-            onClick={loginWithGoogle}
-            className="px-5 py-2.5 bg-white/5 border border-white/10 hover:bg-white hover:text-black hover:border-white text-white text-xs font-bold font-mono rounded-full uppercase tracking-widest transition-all flex items-center gap-2 cursor-pointer shadow-lg"
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="currentColor"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="currentColor"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="currentColor"/>
-            </svg>
-            <span>Sign In</span>
-          </button>
-        )}
+ 
+             <AnimatePresence>
+               {showProfileMenu && (
+                 <>
+                   {/* Backdrop click collector */}
+                   <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                   
+                   <motion.div
+                     initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                     animate={{ opacity: 1, y: 0, scale: 1 }}
+                     exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                     transition={{ duration: 0.15, ease: "easeOut" }}
+                     className="absolute right-0 mt-3 w-64 bg-neutral-950/95 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl z-50 flex flex-col gap-3 text-left"
+                   >
+                     <div className="border-b border-white/5 pb-2">
+                       <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Active Account</p>
+                       <p className="text-xs font-bold text-white truncate max-w-full mt-0.5" title={user.user_metadata?.full_name}>
+                         {user.user_metadata?.full_name || "TEDx Attendee"}
+                       </p>
+                       <p className="text-[9px] font-mono text-white/50 truncate max-w-full mt-0.5">{user.email}</p>
+                     </div>
+ 
+                     <button
+                       onClick={() => {
+                         setShowProfileMenu(false);
+                         logout();
+                       }}
+                       className="w-full py-2 bg-ted-red/10 border border-ted-red/20 text-ted-red text-[10px] font-bold font-mono rounded-xl uppercase tracking-wider hover:bg-ted-red hover:text-white transition-all text-center cursor-pointer"
+                     >
+                       Logout Session
+                     </button>
+                   </motion.div>
+                 </>
+               )}
+             </AnimatePresence>
+           </div>
+         ) : (
+           <button
+             onClick={loginWithGoogle}
+             className="w-12 h-12 rounded-full border border-white/10 hover:border-ted-red/80 hover:bg-white/10 transition-all flex items-center justify-center bg-white/5 cursor-pointer shadow-lg group relative"
+             aria-label="Sign In"
+           >
+             {/* Professional avatar placeholder silhouette */}
+             <svg 
+               xmlns="http://www.w3.org/2000/svg" 
+               viewBox="0 0 24 24" 
+               fill="none" 
+               stroke="currentColor" 
+               strokeWidth="2" 
+               strokeLinecap="round" 
+               strokeLinejoin="round" 
+               className="w-6 h-6 text-white/50 group-hover:text-white transition-colors"
+             >
+               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+               <circle cx="12" cy="7" r="4" />
+             </svg>
+             
+             {/* Tooltip on hover */}
+             <span className="absolute right-0 top-14 scale-0 group-hover:scale-100 transition-all duration-150 rounded bg-neutral-950/95 border border-white/10 p-2 text-[9px] font-mono font-bold tracking-wider text-white uppercase whitespace-nowrap shadow-2xl z-50">
+               Sign In
+             </span>
+           </button>
+         )}
       </div>
 
       {/* Mobile Hamburger Button */}
