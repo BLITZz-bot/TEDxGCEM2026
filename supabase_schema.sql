@@ -117,3 +117,37 @@ USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
 -- ADD COLUMN IF NOT EXISTS about_theme_name TEXT DEFAULT 'TRANSFORMING PERSPECTIVES' NOT NULL,
 -- ADD COLUMN IF NOT EXISTS about_theme_desc TEXT DEFAULT 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.' NOT NULL,
 -- ADD COLUMN IF NOT EXISTS reveal_about_theme BOOLEAN DEFAULT true NOT NULL;
+
+-- 8. TEAM MEMBERS TABLE AND POLICIES
+CREATE TABLE IF NOT EXISTS public.team_members (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL,
+    image_url TEXT NOT NULL, -- Holds Base64 data string
+    email TEXT,
+    linkedin TEXT,
+    bio TEXT NOT NULL
+);
+
+-- Enable RLS for team members
+ALTER TABLE public.team_members ENABLE ROW LEVEL SECURITY;
+
+-- Allow read access to anyone (public)
+CREATE POLICY "Allow public read access to team members"
+ON public.team_members
+FOR SELECT
+TO public
+USING (true);
+
+-- Allow write/management only to the admin
+CREATE POLICY "Allow admin to manage team members"
+ON public.team_members
+FOR ALL
+TO authenticated
+USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+
+-- Migration for adding reveal_team to event_settings
+-- Execute this query in your Supabase SQL Editor:
+-- ALTER TABLE public.event_settings ADD COLUMN IF NOT EXISTS reveal_team BOOLEAN DEFAULT true NOT NULL;
+

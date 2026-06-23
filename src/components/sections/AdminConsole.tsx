@@ -35,6 +35,7 @@ interface AdminConsoleProps {
     about_theme_name: string;
     about_theme_desc: string;
     reveal_about_theme: boolean;
+    reveal_team: boolean;
   } | null;
   onSettingsUpdate: () => void;
 }
@@ -43,8 +44,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const { isAdmin, loading: authLoading } = useAuth();
   const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
   const [messages, setMessages] = useState<AdminMessage[]>([]);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages" | "settings">("registrations");
+  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages" | "settings" | "team">("registrations");
   const [errorMsg, setErrorMsg] = useState("");
 
   // Event settings states
@@ -59,8 +61,19 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [aboutThemeName, setAboutThemeName] = useState(settings?.about_theme_name || "");
   const [aboutThemeDesc, setAboutThemeDesc] = useState(settings?.about_theme_desc || "");
   const [revealAboutTheme, setRevealAboutTheme] = useState(settings ? !!settings.reveal_about_theme : true);
+  const [revealTeam, setRevealTeam] = useState(settings ? !!settings.reveal_team : true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
+
+  // Team management states
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [memberName, setMemberName] = useState("");
+  const [memberRole, setMemberRole] = useState("");
+  const [memberImageUrl, setMemberImageUrl] = useState("");
+  const [memberEmail, setMemberEmail] = useState("");
+  const [memberLinkedin, setMemberLinkedin] = useState("");
+  const [memberBio, setMemberBio] = useState("");
+  const [savingMember, setSavingMember] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -76,6 +89,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       setAboutThemeName(settings.about_theme_name ?? "");
       setAboutThemeDesc(settings.about_theme_desc ?? "");
       setRevealAboutTheme(settings.reveal_about_theme ?? true);
+      setRevealTeam(settings.reveal_team ?? true);
     }
   }, [settings]);
 
@@ -94,9 +108,15 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       const msgData = await msgRes.json();
       if (!msgRes.ok) throw new Error(msgData.error || "Failed to load inbox messages.");
       setMessages(msgData.messages || []);
+
+      // Fetch team members
+      const teamRes = await fetch("/api/team");
+      const teamData = await teamRes.json();
+      if (!teamRes.ok) throw new Error(teamData.error || "Failed to load team members.");
+      setTeamMembers(teamData.team || []);
     } catch (err: unknown) {
       console.error("Error loading admin records:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to load database records. Ensure backend setup is correct.";
+      const errorMessage = err instanceof Error ? err.message : "Failed to load database records. Ensure database setup is correct.";
       setErrorMsg(errorMessage);
     } finally {
       setLoading(false);
@@ -125,6 +145,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           about_theme_name: aboutThemeName,
           about_theme_desc: aboutThemeDesc,
           reveal_about_theme: revealAboutTheme,
+          reveal_team: revealTeam,
         }),
       });
 
@@ -140,6 +161,104 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     } finally {
       setSavingSettings(false);
     }
+  };
+
+  const handleSaveMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!memberImageUrl) {
+      alert("Please upload a profile image first.");
+      return;
+    }
+    setSavingMember(true);
+    try {
+      const res = await fetch("/api/team", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: editingMemberId,
+          name: memberName,
+          role: memberRole,
+          image_url: memberImageUrl,
+          email: memberEmail,
+          linkedin: memberLinkedin,
+          bio: memberBio,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save team member.");
+
+      alert(editingMemberId ? "Team member profile updated!" : "New team member added!");
+      handleResetMemberForm();
+      
+      // Reload team members list
+      const teamRes = await fetch("/api/team");
+      const teamData = await teamRes.json();
+      if (teamRes.ok && teamData.team) {
+        setTeamMembers(teamData.team);
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to save member.";
+      alert("Error saving team member: " + errorMessage);
+    } finally {
+      setSavingMember(false);
+    }
+  };
+
+  const handleEditMember = (member: any) => {
+    setEditingMemberId(member.id);
+    setMemberName(member.name);
+    setMemberRole(member.role);
+    setMemberImageUrl(member.image_url);
+    setMemberEmail(member.email || "");
+    setMemberLinkedin(member.linkedin || "");
+    setMemberBio(member.bio);
+  };
+
+  const handleDeleteMember = async (id: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this team member?")) return;
+    try {
+      const res = await fetch(`/api/team?id=${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete team member.");
+
+      setTeamMembers(prev => prev.filter(m => m.id !== id));
+      alert("Team member deleted successfully!");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error deleting member: " + errorMessage);
+    }
+  };
+
+  const handleResetMemberForm = () => {
+    setEditingMemberId(null);
+    setMemberName("");
+    setMemberRole("");
+    setMemberImageUrl("");
+    setMemberEmail("");
+    setMemberLinkedin("");
+    setMemberBio("");
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image size should be less than 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setMemberImageUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   useEffect(() => {
@@ -308,6 +427,14 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           Event Controls
         </button>
         <button
+          onClick={() => setActiveSubTab("team")}
+          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+            activeSubTab === "team" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+          }`}
+        >
+          Team Manager ({teamMembers.length})
+        </button>
+        <button
           onClick={fetchData}
           disabled={loading}
           className="md:ml-auto px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all text-xs font-mono uppercase tracking-widest font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50"
@@ -430,7 +557,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               </div>
             )}
           </div>
-        ) : (
+        ) : activeSubTab === "settings" ? (
           /* SETTINGS/EVENT CONTROLS VIEW */
           <form onSubmit={handleSaveSettings} className="space-y-8 font-mono">
             {settingsSuccess && (
@@ -626,6 +753,26 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                     />
                   </button>
                 </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Reveal Team Section</label>
+                    <span className="text-[9px] text-white/30 block">Toggle off to show &apos;THE FACES BEHIND THE EXPERIENCE - COMING SOON&apos; placeholder on website</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRevealTeam(!revealTeam)}
+                    className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                      revealTeam ? "bg-ted-red" : "bg-white/10"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                        revealTeam ? "translate-x-7" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -646,6 +793,216 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               </button>
             </div>
           </form>
+        ) : (
+          /* TEAM MANAGER VIEW */
+          <div className="space-y-8 font-mono text-xs">
+            {/* Editor panel: Add / Edit Team Member */}
+            <div className="border border-white/10 p-6 rounded-2xl bg-black/40 space-y-4">
+              <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">
+                {editingMemberId ? `// Edit Team Member Profile` : `// Add New Team Member`}
+              </span>
+              
+              <form onSubmit={handleSaveMember} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Full Name</label>
+                    <input
+                      type="text"
+                      value={memberName}
+                      onChange={(e) => setMemberName(e.target.value)}
+                      placeholder="e.g. Kavya Menon"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Role / Designation</label>
+                    <input
+                      type="text"
+                      value={memberRole}
+                      onChange={(e) => setMemberRole(e.target.value)}
+                      placeholder="e.g. Design & Tech Lead"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Gmail Address (Optional)</label>
+                    <input
+                      type="email"
+                      value={memberEmail}
+                      onChange={(e) => setMemberEmail(e.target.value)}
+                      placeholder="e.g. kavya@tedxgcem.com"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">LinkedIn Profile URL (Optional)</label>
+                    <input
+                      type="url"
+                      value={memberLinkedin}
+                      onChange={(e) => setMemberLinkedin(e.target.value)}
+                      placeholder="e.g. https://linkedin.com/in/kavya"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs text-white/50 uppercase tracking-wider block">Biography Description (Editable Card Backface)</label>
+                  <textarea
+                    value={memberBio}
+                    onChange={(e) => setMemberBio(e.target.value)}
+                    placeholder="Provide a bio description for the flipped side of the card..."
+                    className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-sans h-24 resize-y leading-relaxed"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-2">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Upload Profile Headshot</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="w-full bg-white/5 border border-white/10 p-2.5 text-xs text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono cursor-pointer"
+                    />
+                    <span className="text-[9px] text-white/30 block">Select a square photo from your computer (under 2MB)</span>
+                  </div>
+
+                  {memberImageUrl && (
+                    <div className="flex items-center gap-4 border border-white/5 bg-black/30 p-3 rounded-xl">
+                      <div className="w-16 h-16 rounded border border-white/20 overflow-hidden shrink-0 bg-zinc-950">
+                        <img src={memberImageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-white uppercase block">Image Preview</span>
+                        <button
+                          type="button"
+                          onClick={() => setMemberImageUrl("")}
+                          className="text-[9px] text-ted-red hover:underline uppercase font-bold cursor-pointer"
+                        >
+                          Remove Photo
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+                  {editingMemberId && (
+                    <button
+                      type="button"
+                      onClick={handleResetMemberForm}
+                      className="px-6 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold uppercase tracking-widest text-[10px] transition-colors rounded-lg cursor-pointer"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={savingMember}
+                    className="px-6 py-2.5 bg-ted-red hover:bg-white text-white hover:text-black font-black uppercase tracking-widest text-[10px] transition-colors rounded-lg cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {savingMember ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Saving Member...
+                      </>
+                    ) : editingMemberId ? (
+                      "Update Profile"
+                    ) : (
+                      "Add Member"
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* List/Table panel: Current Team Members */}
+            <div className="border border-white/10 p-6 rounded-2xl bg-black/40 space-y-4">
+              <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Organizing Committee Members"}</span>
+              
+              {teamMembers.length === 0 ? (
+                <p className="text-center text-white/40 py-8 font-mono">No team members registered. Add members above.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {teamMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex gap-4 border border-white/5 bg-black/20 p-4 rounded-xl items-start relative group"
+                    >
+                      <div className="w-16 h-16 border border-white/15 overflow-hidden shrink-0 bg-zinc-950">
+                        {member.image_url ? (
+                          <img src={member.image_url} alt={member.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white/20 font-bold bg-white/5 text-[9px] uppercase">
+                            No Photo
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 flex-grow pr-16">
+                        <div className="space-y-0.5">
+                          <h5 className="font-bold text-white uppercase tracking-wider text-sm">{member.name}</h5>
+                          <div className="text-[10px] text-ted-red uppercase tracking-widest">{member.role}</div>
+                        </div>
+                        
+                        <div className="flex gap-2.5 pt-0.5">
+                          {member.email ? (
+                            <span className="text-[9px] text-white/50 bg-white/5 px-2 py-0.5 rounded font-mono" title={member.email}>
+                              ✉️ Email
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-white/20 bg-white/[0.02] px-2 py-0.5 rounded font-mono line-through">
+                              ✉️ Email
+                            </span>
+                          )}
+                          {member.linkedin ? (
+                            <span className="text-[9px] text-white/50 bg-white/5 px-2 py-0.5 rounded font-mono" title={member.linkedin}>
+                              🔗 LinkedIn
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-white/20 bg-white/[0.02] px-2 py-0.5 rounded font-mono line-through">
+                              🔗 LinkedIn
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-[10px] text-white/40 leading-relaxed font-sans line-clamp-2 max-w-sm" title={member.bio}>
+                          {member.bio}
+                        </p>
+                      </div>
+
+                      <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEditMember(member)}
+                          className="p-1.5 bg-white/5 border border-white/10 hover:bg-ted-red/20 hover:border-ted-red text-white hover:text-white rounded transition-colors cursor-pointer animate-none"
+                          title="Edit Profile"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMember(member.id)}
+                          className="p-1.5 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white text-white rounded transition-colors cursor-pointer animate-none"
+                          title="Delete Member"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </section>

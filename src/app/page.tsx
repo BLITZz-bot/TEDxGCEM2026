@@ -37,6 +37,7 @@ export default function Home() {
     about_theme_name: string;
     about_theme_desc: string;
     reveal_about_theme: boolean;
+    reveal_team: boolean;
   } | null>(null);
 
   const fetchSettings = () => {

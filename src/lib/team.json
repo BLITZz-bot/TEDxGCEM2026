@@ -1,0 +1,74 @@
+[
+  {
+    "id": "1",
+    "name": "Aarav Sharma",
+    "role": "Licensee & Organizer",
+    "image_url": "",
+    "email": "aarav.sharma@tedxgcem.com",
+    "linkedin": "https://www.linkedin.com/in/aarav-sharma",
+    "bio": "Passionate about building community platforms and showcasing local talent. Aarav oversees the overall execution and direction of TEDxGCEM."
+  },
+  {
+    "id": "2",
+    "name": "Diya Iyer",
+    "role": "Co-Organizer",
+    "image_url": "",
+    "email": "diya.iyer@tedxgcem.com",
+    "linkedin": "https://www.linkedin.com/in/diya-iyer",
+    "bio": "Coordinating operations and sponsorships, Diya bridges the gap between creative vision and administrative excellence."
+  },
+  {
+    "id": "3",
+    "name": "Rohan Verma",
+    "role": "Curation Lead",
+    "image_url": "",
+    "email": "rohan.verma@tedxgcem.com",
+    "linkedin": "https://www.linkedin.com/in/rohan-verma",
+    "bio": "Dedicated to seeking out stories that matter, Rohan works closely with our speakers to refine their ideas for the stage."
+  },
+  {
+    "id": "4",
+    "name": "Kavya Menon",
+    "role": "Design & Tech Lead",
+    "image_url": "",
+    "email": "kavya.menon@tedxgcem.com",
+    "linkedin": "https://www.linkedin.com/in/kavya-menon",
+    "bio": "Leading the development of the website and branding, Kavya blends tech and design to establish our digital footprint."
+  },
+  {
+    "id": "5",
+    "name": "Vikram Sen",
+    "role": "Marketing & PR Lead",
+    "image_url": "",
+    "email": "vikram.sen@tedxgcem.com",
+    "linkedin": "https://www.linkedin.com/in/vikram-sen",
+    "bio": "Spreading the word across all media, Vikram designs campaigns that engage the public and build excitement."
+  },
+  {
+    "id": "6",
+    "name": "Ananya Rao",
+    "role": "Operations & Production Lead",
+    "image_url": "",
+    "email": "ananya.rao@tedxgcem.com",
+    "linkedin": "https://www.linkedin.com/in/ananya-rao",
+    "bio": "Ananya keeps the gear turning behind the scenes, managing event logistics, schedules, and live stage production."
+  },
+  {
+    "id": "7",
+    "name": "Siddharth Nair",
+    "role": "Sponsorship & Finance Lead",
+    "image_url": "",
+    "email": "siddharth.nair@tedxgcem.com",
+    "linkedin": "https://www.linkedin.com/in/siddharth-nair",
+    "bio": "Handling financial partnerships and budget compliance to ensure a sustainable and high-quality conference experience."
+  },
+  {
+    "id": "8",
+    "name": "Meera Patel",
+    "role": "Volunteer Coordinator",
+    "image_url": "",
+    "email": "meera.patel@tedxgcem.com",
+    "linkedin": "https://www.linkedin.com/in/meera-patel",
+    "bio": "Meera organizes our team of student volunteers, coordinating on-ground operations to ensure a seamless attendee experience."
+  }
+]

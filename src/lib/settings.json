@@ -9,5 +9,6 @@
   "countdown_target": "2026-10-15T09:00:00",
   "about_theme_name": "TRANSFORMING PERSPECTIVES",
   "about_theme_desc": "This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.",
-  "reveal_about_theme": true
+  "reveal_about_theme": false,
+  "reveal_team": true
 }
