@@ -347,20 +347,23 @@ export default function About({ settings }: AboutProps) {
             viewport={{ once: false }}
             transition={{ duration: 0.6 }}
           >
-            <div className="mt-24 border-2 border-white/10 p-12 bg-black/40 text-center space-y-6 max-w-2xl mx-auto shadow-[6px_6px_0px_0px_#EB0028] relative overflow-hidden">
+            <div className="mt-24 border-2 border-white/10 p-12 bg-black/40 text-center space-y-4 max-w-2xl mx-auto shadow-[6px_6px_0px_0px_#EB0028] relative overflow-hidden">
               <div className="absolute -top-[1.5px] -left-[1.5px] w-3 h-3 border-t-2 border-l-2 border-ted-red" />
               <div className="absolute -top-[1.5px] -right-[1.5px] w-3 h-3 border-t-2 border-r-2 border-ted-red" />
               <div className="absolute -bottom-[1.5px] -left-[1.5px] w-3 h-3 border-b-2 border-l-2 border-ted-red" />
               <div className="absolute -bottom-[1.5px] -right-[1.5px] w-3 h-3 border-b-2 border-r-2 border-ted-red" />
               
-              <span className="text-ted-red text-xs uppercase tracking-[0.35em] font-mono font-black animate-pulse block">
-                {"// THE FACES BEHIND THE EXPERIENCE"}
-              </span>
-              <h3 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase text-white leading-none">
-                COMING SOON
+              <h3 className="text-xl md:text-2xl font-black italic tracking-tighter uppercase text-white leading-tight">
+                THE FACES BEHIND THE EXPERIENCE
               </h3>
-              <p className="text-white/40 text-xs font-mono max-w-sm mx-auto leading-relaxed">
-                Our organizing committee is hard at work behind the scenes drafting the next chapter. Stay tuned.
+              <h3 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase text-ted-red leading-none">
+                COMING
+              </h3>
+              
+              <div className="h-[1.5px] w-12 bg-ted-red/30 mx-auto my-2" />
+              
+              <p className="text-white font-black font-mono tracking-[0.35em] uppercase text-sm md:text-base animate-pulse">
+                SOON
               </p>
             </div>
           </motion.div>

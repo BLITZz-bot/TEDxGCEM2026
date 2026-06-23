@@ -59,11 +59,11 @@ interface Particle {
   color: string;
 }
 
-const speakers = [
+const DEFAULT_SPEAKERS = [
   { 
-    id: 1, 
+    id: "1", 
     name: "Dr. Sarah Chen", 
-    topic: "The Future of AI Ethics", 
+    designation: "Neuroscientist & Author", 
     size: "large",
     bio: "Sarah is a research fellow at the Institute for Human-Centered AI, studying algorithmic accountability and ethics in large-scale generative models.",
     details: "Ph.D. in Computer Science from Stanford. Former lead ethical researcher at DeepMind.",
@@ -71,9 +71,9 @@ const speakers = [
     photo: slImg.src
   },
   { 
-    id: 2, 
+    id: "2", 
     name: "Marcus Thorne", 
-    topic: "Urban Rewilding", 
+    designation: "Founder & CEO, Future Labs", 
     size: "small",
     bio: "An environmental architect specializing in integrating bio-diverse ecosystems into skyscrapers and urban infrastructure.",
     details: "Founder of GreenGrid Studios. TED Senior Fellow and designer of Milan's Vertical Forests.",
@@ -81,9 +81,9 @@ const speakers = [
     photo: slImg.src
   },
   { 
-    id: 3, 
+    id: "3", 
     name: "Aisha Roberts", 
-    topic: "Quantum Storytelling", 
+    designation: "Digital Media Theorist", 
     size: "medium",
     bio: "A media theorist exploring the application of quantum physics concepts to interactive narratives and digital media.",
     details: "Professor of Digital Media at MIT. Author of 'Schrödinger's Screen'.",
@@ -91,9 +91,9 @@ const speakers = [
     photo: slImg.src
   },
   { 
-    id: 4, 
+    id: "4", 
     name: "Julian Voss", 
-    topic: "The Sound of Silence", 
+    designation: "Sound Designer & Acoustician", 
     size: "small",
     bio: "A sound designer and acoustician researching the neurological effects of absolute silence in high-noise environments.",
     details: "Acoustic consultant for NASA's quiet spacecraft initiative. Winner of multiple sound engineering awards.",
@@ -101,9 +101,9 @@ const speakers = [
     photo: slImg.src
   },
   { 
-    id: 5, 
+    id: "5", 
     name: "Elena Rodriguez", 
-    topic: "Bionic Architecture", 
+    designation: "Bionic Architecture Pioneer", 
     size: "medium",
     bio: "A pioneer in bio-inspired building design, building self-heating and self-cooling living structures using synthetic materials.",
     details: "Dean of Architecture at Barcelona Tech. Pioneer in biological-material printing.",
@@ -111,9 +111,9 @@ const speakers = [
     photo: slImg.src
   },
   { 
-    id: 6, 
+    id: "6", 
     name: "Kenji Tanaka", 
-    topic: "Minimalist Mathematics", 
+    designation: "Mathematician & Author", 
     size: "small",
     bio: "A mathematician and author discovering elegance and simple geometry in chaotic topological networks.",
     details: "Fields Medalist. Research focuses on topological data analysis in social network graphs.",
@@ -131,20 +131,52 @@ const BOX_SETTINGS = {
   aspectRatio: "1.5",   // Aspect ratio of the photo frame (e.g. "1.5" or "4/3" for landscape, "4/5" for portrait)
 };
 
-export default function Speakers() {
+interface SpeakersProps {
+  settings?: {
+    reveal_speakers?: boolean;
+  } | null;
+}
+
+export default function Speakers({ settings }: SpeakersProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
+  const [speakers, setSpeakers] = useState<any[]>(DEFAULT_SPEAKERS);
   const [selectedSpeaker, setSelectedSpeaker] = useState<{
-    id: number;
+    id: string | number;
     name: string;
-    topic: string;
+    designation?: string;
     bio: string;
     details: string;
     photo: string;
+    email?: string;
+    linkedin?: string;
+    instagram?: string;
   } | null>(null);
 
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
   const mousePosRef = useRef({ x: -1000, y: -1000 });
+
+  useEffect(() => {
+    fetch("/api/speakers")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.speakers && data.speakers.length > 0) {
+          const formatted = data.speakers.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            designation: s.designation,
+            bio: s.bio,
+            details: s.details,
+            photo: s.image_url || slImg.src,
+            email: s.email,
+            linkedin: s.linkedin,
+            instagram: s.instagram
+          }));
+          setSpeakers(formatted);
+        }
+      })
+      .catch((err) => console.error("Error loading dynamic speakers:", err));
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -403,82 +435,111 @@ export default function Speakers() {
         </motion.div>
 
         {/* Speakers Grid - 2 per row, compact size, centered */}
-        <div 
-          className="grid grid-cols-1 sm:grid-cols-2 gap-8 mx-auto"
-          style={{ maxWidth: gridMaxWidth }}
-        >
-          {speakers.map((speaker, index) => {
-            const isCardHovered = hoveredCardIndex === index;
-            return (
-              <motion.div
-                key={speaker.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: false }}
-                transition={{ duration: 0.5, delay: index * 0.08 }}
-                onClick={() => setSelectedSpeaker(speaker)}
-                className={`group relative border rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 cursor-pointer select-none w-full mx-auto speaker-card backdrop-blur-md ${
-                  isCardHovered
-                    ? "border-ted-red/50 bg-white/[0.07] shadow-[0_0_25px_rgba(235,0,40,0.08)]"
-                    : "border-white/15 bg-white/[0.04] hover:bg-white/[0.07] hover:border-ted-red/50"
-                }`}
-                style={{ maxWidth: BOX_SETTINGS.width, height: BOX_SETTINGS.height }}
-                data-index={index}
-              >
-                {/* Asymmetric Polaroid Frame Container (Portrait Aspect Ratio) */}
-                <div 
-                  className="relative w-full mb-4"
-                  style={{ aspectRatio: BOX_SETTINGS.aspectRatio }}
-                >
-                  {/* Behind Shadow Layer */}
-                  <div className={`absolute inset-0 bg-ted-red rounded-2xl transform transition-transform duration-300 ease-out z-0 ${
-                    isCardHovered 
-                      ? "translate-x-2.5 translate-y-2.5" 
-                      : "translate-x-2.5 translate-y-2.5 md:translate-x-0 md:translate-y-0 md:group-hover:translate-x-2.5 md:group-hover:translate-y-2.5"
-                  }`} />
-                  
-                  {/* Front Image Frame */}
-                  <div className={`absolute inset-0 rounded-2xl overflow-hidden border bg-zinc-900 z-10 transition-[transform,border-color] duration-300 ease-out ${
+        {settings?.reveal_speakers !== false ? (
+          <div 
+            className="grid grid-cols-1 sm:grid-cols-2 gap-8 mx-auto"
+            style={{ maxWidth: gridMaxWidth }}
+          >
+            {speakers.map((speaker, index) => {
+              const isCardHovered = hoveredCardIndex === index;
+              return (
+                <motion.div
+                  key={speaker.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: false }}
+                  transition={{ duration: 0.5, delay: index * 0.08 }}
+                  onClick={() => setSelectedSpeaker(speaker)}
+                  className={`group relative border rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 cursor-pointer select-none w-full mx-auto speaker-card backdrop-blur-md ${
                     isCardHovered
-                      ? "border-ted-red/30 -translate-x-1 -translate-y-1"
-                      : "border-white/15 group-hover:border-ted-red/30 -translate-x-1 -translate-y-1 md:translate-x-0 md:translate-y-0 md:group-hover:-translate-x-1 md:group-hover:-translate-y-1"
-                  }`}>
-                    <img 
-                      src={speaker.photo} 
-                      alt={speaker.name} 
-                      className={`w-full h-full object-cover transition-[transform,filter] duration-300 ease-out transform-gpu [will-change:transform,filter] ${
-                        isCardHovered
-                          ? "grayscale-0 scale-105"
-                          : "grayscale-0 md:grayscale md:group-hover:grayscale-0 md:group-hover:scale-105"
-                      }`}
-                    />
+                      ? "border-ted-red/50 bg-white/[0.07] shadow-[0_0_25px_rgba(235,0,40,0.08)]"
+                      : "border-white/15 bg-white/[0.04] hover:bg-white/[0.07] hover:border-ted-red/50"
+                  }`}
+                  style={{ maxWidth: BOX_SETTINGS.width, height: BOX_SETTINGS.height }}
+                  data-index={index}
+                >
+                  {/* Asymmetric Polaroid Frame Container (Portrait Aspect Ratio) */}
+                  <div 
+                    className="relative w-full mb-4"
+                    style={{ aspectRatio: BOX_SETTINGS.aspectRatio }}
+                  >
+                    {/* Behind Shadow Layer */}
+                    <div className={`absolute inset-0 bg-ted-red rounded-2xl transform transition-transform duration-300 ease-out z-0 ${
+                      isCardHovered 
+                        ? "translate-x-2.5 translate-y-2.5" 
+                        : "translate-x-2.5 translate-y-2.5 md:translate-x-0 md:translate-y-0 md:group-hover:translate-x-2.5 md:group-hover:translate-y-2.5"
+                    }`} />
+                    
+                    {/* Front Image Frame */}
+                    <div className={`absolute inset-0 rounded-2xl overflow-hidden border bg-zinc-900 z-10 transition-[transform,border-color] duration-300 ease-out ${
+                      isCardHovered
+                        ? "border-ted-red/30 -translate-x-1 -translate-y-1"
+                        : "border-white/15 group-hover:border-ted-red/30 -translate-x-1 -translate-y-1 md:translate-x-0 md:translate-y-0 md:group-hover:-translate-x-1 md:group-hover:-translate-y-1"
+                    }`}>
+                      <img 
+                        src={speaker.photo} 
+                        alt={speaker.name} 
+                        className={`w-full h-full object-cover transition-[transform,filter] duration-300 ease-out transform-gpu [will-change:transform,filter] ${
+                          isCardHovered
+                            ? "grayscale-0 scale-105"
+                            : "grayscale-0 md:grayscale md:group-hover:grayscale-0 md:group-hover:scale-105"
+                        }`}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* Editorial Details Underneath */}
-                <div className="text-left mt-auto">
-                  <h3 className={`text-xl sm:text-2xl font-black italic uppercase tracking-tight transition-colors duration-300 leading-tight ${
-                    isCardHovered ? "text-ted-red" : "text-ted-red md:text-white md:group-hover:text-ted-red"
-                  }`}>
-                    {speaker.name}
-                  </h3>
-                  
-                  {/* Designation */}
-                  <p className={`text-white/50 text-[10px] sm:text-xs uppercase tracking-[0.15em] font-mono mt-1 transition-colors duration-300 ${
-                    isCardHovered ? "text-white/80" : "group-hover:text-white/80"
-                  }`}>
-                    {speaker.topic}
-                  </p>
-                  
-                  {/* Active hover dash line */}
-                  <div className={`h-[2px] bg-ted-red mt-4 transition-[width] duration-300 ease-out ${
-                    isCardHovered ? "w-12" : "w-12 md:w-0 md:group-hover:w-12"
-                  }`} />
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+                  {/* Editorial Details Underneath */}
+                  <div className="text-left mt-auto">
+                    <h3 className={`text-xl sm:text-2xl font-black italic tracking-tight transition-colors duration-300 leading-tight ${
+                      isCardHovered ? "text-ted-red" : "text-ted-red md:text-white md:group-hover:text-ted-red"
+                    }`}>
+                      {speaker.name}
+                    </h3>
+                    
+                    {/* Designation */}
+                    <p className={`text-[#A0A0A0] text-[11px] sm:text-xs font-medium tracking-wide mt-2.5 transition-all duration-300 ease-out ${
+                      isCardHovered ? "opacity-100" : "opacity-65 group-hover:opacity-100"
+                    }`}>
+                      {speaker.designation}
+                    </p>
+                    
+                    {/* Active hover dash line */}
+                    <div className={`h-[2px] bg-ted-red mt-4 transition-[width] duration-300 ease-out ${
+                      isCardHovered ? "w-12" : "w-12 md:w-0 md:group-hover:w-12"
+                    }`} />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="border-2 border-white/10 p-12 bg-black/40 text-center space-y-4 max-w-2xl mx-auto shadow-[6px_6px_0px_0px_#EB0028] relative overflow-hidden">
+              <div className="absolute -top-[1.5px] -left-[1.5px] w-3 h-3 border-t-2 border-l-2 border-ted-red" />
+              <div className="absolute -top-[1.5px] -right-[1.5px] w-3 h-3 border-t-2 border-r-2 border-ted-red" />
+              <div className="absolute -bottom-[1.5px] -left-[1.5px] w-3 h-3 border-b-2 border-l-2 border-ted-red" />
+              <div className="absolute -bottom-[1.5px] -right-[1.5px] w-3 h-3 border-b-2 border-r-2 border-ted-red" />
+              
+              <h3 className="text-xl md:text-2xl font-black italic tracking-tighter uppercase text-white leading-tight">
+                Speaker Lineup
+              </h3>
+              <h3 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase text-ted-red leading-none">
+                Coming Soon
+              </h3>
+              
+              <div className="h-[1.5px] w-12 bg-ted-red/30 mx-auto my-2" />
+              
+              <p className="text-white/60 font-mono tracking-[0.2em] uppercase text-xs">
+                STAY TUNED FOR REVEALS
+              </p>
+            </div>
+          </motion.div>
+        )}
 
       </div>
 
@@ -554,20 +615,15 @@ export default function Speakers() {
                   <span className="text-ted-red text-[10px] font-bold uppercase tracking-[0.2em] font-mono block mb-2">
                     {"// SPEAKER SPECS"}
                   </span>
-                  <h3 className="text-3xl sm:text-5xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">
+                  <h3 className="text-3xl sm:text-5xl md:text-7xl font-black italic text-white tracking-tighter leading-none">
                     {selectedSpeaker.name}
                   </h3>
-                </div>
-
-                {/* Talk topic with a red side-border accent */}
-                <div className="border-l-4 border-ted-red pl-4 py-1">
-                  <span className="text-ted-red font-mono text-[9px] uppercase tracking-widest block mb-1">
-                    Presentation Topic
-                  </span>
-                  <p className="text-white font-semibold text-sm sm:text-xl md:text-2xl leading-tight">
-                    {selectedSpeaker.topic}
+                  <p className="text-white/50 text-xs tracking-widest font-mono mt-2">
+                    {selectedSpeaker.designation}
                   </p>
                 </div>
+
+
 
                 {/* Stylized biography quotes */}
                 <div className="space-y-2">
@@ -587,22 +643,44 @@ export default function Speakers() {
 
                 {/* Full-width custom contact buttons */}
                 <div className="flex flex-row gap-2 pt-2 w-full">
+                  {selectedSpeaker.linkedin ? (
+                    <a 
+                      href={selectedSpeaker.linkedin} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2.5 border border-white/10 hover:border-ted-red/40 bg-white/[0.02] hover:bg-ted-red/10 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white"
+                    >
+                      <Linkedin className="w-3.5 h-3.5 text-white/60" />
+                      <span>LinkedIn</span>
+                    </a>
+                  ) : (
+                    <div 
+                      className="flex-1 py-2.5 border border-white/5 bg-white/[0.01] rounded-xl flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white/20 cursor-not-allowed select-none"
+                    >
+                      <Linkedin className="w-3.5 h-3.5 text-white/10" />
+                      <span>LinkedIn</span>
+                    </div>
+                  )}
+                  {selectedSpeaker.instagram ? (
+                    <a 
+                      href={selectedSpeaker.instagram} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2.5 border border-white/10 hover:border-ted-red/40 bg-white/[0.02] hover:bg-ted-red/10 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white"
+                    >
+                      <Instagram className="w-3.5 h-3.5 text-white/60" />
+                      <span>Instagram</span>
+                    </a>
+                  ) : (
+                    <div 
+                      className="flex-1 py-2.5 border border-white/5 bg-white/[0.01] rounded-xl flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white/20 cursor-not-allowed select-none"
+                    >
+                      <Instagram className="w-3.5 h-3.5 text-white/10" />
+                      <span>Instagram</span>
+                    </div>
+                  )}
                   <a 
-                    href="#" 
-                    className="flex-1 py-2.5 border border-white/10 hover:border-ted-red/40 bg-white/[0.02] hover:bg-ted-red/10 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white"
-                  >
-                    <Linkedin className="w-3.5 h-3.5 text-white/60" />
-                    <span>LinkedIn</span>
-                  </a>
-                  <a 
-                    href="#" 
-                    className="flex-1 py-2.5 border border-white/10 hover:border-ted-red/40 bg-white/[0.02] hover:bg-ted-red/10 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white"
-                  >
-                    <Instagram className="w-3.5 h-3.5 text-white/60" />
-                    <span>Instagram</span>
-                  </a>
-                  <a 
-                    href={`mailto:speakers@tedxgcem.com`} 
+                    href={`mailto:${selectedSpeaker.email || "speakers@tedxgcem.com"}`} 
                     className="flex-1 py-2.5 border border-white/10 hover:border-ted-red/40 bg-white/[0.02] hover:bg-ted-red/10 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white"
                   >
                     <Mail className="w-3.5 h-3.5 text-white/60" />

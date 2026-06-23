@@ -36,6 +36,7 @@ interface AdminConsoleProps {
     about_theme_desc: string;
     reveal_about_theme: boolean;
     reveal_team: boolean;
+    reveal_speakers: boolean;
   } | null;
   onSettingsUpdate: () => void;
 }
@@ -45,8 +46,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
   const [messages, setMessages] = useState<AdminMessage[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [speakersList, setSpeakersList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages" | "settings" | "team">("registrations");
+  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages" | "settings" | "team" | "speakers">("registrations");
   const [errorMsg, setErrorMsg] = useState("");
 
   // Event settings states
@@ -62,6 +64,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [aboutThemeDesc, setAboutThemeDesc] = useState(settings?.about_theme_desc || "");
   const [revealAboutTheme, setRevealAboutTheme] = useState(settings ? !!settings.reveal_about_theme : true);
   const [revealTeam, setRevealTeam] = useState(settings ? !!settings.reveal_team : true);
+  const [revealSpeakers, setRevealSpeakers] = useState(settings ? !!settings.reveal_speakers : true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
 
@@ -74,6 +77,18 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [memberLinkedin, setMemberLinkedin] = useState("");
   const [memberBio, setMemberBio] = useState("");
   const [savingMember, setSavingMember] = useState(false);
+
+  // Speakers management states
+  const [editingSpeakerId, setEditingSpeakerId] = useState<string | null>(null);
+  const [speakerName, setSpeakerName] = useState("");
+  const [speakerDesignation, setSpeakerDesignation] = useState("");
+  const [speakerBio, setSpeakerBio] = useState("");
+  const [speakerDetails, setSpeakerDetails] = useState("");
+  const [speakerImageUrl, setSpeakerImageUrl] = useState("");
+  const [speakerEmail, setSpeakerEmail] = useState("");
+  const [speakerLinkedin, setSpeakerLinkedin] = useState("");
+  const [speakerInstagram, setSpeakerInstagram] = useState("");
+  const [savingSpeaker, setSavingSpeaker] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -90,6 +105,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       setAboutThemeDesc(settings.about_theme_desc ?? "");
       setRevealAboutTheme(settings.reveal_about_theme ?? true);
       setRevealTeam(settings.reveal_team ?? true);
+      setRevealSpeakers(settings.reveal_speakers ?? true);
     }
   }, [settings]);
 
@@ -114,6 +130,12 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       const teamData = await teamRes.json();
       if (!teamRes.ok) throw new Error(teamData.error || "Failed to load team members.");
       setTeamMembers(teamData.team || []);
+
+      // Fetch speakers
+      const speakersRes = await fetch("/api/speakers");
+      const speakersData = await speakersRes.json();
+      if (!speakersRes.ok) throw new Error(speakersData.error || "Failed to load speakers.");
+      setSpeakersList(speakersData.speakers || []);
     } catch (err: unknown) {
       console.error("Error loading admin records:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to load database records. Ensure database setup is correct.";
@@ -146,6 +168,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           about_theme_desc: aboutThemeDesc,
           reveal_about_theme: revealAboutTheme,
           reveal_team: revealTeam,
+          reveal_speakers: revealSpeakers,
         }),
       });
 
@@ -257,6 +280,182 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     const reader = new FileReader();
     reader.onloadend = () => {
       setMemberImageUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleToggleTeamReveal = async () => {
+    const updatedReveal = !revealTeam;
+    setRevealTeam(updatedReveal);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          theme_name: themeName,
+          reveal_theme: revealTheme,
+          reveal_date: revealDate,
+          reveal_countdown: revealCountdown,
+          event_date: eventDate,
+          event_time: eventTime,
+          event_day: eventDay,
+          countdown_target: countdownTarget,
+          about_theme_name: aboutThemeName,
+          about_theme_desc: aboutThemeDesc,
+          reveal_about_theme: revealAboutTheme,
+          reveal_team: updatedReveal,
+          reveal_speakers: revealSpeakers,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save settings.");
+      onSettingsUpdate();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error toggling team reveal: " + errorMessage);
+      setRevealTeam(!updatedReveal);
+    }
+  };
+
+  const handleToggleSpeakersReveal = async () => {
+    const updatedReveal = !revealSpeakers;
+    setRevealSpeakers(updatedReveal);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          theme_name: themeName,
+          reveal_theme: revealTheme,
+          reveal_date: revealDate,
+          reveal_countdown: revealCountdown,
+          event_date: eventDate,
+          event_time: eventTime,
+          event_day: eventDay,
+          countdown_target: countdownTarget,
+          about_theme_name: aboutThemeName,
+          about_theme_desc: aboutThemeDesc,
+          reveal_about_theme: revealAboutTheme,
+          reveal_team: revealTeam,
+          reveal_speakers: updatedReveal,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save settings.");
+      onSettingsUpdate();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error toggling speakers reveal: " + errorMessage);
+      setRevealSpeakers(!updatedReveal);
+    }
+  };
+
+  const handleSaveSpeaker = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!speakerImageUrl) {
+      alert("Please upload a profile image first.");
+      return;
+    }
+    setSavingSpeaker(true);
+    try {
+      const res = await fetch("/api/speakers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: editingSpeakerId,
+          name: speakerName,
+          designation: speakerDesignation,
+          image_url: speakerImageUrl,
+          email: speakerEmail,
+          linkedin: speakerLinkedin,
+          instagram: speakerInstagram,
+          bio: speakerBio,
+          details: speakerDetails,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save speaker.");
+
+      alert(editingSpeakerId ? "Speaker profile updated!" : "New speaker added!");
+      handleResetSpeakerForm();
+      
+      // Reload speakers list
+      const speakersRes = await fetch("/api/speakers");
+      const speakersData = await speakersRes.json();
+      if (speakersRes.ok && speakersData.speakers) {
+        setSpeakersList(speakersData.speakers);
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to save speaker.";
+      alert("Error saving speaker: " + errorMessage);
+    } finally {
+      setSavingSpeaker(false);
+    }
+  };
+
+  const handleEditSpeaker = (speaker: any) => {
+    setEditingSpeakerId(speaker.id);
+    setSpeakerName(speaker.name);
+    setSpeakerDesignation(speaker.designation || "");
+    setSpeakerImageUrl(speaker.image_url);
+    setSpeakerEmail(speaker.email || "");
+    setSpeakerLinkedin(speaker.linkedin || "");
+    setSpeakerInstagram(speaker.instagram || "");
+    setSpeakerBio(speaker.bio);
+    setSpeakerDetails(speaker.details);
+  };
+
+  const handleDeleteSpeaker = async (id: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this speaker?")) return;
+    try {
+      const res = await fetch(`/api/speakers?id=${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete speaker.");
+
+      setSpeakersList(prev => prev.filter(s => s.id !== id));
+      alert("Speaker deleted successfully!");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error deleting speaker: " + errorMessage);
+    }
+  };
+
+  const handleResetSpeakerForm = () => {
+    setEditingSpeakerId(null);
+    setSpeakerName("");
+    setSpeakerDesignation("");
+    setSpeakerImageUrl("");
+    setSpeakerEmail("");
+    setSpeakerLinkedin("");
+    setSpeakerInstagram("");
+    setSpeakerBio("");
+    setSpeakerDetails("");
+  };
+
+  const handleSpeakerImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image size should be less than 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSpeakerImageUrl(reader.result as string);
     };
     reader.readAsDataURL(file);
   };
@@ -433,6 +632,14 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           }`}
         >
           Team Manager ({teamMembers.length})
+        </button>
+        <button
+          onClick={() => setActiveSubTab("speakers")}
+          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+            activeSubTab === "speakers" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+          }`}
+        >
+          Speakers Manager ({speakersList.length})
         </button>
         <button
           onClick={fetchData}
@@ -773,6 +980,26 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                     />
                   </button>
                 </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Reveal Speakers Section</label>
+                    <span className="text-[9px] text-white/30 block">Toggle off to show &apos;Speaker Lineup Coming Soon&apos; placeholder on website</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRevealSpeakers(!revealSpeakers)}
+                    className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                      revealSpeakers ? "bg-ted-red" : "bg-white/10"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                        revealSpeakers ? "translate-x-7" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -793,9 +1020,36 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               </button>
             </div>
           </form>
-        ) : (
+        ) : activeSubTab === "team" ? (
           /* TEAM MANAGER VIEW */
           <div className="space-y-8 font-mono text-xs">
+            {/* Visibility toggle control card */}
+            <div className="border border-white/10 p-6 rounded-2xl bg-black/40 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Visibility Controls"}</span>
+                <label className="text-sm font-bold text-white uppercase tracking-wider block">Reveal Team Section on Website</label>
+                <span className="text-[9px] text-white/30 block">
+                  {revealTeam 
+                    ? "Currently showing committee profiles on About page" 
+                    : "Currently showing 'THE FACES BEHIND THE EXPERIENCE - COMING SOON' placeholder"
+                  }
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleTeamReveal}
+                className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                  revealTeam ? "bg-ted-red" : "bg-white/10"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                    revealTeam ? "translate-x-7" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
             {/* Editor panel: Add / Edit Team Member */}
             <div className="border border-white/10 p-6 rounded-2xl bg-black/40 space-y-4">
               <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">
@@ -991,6 +1245,273 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                           onClick={() => handleDeleteMember(member.id)}
                           className="p-1.5 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white text-white rounded transition-colors cursor-pointer animate-none"
                           title="Delete Member"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* SPEAKERS MANAGER VIEW */
+          <div className="space-y-8 font-mono text-xs">
+            {/* Visibility toggle control card */}
+            <div className="border border-white/10 p-6 rounded-2xl bg-black/40 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Visibility Controls"}</span>
+                <label className="text-sm font-bold text-white uppercase tracking-wider block">Reveal Speakers Section on Website</label>
+                <span className="text-[9px] text-white/30 block">
+                  {revealSpeakers 
+                    ? "Currently showing speakers lineup on website" 
+                    : "Currently showing 'Speaker Lineup Coming Soon' placeholder"
+                  }
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleSpeakersReveal}
+                className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                  revealSpeakers ? "bg-ted-red" : "bg-white/10"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                    revealSpeakers ? "translate-x-7" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Editor panel: Add / Edit Speaker */}
+            <div className="border border-white/10 p-6 rounded-2xl bg-black/40 space-y-4">
+              <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">
+                {editingSpeakerId ? `// Edit Speaker Profile` : `// Add New Speaker`}
+              </span>
+              
+              <form onSubmit={handleSaveSpeaker} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Full Name</label>
+                    <input
+                      type="text"
+                      value={speakerName}
+                      onChange={(e) => setSpeakerName(e.target.value)}
+                      placeholder="e.g. Dr. Sarah Chen"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Designation / Role</label>
+                    <input
+                      type="text"
+                      value={speakerDesignation}
+                      onChange={(e) => setSpeakerDesignation(e.target.value)}
+                      placeholder="e.g. AI Ethics Researcher"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Gmail Address (Optional)</label>
+                    <input
+                      type="email"
+                      value={speakerEmail}
+                      onChange={(e) => setSpeakerEmail(e.target.value)}
+                      placeholder="e.g. sarah.chen@tedxgcem.com"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">LinkedIn Profile URL (Optional)</label>
+                    <input
+                      type="url"
+                      value={speakerLinkedin}
+                      onChange={(e) => setSpeakerLinkedin(e.target.value)}
+                      placeholder="e.g. https://linkedin.com/in/sarah"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Instagram Profile URL (Optional)</label>
+                    <input
+                      type="url"
+                      value={speakerInstagram}
+                      onChange={(e) => setSpeakerInstagram(e.target.value)}
+                      placeholder="e.g. https://instagram.com/sarah"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs text-white/50 uppercase tracking-wider block">Talk Description / Short Bio</label>
+                  <textarea
+                    value={speakerBio}
+                    onChange={(e) => setSpeakerBio(e.target.value)}
+                    placeholder="Provide a short description of the talk topic and speaker profile..."
+                    className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-sans h-24 resize-y leading-relaxed"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs text-white/50 uppercase tracking-wider block">Detailed Credentials / Background</label>
+                  <textarea
+                    value={speakerDetails}
+                    onChange={(e) => setSpeakerDetails(e.target.value)}
+                    placeholder="Provide detailed background, achievements, and credentials..."
+                    className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-sans h-20 resize-y leading-relaxed"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-2">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Upload Speaker Headshot</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleSpeakerImageChange}
+                      className="w-full bg-white/5 border border-white/10 p-2.5 text-xs text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono cursor-pointer"
+                    />
+                    <span className="text-[9px] text-white/30 block">Select a high-quality square speaker headshot (under 2MB)</span>
+                  </div>
+
+                  {speakerImageUrl && (
+                    <div className="flex items-center gap-4 border border-white/5 bg-black/30 p-3 rounded-xl">
+                      <div className="w-16 h-16 rounded border border-white/20 overflow-hidden shrink-0 bg-zinc-950">
+                        <img src={speakerImageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-white uppercase block">Image Preview</span>
+                        <button
+                          type="button"
+                          onClick={() => setSpeakerImageUrl("")}
+                          className="text-[9px] text-ted-red hover:underline uppercase font-bold cursor-pointer"
+                        >
+                          Remove Photo
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+                  {editingSpeakerId && (
+                    <button
+                      type="button"
+                      onClick={handleResetSpeakerForm}
+                      className="px-6 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold uppercase tracking-widest text-[10px] transition-colors rounded-lg cursor-pointer"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={savingSpeaker}
+                    className="px-6 py-2.5 bg-ted-red hover:bg-white text-white hover:text-black font-black uppercase tracking-widest text-[10px] transition-colors rounded-lg cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {savingSpeaker ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Saving Speaker...
+                      </>
+                    ) : editingSpeakerId ? (
+                      "Update Profile"
+                    ) : (
+                      "Add Speaker"
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* List/Table panel: Current Speakers */}
+            <div className="border border-white/10 p-6 rounded-2xl bg-black/40 space-y-4">
+              <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Registered Featured Speakers"}</span>
+              
+              {speakersList.length === 0 ? (
+                <p className="text-center text-white/40 py-8 font-mono">No speakers registered. Add speakers above.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {speakersList.map((speaker) => (
+                    <div
+                      key={speaker.id}
+                      className="flex gap-4 border border-white/5 bg-black/20 p-4 rounded-xl items-start relative group"
+                    >
+                      <div className="w-16 h-20 border border-white/15 overflow-hidden shrink-0 bg-zinc-950">
+                        {speaker.image_url ? (
+                          <img src={speaker.image_url} alt={speaker.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white/20 font-bold bg-white/5 text-[9px] uppercase">
+                            No Photo
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 flex-grow pr-16">
+                        <div className="space-y-0.5">
+                          <h5 className="font-bold text-white uppercase tracking-wider text-sm">{speaker.name}</h5>
+                          <div className="text-[10px] text-ted-red uppercase tracking-widest">{speaker.designation}</div>
+                        </div>
+                        
+                        <div className="flex gap-2.5 pt-0.5">
+                          {speaker.email ? (
+                            <span className="text-[9px] text-white/50 bg-white/5 px-2 py-0.5 rounded font-mono" title={speaker.email}>
+                              ✉️ Email
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-white/20 bg-white/[0.02] px-2 py-0.5 rounded font-mono line-through">
+                              ✉️ Email
+                            </span>
+                          )}
+                          {speaker.linkedin ? (
+                            <span className="text-[9px] text-white/50 bg-white/5 px-2 py-0.5 rounded font-mono" title={speaker.linkedin}>
+                              🔗 LinkedIn
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-white/20 bg-white/[0.02] px-2 py-0.5 rounded font-mono line-through">
+                              🔗 LinkedIn
+                            </span>
+                          )}
+                          {speaker.instagram ? (
+                            <span className="text-[9px] text-white/50 bg-white/5 px-2 py-0.5 rounded font-mono" title={speaker.instagram}>
+                              📸 Instagram
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-white/20 bg-white/[0.02] px-2 py-0.5 rounded font-mono line-through">
+                              📸 Instagram
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-[10px] text-white/40 leading-relaxed font-sans line-clamp-2 max-w-sm" title={speaker.bio}>
+                          {speaker.bio}
+                        </p>
+                      </div>
+
+                      <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEditSpeaker(speaker)}
+                          className="p-1.5 bg-white/5 border border-white/10 hover:bg-ted-red/20 hover:border-ted-red text-white hover:text-white rounded transition-colors cursor-pointer animate-none"
+                          title="Edit Profile"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSpeaker(speaker.id)}
+                          className="p-1.5 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white text-white rounded transition-colors cursor-pointer animate-none"
+                          title="Delete Speaker"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

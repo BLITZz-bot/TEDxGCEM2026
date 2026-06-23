@@ -86,12 +86,14 @@ CREATE TABLE IF NOT EXISTS public.event_settings (
     about_theme_name TEXT DEFAULT 'TRANSFORMING PERSPECTIVES' NOT NULL,
     about_theme_desc TEXT DEFAULT 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.' NOT NULL,
     reveal_about_theme BOOLEAN DEFAULT true NOT NULL,
+    reveal_team BOOLEAN DEFAULT true NOT NULL,
+    reveal_speakers BOOLEAN DEFAULT true NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
 -- Insert initial settings row if not present
-INSERT INTO public.event_settings (id, theme_name, reveal_theme, reveal_date, reveal_countdown, event_date, event_time, event_day, countdown_target, about_theme_name, about_theme_desc, reveal_about_theme)
-VALUES ('global', 'RIPPLE', true, true, true, 'October 15, 2026', '09:00 AM', 'THURSDAY', '2026-10-15T09:00:00', 'TRANSFORMING PERSPECTIVES', 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.', true)
+INSERT INTO public.event_settings (id, theme_name, reveal_theme, reveal_date, reveal_countdown, event_date, event_time, event_day, countdown_target, about_theme_name, about_theme_desc, reveal_about_theme, reveal_team, reveal_speakers)
+VALUES ('global', 'RIPPLE', true, true, true, 'October 15, 2026', '09:00 AM', 'THURSDAY', '2026-10-15T09:00:00', 'TRANSFORMING PERSPECTIVES', 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.', true, true, true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Enable RLS
@@ -150,4 +152,43 @@ USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
 -- Migration for adding reveal_team to event_settings
 -- Execute this query in your Supabase SQL Editor:
 -- ALTER TABLE public.event_settings ADD COLUMN IF NOT EXISTS reveal_team BOOLEAN DEFAULT true NOT NULL;
+
+-- 9. SPEAKERS TABLE AND POLICIES
+CREATE TABLE IF NOT EXISTS public.speakers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    name TEXT NOT NULL,
+    designation TEXT NOT NULL, -- Added designation field
+    bio TEXT NOT NULL,
+    details TEXT NOT NULL,
+    image_url TEXT NOT NULL, -- Holds Base64 data string
+    email TEXT,
+    linkedin TEXT,
+    instagram TEXT
+);
+
+-- Enable RLS for speakers
+ALTER TABLE public.speakers ENABLE ROW LEVEL SECURITY;
+
+-- Allow read access to anyone (public)
+CREATE POLICY "Allow public read access to speakers"
+ON public.speakers
+FOR SELECT
+TO public
+USING (true);
+
+-- Allow write/management only to the admin
+CREATE POLICY "Allow admin to manage speakers"
+ON public.speakers
+FOR ALL
+TO authenticated
+USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+
+-- Migration for adding designation to speakers table
+-- Execute this query in your Supabase SQL Editor if table already exists:
+-- ALTER TABLE public.speakers ADD COLUMN IF NOT EXISTS designation TEXT DEFAULT 'Featured Speaker' NOT NULL;
+
+-- Migration for adding reveal_speakers to event_settings table
+-- Execute this query in your Supabase SQL Editor if table already exists:
+-- ALTER TABLE public.event_settings ADD COLUMN IF NOT EXISTS reveal_speakers BOOLEAN DEFAULT true NOT NULL;
 

@@ -15,6 +15,7 @@ export interface EventSettings {
   about_theme_desc: string;
   reveal_about_theme: boolean;
   reveal_team: boolean;
+  reveal_speakers: boolean;
 }
 
 const DEFAULT_SETTINGS: EventSettings = {
@@ -30,6 +31,7 @@ const DEFAULT_SETTINGS: EventSettings = {
   about_theme_desc: "This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.",
   reveal_about_theme: true,
   reveal_team: true,
+  reveal_speakers: true,
 };
 
 const SETTINGS_FILE_PATH = path.join(process.cwd(), "src", "lib", "settings.json");
@@ -58,6 +60,7 @@ export async function getSettings(): Promise<EventSettings> {
         about_theme_desc: data.about_theme_desc ?? DEFAULT_SETTINGS.about_theme_desc,
         reveal_about_theme: data.reveal_about_theme ?? DEFAULT_SETTINGS.reveal_about_theme,
         reveal_team: data.reveal_team ?? DEFAULT_SETTINGS.reveal_team,
+        reveal_speakers: data.reveal_speakers ?? DEFAULT_SETTINGS.reveal_speakers,
       };
     }
   } catch (err) {
@@ -82,6 +85,7 @@ export async function getSettings(): Promise<EventSettings> {
         about_theme_desc: parsed.about_theme_desc ?? DEFAULT_SETTINGS.about_theme_desc,
         reveal_about_theme: parsed.reveal_about_theme ?? DEFAULT_SETTINGS.reveal_about_theme,
         reveal_team: parsed.reveal_team ?? DEFAULT_SETTINGS.reveal_team,
+        reveal_speakers: parsed.reveal_speakers ?? DEFAULT_SETTINGS.reveal_speakers,
       };
     }
   } catch (err) {
@@ -118,6 +122,7 @@ export async function saveSettings(settings: EventSettings): Promise<boolean> {
         about_theme_desc: settings.about_theme_desc,
         reveal_about_theme: settings.reveal_about_theme,
         reveal_team: settings.reveal_team,
+        reveal_speakers: settings.reveal_speakers,
         updated_at: new Date().toISOString(),
       };
 

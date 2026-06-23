@@ -38,6 +38,7 @@ export default function Home() {
     about_theme_desc: string;
     reveal_about_theme: boolean;
     reveal_team: boolean;
+    reveal_speakers: boolean;
   } | null>(null);
 
   const fetchSettings = () => {
@@ -129,7 +130,7 @@ export default function Home() {
       case "about":
         return <About key="about" settings={settings} />;
       case "speakers":
-        return <Speakers key="speakers" />;
+        return <Speakers key="speakers" settings={settings} />;
       case "schedule":
         return <Schedule key="schedule" />;
       case "partners":
