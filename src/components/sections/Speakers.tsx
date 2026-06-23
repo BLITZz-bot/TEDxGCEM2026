@@ -131,6 +131,30 @@ const BOX_SETTINGS = {
   aspectRatio: "1.5",   // Aspect ratio of the photo frame (e.g. "1.5" or "4/3" for landscape, "4/5" for portrait)
 };
 
+interface Speaker {
+  id: string | number;
+  name: string;
+  designation?: string;
+  bio: string;
+  details: string;
+  photo: string;
+  email?: string;
+  linkedin?: string;
+  instagram?: string;
+}
+
+interface DBSpeaker {
+  id: string;
+  name: string;
+  designation: string;
+  bio: string;
+  details: string;
+  image_url?: string;
+  email?: string;
+  linkedin?: string;
+  instagram?: string;
+}
+
 interface SpeakersProps {
   settings?: {
     reveal_speakers?: boolean;
@@ -140,18 +164,8 @@ interface SpeakersProps {
 export default function Speakers({ settings }: SpeakersProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  const [speakers, setSpeakers] = useState<any[]>(DEFAULT_SPEAKERS);
-  const [selectedSpeaker, setSelectedSpeaker] = useState<{
-    id: string | number;
-    name: string;
-    designation?: string;
-    bio: string;
-    details: string;
-    photo: string;
-    email?: string;
-    linkedin?: string;
-    instagram?: string;
-  } | null>(null);
+  const [speakers, setSpeakers] = useState<Speaker[]>(DEFAULT_SPEAKERS);
+  const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null);
 
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
   const mousePosRef = useRef({ x: -1000, y: -1000 });
@@ -161,7 +175,7 @@ export default function Speakers({ settings }: SpeakersProps) {
       .then((res) => res.json())
       .then((data) => {
         if (data && data.speakers && data.speakers.length > 0) {
-          const formatted = data.speakers.map((s: any) => ({
+          const formatted = data.speakers.map((s: DBSpeaker) => ({
             id: s.id,
             name: s.name,
             designation: s.designation,

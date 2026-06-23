@@ -5,12 +5,22 @@ import { motion } from "framer-motion";
 import demoImg from "../../../public/DEMO.png";
 import type { EventSettings } from "@/lib/settings-service";
 
+interface TeamMember {
+  id?: string;
+  name: string;
+  role: string;
+  image_url: string;
+  email?: string;
+  linkedin?: string;
+  bio: string;
+}
+
 interface AboutProps {
   settings: EventSettings | null;
 }
 
 export default function About({ settings }: AboutProps) {
-  const [team, setTeam] = useState<any[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

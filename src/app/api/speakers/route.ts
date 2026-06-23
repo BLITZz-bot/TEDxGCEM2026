@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 async function checkAdmin(supabase: SupabaseClient) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !user.email) return false;
-  const adminEmail = process.env.ADMIN_EMAIL || "tedxgcem@gmail.com";
+  const adminEmail = process.env.ADMIN_EMAIL || "";
   return user.email.toLowerCase() === adminEmail.toLowerCase();
 }
 
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       (linkedin !== undefined && linkedin !== null && typeof linkedin !== "string") ||
       (instagram !== undefined && instagram !== null && typeof instagram !== "string")
     ) {
-      return NextResponse.json({ error: "Invalid parameters.", details: { name, designation, image_url, bio, details } }, { status: 400 });
+      return NextResponse.json({ error: "Invalid parameters." }, { status: 400 });
     }
 
     let success = false;

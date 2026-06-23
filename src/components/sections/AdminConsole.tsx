@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { TeamMember } from "@/lib/team-service";
+import { Speaker } from "@/lib/speakers-service";
 
 interface AdminRegistration {
   id: string;
@@ -45,8 +47,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const { isAdmin, loading: authLoading } = useAuth();
   const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
   const [messages, setMessages] = useState<AdminMessage[]>([]);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [speakersList, setSpeakersList] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [speakersList, setSpeakersList] = useState<Speaker[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages" | "settings" | "team" | "speakers">("registrations");
   const [errorMsg, setErrorMsg] = useState("");
@@ -230,7 +232,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     }
   };
 
-  const handleEditMember = (member: any) => {
+  const handleEditMember = (member: TeamMember) => {
     setEditingMemberId(member.id);
     setMemberName(member.name);
     setMemberRole(member.role);
@@ -402,7 +404,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     }
   };
 
-  const handleEditSpeaker = (speaker: any) => {
+  const handleEditSpeaker = (speaker: Speaker) => {
     setEditingSpeakerId(speaker.id);
     setSpeakerName(speaker.name);
     setSpeakerDesignation(speaker.designation || "");

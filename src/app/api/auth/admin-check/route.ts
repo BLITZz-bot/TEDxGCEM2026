@@ -15,7 +15,7 @@ export async function GET() {
     }
 
     // Keep the admin email strictly on the server
-    const adminEmail = process.env.ADMIN_EMAIL || "tedxgcem@gmail.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "";
     const isAdmin = user.email.toLowerCase() === adminEmail.toLowerCase();
 
     return NextResponse.json(
