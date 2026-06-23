@@ -70,3 +70,40 @@ ON public.registrations
 FOR ALL 
 TO authenticated 
 USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+
+-- 6. EVENT SETTINGS TABLE
+-- Stores global configurable settings for the event
+CREATE TABLE IF NOT EXISTS public.event_settings (
+    id TEXT PRIMARY KEY,
+    theme_name TEXT DEFAULT 'RIPPLE' NOT NULL,
+    reveal_theme BOOLEAN DEFAULT true NOT NULL,
+    reveal_date BOOLEAN DEFAULT true NOT NULL,
+    reveal_countdown BOOLEAN DEFAULT true NOT NULL,
+    event_date TEXT DEFAULT 'October 15, 2026' NOT NULL,
+    event_time TEXT DEFAULT '09:00 AM' NOT NULL,
+    event_day TEXT DEFAULT 'THURSDAY' NOT NULL,
+    countdown_target TEXT DEFAULT '2026-10-15T09:00:00' NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+-- Insert initial settings row if not present
+INSERT INTO public.event_settings (id, theme_name, reveal_theme, reveal_date, reveal_countdown, event_date, event_time, event_day, countdown_target)
+VALUES ('global', 'RIPPLE', true, true, true, 'October 15, 2026', '09:00 AM', 'THURSDAY', '2026-10-15T09:00:00')
+ON CONFLICT (id) DO NOTHING;
+
+-- Enable RLS
+ALTER TABLE public.event_settings ENABLE ROW LEVEL SECURITY;
+
+-- Allow read access to anyone (public)
+CREATE POLICY "Allow public read access to event settings"
+ON public.event_settings
+FOR SELECT
+TO public
+USING (true);
+
+-- Allow write/management only to the admin
+CREATE POLICY "Allow admin to manage event settings"
+ON public.event_settings
+FOR ALL
+TO authenticated
+USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');

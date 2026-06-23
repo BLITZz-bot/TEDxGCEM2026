@@ -23,6 +23,33 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [showDevLinks, setShowDevLinks] = useState(false);
   const devCreditRef = useRef<HTMLDivElement>(null);
+  
+  // Dynamic settings state
+  const [settings, setSettings] = useState<{
+    theme_name: string;
+    reveal_theme: boolean;
+    reveal_date: boolean;
+    reveal_countdown: boolean;
+    event_date: string;
+    event_time: string;
+    event_day: string;
+    countdown_target: string;
+  } | null>(null);
+
+  const fetchSettings = () => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.settings) {
+          setSettings(data.settings);
+        }
+      })
+      .catch((err) => console.error("Error loading settings:", err));
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -89,9 +116,9 @@ export default function Home() {
       case "home":
         return (
           <div key="home" className="flex flex-col w-full">
-            <Hero onTabChange={handleTabChange} />
-            <EventDate />
-            <Countdown onTabChange={handleTabChange} />
+            <Hero onTabChange={handleTabChange} settings={settings} />
+            <EventDate settings={settings} />
+            <Countdown onTabChange={handleTabChange} settings={settings} />
             <Highlights />
           </div>
         );
@@ -110,9 +137,9 @@ export default function Home() {
       case "contact":
         return <Contact key="contact" />;
       case "admin":
-        return <AdminConsole key="admin" />;
+        return <AdminConsole key="admin" settings={settings} onSettingsUpdate={fetchSettings} />;
       default:
-        return <Hero key="home" onTabChange={handleTabChange} />;
+        return <Hero key="home" onTabChange={handleTabChange} settings={settings} />;
     }
   };
 

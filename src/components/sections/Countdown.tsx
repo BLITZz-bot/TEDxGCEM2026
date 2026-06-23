@@ -7,11 +7,20 @@ import { TabId } from "@/components/ui/TabNav";
 
 interface CountdownProps {
   onTabChange: (id: TabId) => void;
+  settings?: {
+    theme_name: string;
+    reveal_theme: boolean;
+    reveal_date: boolean;
+    reveal_countdown: boolean;
+    event_date: string;
+    event_time: string;
+    event_day: string;
+    countdown_target: string;
+  } | null;
 }
 
-export default function Countdown({ onTabChange }: CountdownProps) {
-  // Target Event: October 15, 2026 at 09:00:00 AM IST
-  const targetDateStr = "2026-10-15T09:00:00";
+export default function Countdown({ onTabChange, settings }: CountdownProps) {
+  const targetDateStr = settings?.countdown_target || "2026-10-15T09:00:00";
   
   const [timeLeft, setTimeLeft] = useState({
     days: "00",
@@ -57,7 +66,7 @@ export default function Countdown({ onTabChange }: CountdownProps) {
     const interval = setInterval(calculateTime, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [targetDateStr]);
 
   const timeBlocks = [
     { label: "Days", value: timeLeft.days },
@@ -131,37 +140,54 @@ export default function Countdown({ onTabChange }: CountdownProps) {
                 animate={{ opacity: 1 }}
                 className="text-white/40 font-mono text-xs uppercase tracking-[0.35em]"
               >
-                The countdown is ticking
+                {settings && (!settings.reveal_countdown || !settings.reveal_date) ? "COUNTDOWN STANDBY" : "The countdown is ticking"}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
         {/* Bento Grid Countdown Block */}
-        <div className="grid grid-cols-4 gap-2 xs:gap-3 md:gap-6 mb-16 max-w-2xl mx-auto">
-          {timeBlocks.map((block, idx) => (
-            <motion.div
-              key={block.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: idx * 0.08 }}
-              className="bg-neutral-900/40 backdrop-blur-md border border-white/10 rounded-2xl p-2.5 xs:p-3 md:p-6 flex flex-col items-center justify-center shadow-lg hover:border-ted-red/50 hover:bg-neutral-900/60 transition-all duration-300 relative group cursor-default"
-            >
-              {/* Top ambient accent dot */}
-              <div className="w-1 h-1 rounded-full bg-white/20 group-hover:bg-ted-red mb-1 md:mb-2 transition-colors duration-300" />
+        {settings && (!settings.reveal_countdown || !settings.reveal_date) ? (
+          <div className="border border-dashed border-white/20 bg-neutral-950/40 backdrop-blur-md p-8 md:p-12 rounded-3xl max-w-2xl mx-auto flex flex-col items-center justify-center text-center space-y-4 mb-16 shadow-[0_0_30px_rgba(235,0,40,0.05)] hover:border-ted-red/30 transition-all duration-300">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ted-red/10 border border-ted-red/20 text-ted-red text-[10px] uppercase tracking-widest font-black font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-ted-red animate-pulse" />
+              Transmission Pending
+            </span>
+            <div className="space-y-1">
+              <h3 className="text-xl md:text-2xl font-black italic tracking-tighter text-white uppercase">
+                COUNTDOWN COMMENCING SOON
+              </h3>
+              <p className="text-[10px] md:text-xs font-mono text-white/40 max-w-md mx-auto leading-relaxed">
+                The master sequence timer will initiate upon the official announcement of the event date and schedule. Pre-registrations remain active.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-2 xs:gap-3 md:gap-6 mb-16 max-w-2xl mx-auto">
+            {timeBlocks.map((block, idx) => (
+              <motion.div
+                key={block.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: idx * 0.08 }}
+                className="bg-neutral-900/40 backdrop-blur-md border border-white/10 rounded-2xl p-2.5 xs:p-3 md:p-6 flex flex-col items-center justify-center shadow-lg hover:border-ted-red/50 hover:bg-neutral-900/60 transition-all duration-300 relative group cursor-default"
+              >
+                {/* Top ambient accent dot */}
+                <div className="w-1 h-1 rounded-full bg-white/20 group-hover:bg-ted-red mb-1 md:mb-2 transition-colors duration-300" />
 
-              {/* Ticking Number */}
-              <span className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black font-mono tracking-tight text-white select-none">
-                {block.value}
-              </span>
+                {/* Ticking Number */}
+                <span className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black font-mono tracking-tight text-white select-none">
+                  {block.value}
+                </span>
 
-              {/* Label */}
-              <span className="text-[7px] xs:text-[8px] md:text-[9px] font-mono font-bold uppercase tracking-[0.1em] md:tracking-[0.2em] text-white/40 group-hover:text-white/80 transition-colors duration-300 mt-1">
-                {block.label}
-              </span>
-            </motion.div>
-          ))}
-        </div>
+                {/* Label */}
+                <span className="text-[7px] xs:text-[8px] md:text-[9px] font-mono font-bold uppercase tracking-[0.1em] md:tracking-[0.2em] text-white/40 group-hover:text-white/80 transition-colors duration-300 mt-1">
+                  {block.label}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Details & RSVP Bento Box Section */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch">
@@ -187,10 +213,14 @@ export default function Countdown({ onTabChange }: CountdownProps) {
                 <MapPin size={12} className="text-ted-red" />
                 <span>VENUE: Gopalan College of Engineering & Management, Bangalore</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar size={12} className="text-ted-red" />
-                <span>DATE: October 15, 2026 // 09:00 AM IST</span>
-              </div>
+              {(!settings || settings.reveal_date) && (
+                <div className="flex items-center gap-2">
+                  <Calendar size={12} className="text-ted-red" />
+                  <span>
+                    DATE: {settings ? settings.event_date : "October 15, 2026"} {"//"} {settings ? settings.event_time : "09:00 AM"} IST
+                  </span>
+                </div>
+              )}
             </div>
           </motion.div>
 

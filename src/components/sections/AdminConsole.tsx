@@ -22,13 +22,53 @@ interface AdminMessage {
   created_at: string;
 }
 
-export default function AdminConsole() {
+interface AdminConsoleProps {
+  settings: {
+    theme_name: string;
+    reveal_theme: boolean;
+    reveal_date: boolean;
+    reveal_countdown: boolean;
+    event_date: string;
+    event_time: string;
+    event_day: string;
+    countdown_target: string;
+  } | null;
+  onSettingsUpdate: () => void;
+}
+
+export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsoleProps) {
   const { isAdmin, loading: authLoading } = useAuth();
   const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
   const [messages, setMessages] = useState<AdminMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages">("registrations");
+  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages" | "settings">("registrations");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Event settings states
+  const [themeName, setThemeName] = useState(settings?.theme_name || "");
+  const [revealTheme, setRevealTheme] = useState(settings ? !!settings.reveal_theme : true);
+  const [revealDate, setRevealDate] = useState(settings ? !!settings.reveal_date : true);
+  const [revealCountdown, setRevealCountdown] = useState(settings ? !!settings.reveal_countdown : true);
+  const [eventDate, setEventDate] = useState(settings?.event_date || "");
+  const [eventTime, setEventTime] = useState(settings?.event_time || "");
+  const [eventDay, setEventDay] = useState(settings?.event_day || "");
+  const [countdownTarget, setCountdownTarget] = useState(settings?.countdown_target || "");
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsSuccess, setSettingsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (settings) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setThemeName(settings.theme_name ?? "");
+      setRevealTheme(settings.reveal_theme ?? true);
+      setRevealDate(settings.reveal_date ?? true);
+      setRevealCountdown(settings.reveal_countdown ?? true);
+      setEventDate(settings.event_date ?? "");
+      setEventTime(settings.event_time ?? "");
+      setEventDay(settings.event_day ?? "");
+      setCountdownTarget(settings.countdown_target ?? "");
+    }
+  }, [settings]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -51,6 +91,42 @@ export default function AdminConsole() {
       setErrorMsg(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    setSettingsSuccess(false);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          theme_name: themeName,
+          reveal_theme: revealTheme,
+          reveal_date: revealDate,
+          reveal_countdown: revealCountdown,
+          event_date: eventDate,
+          event_time: eventTime,
+          event_day: eventDay,
+          countdown_target: countdownTarget,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save settings.");
+
+      setSettingsSuccess(true);
+      onSettingsUpdate();
+      setTimeout(() => setSettingsSuccess(false), 3000);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to save settings.";
+      alert("Error saving settings: " + errorMessage);
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -194,7 +270,7 @@ export default function AdminConsole() {
       </div>
 
       {/* Subtab Switcher */}
-      <div className="flex gap-4 border-b border-white/5 pb-4 mb-6">
+      <div className="flex flex-wrap gap-3 border-b border-white/5 pb-4 mb-6">
         <button
           onClick={() => setActiveSubTab("registrations")}
           className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
@@ -212,9 +288,17 @@ export default function AdminConsole() {
           Contact Messages ({totalMessages})
         </button>
         <button
+          onClick={() => setActiveSubTab("settings")}
+          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+            activeSubTab === "settings" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+          }`}
+        >
+          Event Controls
+        </button>
+        <button
           onClick={fetchData}
           disabled={loading}
-          className="ml-auto px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all text-xs font-mono uppercase tracking-widest font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          className="md:ml-auto px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all text-xs font-mono uppercase tracking-widest font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50"
         >
           <svg className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89H17.5" />
@@ -304,7 +388,7 @@ export default function AdminConsole() {
               </table>
             )}
           </div>
-        ) : (
+        ) : activeSubTab === "messages" ? (
           /* MESSAGES VIEW */
           <div className="space-y-6">
             {messages.length === 0 ? (
@@ -334,6 +418,174 @@ export default function AdminConsole() {
               </div>
             )}
           </div>
+        ) : (
+          /* SETTINGS/EVENT CONTROLS VIEW */
+          <form onSubmit={handleSaveSettings} className="space-y-8 font-mono">
+            {settingsSuccess && (
+              <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-xs font-bold flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                Settings saved successfully! Website content has been updated.
+              </div>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Row 1: Theme controls */}
+              <div className="border border-white/10 p-6 rounded-2xl bg-black/40 space-y-4">
+                <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Theme Config"}</span>
+                
+                <div className="space-y-2">
+                  <label className="text-xs text-white/50 uppercase tracking-wider block">Theme Name</label>
+                  <input
+                    type="text"
+                    value={themeName}
+                    onChange={(e) => setThemeName(e.target.value)}
+                    placeholder="e.g. RIPPLE"
+                    className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                    required
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Reveal Theme on Website</label>
+                    <span className="text-[9px] text-white/30 block">Toggle off to show &apos;REVEALING SOON&apos; globally</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRevealTheme(!revealTheme)}
+                    className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                      revealTheme ? "bg-ted-red" : "bg-white/10"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                        revealTheme ? "translate-x-7" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Row 2: Date & Time controls */}
+              <div className="border border-white/10 p-6 rounded-2xl bg-black/40 space-y-4">
+                <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Timeline Info"}</span>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Event Date</label>
+                    <input
+                      type="text"
+                      value={eventDate}
+                      onChange={(e) => setEventDate(e.target.value)}
+                      placeholder="e.g. October 15, 2026"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Event Day</label>
+                    <input
+                      type="text"
+                      value={eventDay}
+                      onChange={(e) => setEventDay(e.target.value)}
+                      placeholder="e.g. THURSDAY"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs text-white/50 uppercase tracking-wider block">Event Time (IST)</label>
+                  <input
+                    type="text"
+                    value={eventTime}
+                    onChange={(e) => setEventTime(e.target.value)}
+                    placeholder="e.g. 09:00 AM"
+                    className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                    required
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Reveal Date & Time on Website</label>
+                    <span className="text-[9px] text-white/30 block">Toggle off to show &apos;ANNOUNCING SOON&apos; globally</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRevealDate(!revealDate)}
+                    className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                      revealDate ? "bg-ted-red" : "bg-white/10"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                        revealDate ? "translate-x-7" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Row 3: Countdown target controls */}
+              <div className="md:col-span-2 border border-white/10 p-6 rounded-2xl bg-black/40 space-y-4">
+                <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Countdown Settings"}</span>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Target Countdown Timestamp (ISO 8601)</label>
+                    <span className="text-[9px] text-white/30">Format: YYYY-MM-DDTHH:MM:SS</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={countdownTarget}
+                    onChange={(e) => setCountdownTarget(e.target.value)}
+                    placeholder="e.g. 2026-10-15T09:00:00"
+                    className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white font-mono focus:outline-none focus:border-ted-red transition-colors rounded-lg"
+                    required
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Reveal Countdown Timer</label>
+                    <span className="text-[9px] text-white/30 block">Toggle off to hide timer numbers on website</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRevealCountdown(!revealCountdown)}
+                    className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                      revealCountdown ? "bg-ted-red" : "bg-white/10"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                        revealCountdown ? "translate-x-7" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button
+                type="submit"
+                disabled={savingSettings}
+                className="px-8 py-3 bg-ted-red hover:bg-white text-white hover:text-black font-black uppercase text-xs tracking-widest transition-all duration-300 rounded-lg cursor-pointer disabled:opacity-50 flex items-center gap-2 border border-ted-red"
+              >
+                {savingSettings ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Saving Changes...
+                  </>
+                ) : (
+                  "Commit Settings"
+                )}
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </section>

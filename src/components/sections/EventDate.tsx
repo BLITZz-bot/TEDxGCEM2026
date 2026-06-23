@@ -4,7 +4,58 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Clock, Compass } from "lucide-react";
 
-export default function EventDate() {
+interface EventDateProps {
+  settings?: {
+    theme_name: string;
+    reveal_theme: boolean;
+    reveal_date: boolean;
+    reveal_countdown: boolean;
+    event_date: string;
+    event_time: string;
+    event_day: string;
+    countdown_target: string;
+  } | null;
+}
+
+export default function EventDate({ settings }: EventDateProps) {
+  // Helper to get formatted short date, e.g., "OCT 15" from "October 15, 2026"
+  const getShortDate = () => {
+    if (!settings || !settings.event_date) return "OCT 15";
+    try {
+      const date = new Date(settings.event_date);
+      if (isNaN(date.getTime())) {
+        const parts = settings.event_date.split(" ");
+        if (parts.length >= 2) {
+          const month = parts[0].substring(0, 3).toUpperCase();
+          const day = parts[1].replace(",", "");
+          return `${month} ${day}`;
+        }
+        return settings.event_date.toUpperCase();
+      }
+      const monthStr = date.toLocaleString("en-US", { month: "short" }).toUpperCase();
+      const dayStr = date.getDate();
+      return `${monthStr} ${dayStr}`;
+    } catch {
+      return "OCT 15";
+    }
+  };
+
+  const getYear = () => {
+    if (!settings || !settings.event_date) return "2026";
+    try {
+      const date = new Date(settings.event_date);
+      if (isNaN(date.getTime())) {
+        const parts = settings.event_date.split(" ");
+        if (parts.length >= 3) {
+          return parts[2];
+        }
+        return "2026";
+      }
+      return String(date.getFullYear());
+    } catch {
+      return "2026";
+    }
+  };
   return (
     <section className="pt-24 pb-8 px-6 relative text-white overflow-hidden font-sans select-none bg-black">
       {/* Editorial Vertical Grid Lines */}
@@ -66,12 +117,14 @@ export default function EventDate() {
                 <Calendar size={18} className="stroke-[1.75]" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[11px] font-mono font-bold tracking-[0.3em] text-ted-red uppercase mb-1">THURSDAY</span>
+                <span className="text-[11px] font-mono font-bold tracking-[0.3em] text-ted-red uppercase mb-1">
+                  {settings && !settings.reveal_date ? "ANNOUNCING SOON" : (settings ? settings.event_day : "THURSDAY")}
+                </span>
                 <span className="text-6xl md:text-7xl font-black font-mono tracking-tighter text-white leading-none">
-                  OCT 15
+                  {settings && !settings.reveal_date ? "SOON" : getShortDate()}
                 </span>
                 <span className="text-xs font-mono text-white/40 tracking-[0.2em] uppercase mt-2">
-                  YEAR 2026 // TIME: 09:00 AM
+                  YEAR {getYear()} {"//"} TIME: {settings && !settings.reveal_date ? "ANNOUNCING SOON" : (settings ? settings.event_time : "09:00 AM")}
                 </span>
               </div>
             </div>
@@ -101,7 +154,7 @@ export default function EventDate() {
                 THE BLUEPRINT OF THE DAY
               </h3>
               <p className="text-white/60 text-xs md:text-sm font-light leading-relaxed font-mono max-w-2xl">
-                TEDxGCEM 2026 brings together thinkers, builders, and community pioneers under the theme &quot;RIPPLE&quot;. On this single day, the campus main auditorium transforms into a launchpad for ideas that challenge the baseline of conventional frameworks and spark new connections.
+                TEDxGCEM {getYear()} brings together thinkers, builders, and community pioneers under {settings && !settings.reveal_theme ? "a theme that will be announced soon" : `the theme &quot;${settings ? settings.theme_name : "RIPPLE"}&quot;`}. On this single day, the campus main auditorium transforms into a launchpad for ideas that challenge the baseline of conventional frameworks and spark new connections.
               </p>
             </div>
 
@@ -118,7 +171,7 @@ export default function EventDate() {
                 <Clock size={14} className="text-ted-red mt-0.5 shrink-0" />
                 <div className="space-y-0.5">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-white">Full Event Day</span>
-                  <p className="text-[9px] font-mono text-white/40 leading-tight">8 Curated Talks, Live Interactive Art, & Innovation Lounges</p>
+                  <p className="text-[9px] font-mono text-white/40 leading-tight">Curated Talks & Interactive Sessions</p>
                 </div>
               </div>
             </div>

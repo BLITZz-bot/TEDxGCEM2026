@@ -1,0 +1,10 @@
+{
+  "theme_name": "RIPPLE",
+  "reveal_theme": true,
+  "reveal_date": true,
+  "reveal_countdown": true,
+  "event_date": "October 15, 2026",
+  "event_time": "09:00 AM",
+  "event_day": "THURSDAY",
+  "countdown_target": "2026-10-15T09:00:00"
+}

@@ -6,6 +6,14 @@ import { TabId } from "@/components/ui/TabNav";
 
 interface HeroProps {
   onTabChange: (id: TabId) => void;
+  settings?: {
+    theme_name: string;
+    reveal_theme: boolean;
+    event_date: string;
+    event_time: string;
+    event_day: string;
+    countdown_target: string;
+  } | null;
 }
 
 interface BgSettings {
@@ -15,7 +23,7 @@ interface BgSettings {
   themeYearSize: number;
 }
 
-export default function Hero({ onTabChange }: HeroProps) {
+export default function Hero({ onTabChange, settings }: HeroProps) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const [isControlsOpen, setIsControlsOpen] = React.useState(false);
   const [bgSettings, setBgSettings] = React.useState<BgSettings>({
@@ -336,12 +344,16 @@ export default function Hero({ onTabChange }: HeroProps) {
               transition: { duration: 0.3, ease: "easeOut" }
             }}
           >
-            RIPPLE
+            {settings ? (settings.reveal_theme ? settings.theme_name : "REVEALING SOON") : "RIPPLE"}
           </motion.span>
         </h1>
         
         <p className="text-white/60 text-sm md:text-base leading-relaxed font-medium max-w-sm pb-2">
-          A single idea can act as a catalyst, creating ripples that expand outward to challenge status quos, spark new connections, and transform communities.
+          {settings 
+            ? (settings.reveal_theme 
+              ? "A single idea can act as a catalyst, creating ripples that expand outward to challenge status quos, spark new connections, and transform communities."
+              : "Get ready for TEDxGCEM 2026. A single idea can act as a catalyst, creating ripples that expand outward to challenge status quos and transform communities. Stay tuned as we unveil our central theme.")
+            : "A single idea can act as a catalyst, creating ripples that expand outward to challenge status quos, spark new connections, and transform communities."}
         </p>
 
         {/* Laptop-Only Action Buttons (nested under description) */}

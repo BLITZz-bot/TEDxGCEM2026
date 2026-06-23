@@ -71,7 +71,7 @@ export default function Highlights() {
             transition={{ delay: 0.15 }}
             className="text-xs font-mono text-white/40 uppercase tracking-widest"
           >
-            TEDxGCEM 2026 // RIPPLE
+            TEDxGCEM 2026
           </motion.div>
         </div>
 
