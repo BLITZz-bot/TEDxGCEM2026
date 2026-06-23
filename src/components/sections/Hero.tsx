@@ -344,7 +344,7 @@ export default function Hero({ onTabChange, settings }: HeroProps) {
               transition: { duration: 0.3, ease: "easeOut" }
             }}
           >
-            {settings ? (settings.reveal_theme ? settings.theme_name : "REVEALING SOON") : "RIPPLE"}
+            {settings ? (settings.reveal_theme ? settings.theme_name : "THE JOURNEY BEGINS SOON") : "RIPPLE"}
           </motion.span>
         </h1>
         

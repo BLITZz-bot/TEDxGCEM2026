@@ -448,7 +448,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                 <div className="flex items-center justify-between pt-2">
                   <div className="space-y-1">
                     <label className="text-xs text-white/50 uppercase tracking-wider block">Reveal Theme on Website</label>
-                    <span className="text-[9px] text-white/30 block">Toggle off to show &apos;REVEALING SOON&apos; globally</span>
+                    <span className="text-[9px] text-white/30 block">Toggle off to show &apos;THE JOURNEY BEGINS SOON&apos; globally</span>
                   </div>
                   <button
                     type="button"
