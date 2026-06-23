@@ -83,12 +83,15 @@ CREATE TABLE IF NOT EXISTS public.event_settings (
     event_time TEXT DEFAULT '09:00 AM' NOT NULL,
     event_day TEXT DEFAULT 'THURSDAY' NOT NULL,
     countdown_target TEXT DEFAULT '2026-10-15T09:00:00' NOT NULL,
+    about_theme_name TEXT DEFAULT 'TRANSFORMING PERSPECTIVES' NOT NULL,
+    about_theme_desc TEXT DEFAULT 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.' NOT NULL,
+    reveal_about_theme BOOLEAN DEFAULT true NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
 -- Insert initial settings row if not present
-INSERT INTO public.event_settings (id, theme_name, reveal_theme, reveal_date, reveal_countdown, event_date, event_time, event_day, countdown_target)
-VALUES ('global', 'RIPPLE', true, true, true, 'October 15, 2026', '09:00 AM', 'THURSDAY', '2026-10-15T09:00:00')
+INSERT INTO public.event_settings (id, theme_name, reveal_theme, reveal_date, reveal_countdown, event_date, event_time, event_day, countdown_target, about_theme_name, about_theme_desc, reveal_about_theme)
+VALUES ('global', 'RIPPLE', true, true, true, 'October 15, 2026', '09:00 AM', 'THURSDAY', '2026-10-15T09:00:00', 'TRANSFORMING PERSPECTIVES', 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Enable RLS
@@ -107,3 +110,10 @@ ON public.event_settings
 FOR ALL
 TO authenticated
 USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+
+-- 7. DATABASE MIGRATION FOR UPDATED FIELDS
+-- Execute this query if the event_settings table already exists in your database:
+-- ALTER TABLE public.event_settings 
+-- ADD COLUMN IF NOT EXISTS about_theme_name TEXT DEFAULT 'TRANSFORMING PERSPECTIVES' NOT NULL,
+-- ADD COLUMN IF NOT EXISTS about_theme_desc TEXT DEFAULT 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.' NOT NULL,
+-- ADD COLUMN IF NOT EXISTS reveal_about_theme BOOLEAN DEFAULT true NOT NULL;

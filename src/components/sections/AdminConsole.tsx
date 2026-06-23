@@ -32,6 +32,9 @@ interface AdminConsoleProps {
     event_time: string;
     event_day: string;
     countdown_target: string;
+    about_theme_name: string;
+    about_theme_desc: string;
+    reveal_about_theme: boolean;
   } | null;
   onSettingsUpdate: () => void;
 }
@@ -53,6 +56,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [eventTime, setEventTime] = useState(settings?.event_time || "");
   const [eventDay, setEventDay] = useState(settings?.event_day || "");
   const [countdownTarget, setCountdownTarget] = useState(settings?.countdown_target || "");
+  const [aboutThemeName, setAboutThemeName] = useState(settings?.about_theme_name || "");
+  const [aboutThemeDesc, setAboutThemeDesc] = useState(settings?.about_theme_desc || "");
+  const [revealAboutTheme, setRevealAboutTheme] = useState(settings ? !!settings.reveal_about_theme : true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
 
@@ -67,6 +73,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       setEventTime(settings.event_time ?? "");
       setEventDay(settings.event_day ?? "");
       setCountdownTarget(settings.countdown_target ?? "");
+      setAboutThemeName(settings.about_theme_name ?? "");
+      setAboutThemeDesc(settings.about_theme_desc ?? "");
+      setRevealAboutTheme(settings.reveal_about_theme ?? true);
     }
   }, [settings]);
 
@@ -113,6 +122,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           event_time: eventTime,
           event_day: eventDay,
           countdown_target: countdownTarget,
+          about_theme_name: aboutThemeName,
+          about_theme_desc: aboutThemeDesc,
+          reveal_about_theme: revealAboutTheme,
         }),
       });
 
@@ -562,6 +574,54 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                     <div
                       className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
                         revealCountdown ? "translate-x-7" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* About Section Config */}
+              <div className="md:col-span-2 border border-white/10 p-6 rounded-2xl bg-black/40 space-y-4">
+                <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// About Section Config"}</span>
+                
+                <div className="space-y-2">
+                  <label className="text-xs text-white/50 uppercase tracking-wider block">About Theme Name</label>
+                  <input
+                    type="text"
+                    value={aboutThemeName}
+                    onChange={(e) => setAboutThemeName(e.target.value)}
+                    placeholder="e.g. TRANSFORMING PERSPECTIVES"
+                    className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs text-white/50 uppercase tracking-wider block">About Theme Description</label>
+                  <textarea
+                    value={aboutThemeDesc}
+                    onChange={(e) => setAboutThemeDesc(e.target.value)}
+                    placeholder="e.g. This year, we invite speakers who challenge the baseline of conventional frameworks..."
+                    className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-sans h-28 resize-y"
+                    required
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Reveal About Theme & Description</label>
+                    <span className="text-[9px] text-white/30 block">Toggle off to show &apos;THEME REVEALING SOON&apos; and generic text on the About page</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRevealAboutTheme(!revealAboutTheme)}
+                    className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                      revealAboutTheme ? "bg-ted-red" : "bg-white/10"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                        revealAboutTheme ? "translate-x-7" : "translate-x-0"
                       }`}
                     />
                   </button>

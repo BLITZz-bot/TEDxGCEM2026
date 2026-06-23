@@ -11,6 +11,9 @@ export interface EventSettings {
   event_time: string;
   event_day: string;
   countdown_target: string;
+  about_theme_name: string;
+  about_theme_desc: string;
+  reveal_about_theme: boolean;
 }
 
 const DEFAULT_SETTINGS: EventSettings = {
@@ -22,6 +25,9 @@ const DEFAULT_SETTINGS: EventSettings = {
   event_time: "09:00 AM",
   event_day: "THURSDAY",
   countdown_target: "2026-10-15T09:00:00",
+  about_theme_name: "TRANSFORMING PERSPECTIVES",
+  about_theme_desc: "This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.",
+  reveal_about_theme: true,
 };
 
 const SETTINGS_FILE_PATH = path.join(process.cwd(), "src", "lib", "settings.json");
@@ -46,6 +52,9 @@ export async function getSettings(): Promise<EventSettings> {
         event_time: data.event_time ?? DEFAULT_SETTINGS.event_time,
         event_day: data.event_day ?? DEFAULT_SETTINGS.event_day,
         countdown_target: data.countdown_target ?? DEFAULT_SETTINGS.countdown_target,
+        about_theme_name: data.about_theme_name ?? DEFAULT_SETTINGS.about_theme_name,
+        about_theme_desc: data.about_theme_desc ?? DEFAULT_SETTINGS.about_theme_desc,
+        reveal_about_theme: data.reveal_about_theme ?? DEFAULT_SETTINGS.reveal_about_theme,
       };
     }
   } catch (err) {
@@ -66,6 +75,9 @@ export async function getSettings(): Promise<EventSettings> {
         event_time: parsed.event_time ?? DEFAULT_SETTINGS.event_time,
         event_day: parsed.event_day ?? DEFAULT_SETTINGS.event_day,
         countdown_target: parsed.countdown_target ?? DEFAULT_SETTINGS.countdown_target,
+        about_theme_name: parsed.about_theme_name ?? DEFAULT_SETTINGS.about_theme_name,
+        about_theme_desc: parsed.about_theme_desc ?? DEFAULT_SETTINGS.about_theme_desc,
+        reveal_about_theme: parsed.reveal_about_theme ?? DEFAULT_SETTINGS.reveal_about_theme,
       };
     }
   } catch (err) {
@@ -98,6 +110,9 @@ export async function saveSettings(settings: EventSettings): Promise<boolean> {
         event_time: settings.event_time,
         event_day: settings.event_day,
         countdown_target: settings.countdown_target,
+        about_theme_name: settings.about_theme_name,
+        about_theme_desc: settings.about_theme_desc,
+        reveal_about_theme: settings.reveal_about_theme,
         updated_at: new Date().toISOString(),
       };
 

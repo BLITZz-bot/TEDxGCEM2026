@@ -34,6 +34,9 @@ export default function Home() {
     event_time: string;
     event_day: string;
     countdown_target: string;
+    about_theme_name: string;
+    about_theme_desc: string;
+    reveal_about_theme: boolean;
   } | null>(null);
 
   const fetchSettings = () => {
@@ -123,7 +126,7 @@ export default function Home() {
           </div>
         );
       case "about":
-        return <About key="about" />;
+        return <About key="about" settings={settings} />;
       case "speakers":
         return <Speakers key="speakers" />;
       case "schedule":

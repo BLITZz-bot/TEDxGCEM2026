@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { theme_name, reveal_theme, reveal_date, reveal_countdown, event_date, event_time, event_day, countdown_target } = body;
+    const { theme_name, reveal_theme, reveal_date, reveal_countdown, event_date, event_time, event_day, countdown_target, about_theme_name, about_theme_desc, reveal_about_theme } = body;
 
     // Validation
     if (
@@ -42,7 +42,10 @@ export async function POST(request: Request) {
       typeof event_date !== "string" ||
       typeof event_time !== "string" ||
       typeof event_day !== "string" ||
-      typeof countdown_target !== "string"
+      typeof countdown_target !== "string" ||
+      typeof about_theme_name !== "string" ||
+      typeof about_theme_desc !== "string" ||
+      typeof reveal_about_theme !== "boolean"
     ) {
       return NextResponse.json({ error: "Invalid parameters." }, { status: 400 });
     }
@@ -56,6 +59,9 @@ export async function POST(request: Request) {
       event_time,
       event_day,
       countdown_target,
+      about_theme_name,
+      about_theme_desc,
+      reveal_about_theme,
     };
 
     const success = await saveSettings(settingsToSave);

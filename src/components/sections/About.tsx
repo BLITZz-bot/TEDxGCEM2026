@@ -3,8 +3,13 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import demoImg from "../../../public/DEMO.png";
+import type { EventSettings } from "@/lib/settings-service";
 
-export default function About() {
+interface AboutProps {
+  settings: EventSettings | null;
+}
+
+export default function About({ settings }: AboutProps) {
   const team = [
     { 
       name: "Aarav Sharma", 
@@ -174,7 +179,7 @@ export default function About() {
 
           </motion.div>
 
-          {/* Theme Card: Transforming Perspectives (Takes 12 columns) */}
+          {/* Theme Card: Dynamic Theme Name & Description (Takes 12 columns) */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -184,10 +189,14 @@ export default function About() {
           >
             <div className="max-w-xl">
               <h4 className="text-2xl font-black italic text-white uppercase mb-2">
-                THEME: <span className="text-ted-red">TRANSFORMING PERSPECTIVES</span>
+                THEME: <span className="text-ted-red">{settings?.reveal_about_theme ? (settings.about_theme_name || "TRANSFORMING PERSPECTIVES") : "THEME REVEALING SOON"}</span>
               </h4>
               <p className="text-white/60 text-sm font-light leading-relaxed">
-                This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.
+                {settings?.reveal_about_theme ? (
+                  settings.about_theme_desc || "This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure."
+                ) : (
+                  "The theme for the upcoming TEDxGCEM event will be revealed soon. Stay tuned for a journey that will challenge your perceptions, spark curiosity, and inspire new ways of thinking."
+                )}
               </p>
             </div>
             <div className="w-12 h-12 rounded-none border border-white/15 flex items-center justify-center text-white/40 shrink-0 group-hover:border-ted-red/40 group-hover:text-ted-red transition-all duration-300">
