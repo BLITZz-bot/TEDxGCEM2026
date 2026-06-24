@@ -62,12 +62,12 @@ export default function Team({ settings }: TeamProps) {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: false }}
-              transition={{ duration: 0.6 }}
-              className="border-b border-white/10 pb-6 mb-16"
+              transition={{ duration: 0.5 }}
+              className="mb-20 flex flex-col justify-between items-start gap-4 border-b border-white/10 pb-12 text-left"
             >
               <span className="text-ted-red text-xs uppercase tracking-[0.3em] font-mono block mb-2">{"// ORG_INDEX"}</span>
-              <h2 className="text-4xl font-black italic tracking-tighter uppercase text-white">
-                THE ORGANIZING COMMITTEE
+              <h2 className="text-4xl md:text-6xl font-black italic tracking-tighter leading-[0.95] uppercase">
+                ORGANIZING <span className="text-ted-red">COMMITTEE</span>
               </h2>
             </motion.div>
 
