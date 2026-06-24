@@ -1,0 +1,82 @@
+[
+  {
+    "id": "1",
+    "name": "Global Tech Corp",
+    "role": "Hydration Partner",
+    "level": "Platinum",
+    "logo": "/GRAFIK1.png",
+    "description": "Global Tech Corp is a leading multinational technology firm specializing in enterprise software development, cloud infrastructure, and digital transformation services.",
+    "email": "sponsor@globaltech.corp",
+    "phone": "+91 98765 43210"
+  },
+  {
+    "id": "2",
+    "name": "Future Systems",
+    "role": "Technology Partner",
+    "level": "Platinum",
+    "logo": "/GRAFIK1.png",
+    "description": "Future Systems is at the forefront of cyber-physical engineering, delivering automation, robotics, and smart city infrastructure solutions worldwide.",
+    "email": "info@futuresystems.net",
+    "phone": "+91 87654 32109"
+  },
+  {
+    "id": "3",
+    "name": "Innovate AI",
+    "role": "AI Partner",
+    "level": "Gold",
+    "logo": "/GRAFIK1.png",
+    "description": "Innovate AI leverages state-of-the-art machine learning models to provide automated business analytics, predictive modeling, and intelligent agent systems.",
+    "email": "partnership@innovate.ai",
+    "phone": "+91 76543 21098"
+  },
+  {
+    "id": "4",
+    "name": "Eco Solutions",
+    "role": "Sustainability Partner",
+    "level": "Gold",
+    "logo": "/GRAFIK1.png",
+    "description": "Eco Solutions develops sustainable technologies, green energy grids, and resource management software to help enterprises lower their carbon footprints.",
+    "email: ": "hello@ecosolutions.org",
+    "phone": "+91 65432 10987"
+  },
+  {
+    "id": "5",
+    "name": "Creative Media",
+    "role": "Media Partner",
+    "level": "Silver",
+    "logo": "/GRAFIK1.png",
+    "description": "Creative Media is an award-winning digital design agency crafting immersive web experiences, brand identities, and high-impact marketing campaigns.",
+    "email": "design@creativemedia.com",
+    "phone": "+91 54321 09876"
+  },
+  {
+    "id": "6",
+    "name": "Urban Planning Co",
+    "role": "Venue Partner",
+    "level": "Silver",
+    "logo": "/GRAFIK1.png",
+    "description": "Urban Planning Co designs smart architectural spaces and coordinates eco-friendly community infrastructure projects for futuristic municipalities.",
+    "email": "build@urbanplanning.co",
+    "phone": "+91 43210 98765"
+  },
+  {
+    "id": "7",
+    "name": "NextGen Education",
+    "role": "Education Partner",
+    "level": "Silver",
+    "logo": "/GRAFIK1.png",
+    "description": "NextGen Education provides online learning platforms, interactive academic curricula, and AI-driven tutoring tools to schools across the globe.",
+    "email": "edu@nextgen.org",
+    "phone": "+91 32109 87654"
+  },
+  {
+    "id": "8",
+    "name": "Digital Arts",
+    "role": "Creative Partner",
+    "level": "Silver",
+    "logo": "/GRAFIK1.png",
+    "description": "Digital Arts is a creative collaborative providing digital illustration, visual effects, and high-fidelity rendering software to creators.",
+    "email": "art@digitalarts.io",
+    "phone": "+91 21098 76543"
+  }
+]

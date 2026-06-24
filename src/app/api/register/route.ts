@@ -11,6 +11,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized. Please sign in with Google." }, { status: 401 });
     }
 
+    // Check if registrations are open
+    const { getSettings } = await import("@/lib/settings-service");
+    const settings = await getSettings();
+    if (settings.reveal_register === false) {
+      return NextResponse.json({ error: "Registrations are currently closed." }, { status: 403 });
+    }
+
     const { fullName, phone, organization, linkedin } = await request.json();
 
     if (!fullName || !phone || !organization) {

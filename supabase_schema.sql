@@ -88,12 +88,15 @@ CREATE TABLE IF NOT EXISTS public.event_settings (
     reveal_about_theme BOOLEAN DEFAULT true NOT NULL,
     reveal_team BOOLEAN DEFAULT true NOT NULL,
     reveal_speakers BOOLEAN DEFAULT true NOT NULL,
+    reveal_partners BOOLEAN DEFAULT true NOT NULL,
+    reveal_register BOOLEAN DEFAULT true NOT NULL,
+    reveal_tickets BOOLEAN DEFAULT true NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
 -- Insert initial settings row if not present
-INSERT INTO public.event_settings (id, theme_name, reveal_theme, reveal_date, reveal_countdown, event_date, event_time, event_day, countdown_target, about_theme_name, about_theme_desc, reveal_about_theme, reveal_team, reveal_speakers)
-VALUES ('global', 'RIPPLE', true, true, true, 'October 15, 2026', '09:00 AM', 'THURSDAY', '2026-10-15T09:00:00', 'TRANSFORMING PERSPECTIVES', 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.', true, true, true)
+INSERT INTO public.event_settings (id, theme_name, reveal_theme, reveal_date, reveal_countdown, event_date, event_time, event_day, countdown_target, about_theme_name, about_theme_desc, reveal_about_theme, reveal_team, reveal_speakers, reveal_partners, reveal_register, reveal_tickets)
+VALUES ('global', 'RIPPLE', true, true, true, 'October 15, 2026', '09:00 AM', 'THURSDAY', '2026-10-15T09:00:00', 'TRANSFORMING PERSPECTIVES', 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.', true, true, true, true, true, true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Enable RLS
@@ -191,4 +194,41 @@ USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
 -- Migration for adding reveal_speakers to event_settings table
 -- Execute this query in your Supabase SQL Editor if table already exists:
 -- ALTER TABLE public.event_settings ADD COLUMN IF NOT EXISTS reveal_speakers BOOLEAN DEFAULT true NOT NULL;
+
+-- 10. PARTNERS TABLE AND POLICIES
+CREATE TABLE IF NOT EXISTS public.partners (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL,
+    level TEXT DEFAULT 'Silver' NOT NULL,
+    logo TEXT NOT NULL, -- Holds Base64 data string or URL path
+    description TEXT NOT NULL,
+    email TEXT,
+    phone TEXT
+);
+
+-- Enable RLS for partners
+ALTER TABLE public.partners ENABLE ROW LEVEL SECURITY;
+
+-- Allow read access to anyone (public)
+CREATE POLICY "Allow public read access to partners"
+ON public.partners
+FOR SELECT
+TO public
+USING (true);
+
+-- Allow write/management only to the admin
+CREATE POLICY "Allow admin to manage partners"
+ON public.partners
+FOR ALL
+TO authenticated
+USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+
+-- 11. REGISTRATION AND TICKET Visibilities Migration
+-- Execute this query in your Supabase SQL Editor if the event_settings table already exists:
+-- ALTER TABLE public.event_settings 
+-- ADD COLUMN IF NOT EXISTS reveal_register BOOLEAN DEFAULT true NOT NULL,
+-- ADD COLUMN IF NOT EXISTS reveal_tickets BOOLEAN DEFAULT true NOT NULL;
+
 

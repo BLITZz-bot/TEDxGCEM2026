@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { TeamMember } from "@/lib/team-service";
 import { Speaker } from "@/lib/speakers-service";
+import { Partner } from "@/lib/partners-service";
+import { EventSettings } from "@/lib/settings-service";
 
 interface AdminRegistration {
   id: string;
@@ -14,6 +16,7 @@ interface AdminRegistration {
   linkedin: string;
   ticket_status: string;
   created_at: string;
+  payment_id?: string | null;
 }
 
 interface AdminMessage {
@@ -25,21 +28,7 @@ interface AdminMessage {
 }
 
 interface AdminConsoleProps {
-  settings: {
-    theme_name: string;
-    reveal_theme: boolean;
-    reveal_date: boolean;
-    reveal_countdown: boolean;
-    event_date: string;
-    event_time: string;
-    event_day: string;
-    countdown_target: string;
-    about_theme_name: string;
-    about_theme_desc: string;
-    reveal_about_theme: boolean;
-    reveal_team: boolean;
-    reveal_speakers: boolean;
-  } | null;
+  settings: EventSettings | null;
   onSettingsUpdate: () => void;
 }
 
@@ -49,8 +38,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [messages, setMessages] = useState<AdminMessage[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [speakersList, setSpeakersList] = useState<Speaker[]>([]);
+  const [partnersList, setPartnersList] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages" | "settings" | "team" | "speakers">("registrations");
+  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages" | "settings" | "team" | "speakers" | "partners">("registrations");
   const [errorMsg, setErrorMsg] = useState("");
 
   // Event settings states
@@ -67,6 +57,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [revealAboutTheme, setRevealAboutTheme] = useState(settings ? !!settings.reveal_about_theme : true);
   const [revealTeam, setRevealTeam] = useState(settings ? !!settings.reveal_team : true);
   const [revealSpeakers, setRevealSpeakers] = useState(settings ? !!settings.reveal_speakers : true);
+  const [revealPartners, setRevealPartners] = useState(settings ? !!settings.reveal_partners : true);
+  const [revealRegister, setRevealRegister] = useState(settings ? !!settings.reveal_register : true);
+  const [revealTickets, setRevealTickets] = useState(settings ? !!settings.reveal_tickets : true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
 
@@ -92,6 +85,17 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [speakerInstagram, setSpeakerInstagram] = useState("");
   const [savingSpeaker, setSavingSpeaker] = useState(false);
 
+  // Partners management states
+  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null);
+  const [partnerName, setPartnerName] = useState("");
+  const [partnerRole, setPartnerRole] = useState("");
+  const [partnerLevel, setPartnerLevel] = useState("Silver");
+  const [partnerLogoUrl, setPartnerLogoUrl] = useState("");
+  const [partnerDescription, setPartnerDescription] = useState("");
+  const [partnerEmail, setPartnerEmail] = useState("");
+  const [partnerPhone, setPartnerPhone] = useState("");
+  const [savingPartner, setSavingPartner] = useState(false);
+
   useEffect(() => {
     if (settings) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -108,6 +112,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       setRevealAboutTheme(settings.reveal_about_theme ?? true);
       setRevealTeam(settings.reveal_team ?? true);
       setRevealSpeakers(settings.reveal_speakers ?? true);
+      setRevealPartners(settings.reveal_partners ?? true);
+      setRevealRegister(settings.reveal_register ?? true);
+      setRevealTickets(settings.reveal_tickets ?? true);
     }
   }, [settings]);
 
@@ -138,6 +145,12 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       const speakersData = await speakersRes.json();
       if (!speakersRes.ok) throw new Error(speakersData.error || "Failed to load speakers.");
       setSpeakersList(speakersData.speakers || []);
+
+      // Fetch partners
+      const partnersRes = await fetch("/api/partners");
+      const partnersData = await partnersRes.json();
+      if (!partnersRes.ok) throw new Error(partnersData.error || "Failed to load partners.");
+      setPartnersList(partnersData.partners || []);
     } catch (err: unknown) {
       console.error("Error loading admin records:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to load database records. Ensure database setup is correct.";
@@ -171,6 +184,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           reveal_about_theme: revealAboutTheme,
           reveal_team: revealTeam,
           reveal_speakers: revealSpeakers,
+          reveal_partners: revealPartners,
+          reveal_register: revealRegister,
+          reveal_tickets: revealTickets,
         }),
       });
 
@@ -309,6 +325,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           reveal_about_theme: revealAboutTheme,
           reveal_team: updatedReveal,
           reveal_speakers: revealSpeakers,
+          reveal_partners: revealPartners,
+          reveal_register: revealRegister,
+          reveal_tickets: revealTickets,
         }),
       });
 
@@ -345,6 +364,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           reveal_about_theme: revealAboutTheme,
           reveal_team: revealTeam,
           reveal_speakers: updatedReveal,
+          reveal_partners: revealPartners,
+          reveal_register: revealRegister,
+          reveal_tickets: revealTickets,
         }),
       });
 
@@ -462,6 +484,224 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     reader.readAsDataURL(file);
   };
 
+  const handleTogglePartnersReveal = async () => {
+    const updatedReveal = !revealPartners;
+    setRevealPartners(updatedReveal);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          theme_name: themeName,
+          reveal_theme: revealTheme,
+          reveal_date: revealDate,
+          reveal_countdown: revealCountdown,
+          event_date: eventDate,
+          event_time: eventTime,
+          event_day: eventDay,
+          countdown_target: countdownTarget,
+          about_theme_name: aboutThemeName,
+          about_theme_desc: aboutThemeDesc,
+          reveal_about_theme: revealAboutTheme,
+          reveal_team: revealTeam,
+          reveal_speakers: revealSpeakers,
+          reveal_partners: updatedReveal,
+          reveal_register: revealRegister,
+          reveal_tickets: revealTickets,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save settings.");
+      onSettingsUpdate();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error toggling partners reveal: " + errorMessage);
+      setRevealPartners(!updatedReveal);
+    }
+  };
+
+  const handleToggleRegisterReveal = async () => {
+    const updatedReveal = !revealRegister;
+    setRevealRegister(updatedReveal);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          theme_name: themeName,
+          reveal_theme: revealTheme,
+          reveal_date: revealDate,
+          reveal_countdown: revealCountdown,
+          event_date: eventDate,
+          event_time: eventTime,
+          event_day: eventDay,
+          countdown_target: countdownTarget,
+          about_theme_name: aboutThemeName,
+          about_theme_desc: aboutThemeDesc,
+          reveal_about_theme: revealAboutTheme,
+          reveal_team: revealTeam,
+          reveal_speakers: revealSpeakers,
+          reveal_partners: revealPartners,
+          reveal_register: updatedReveal,
+          reveal_tickets: revealTickets,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save settings.");
+      onSettingsUpdate();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error toggling registration reveal: " + errorMessage);
+      setRevealRegister(!updatedReveal);
+    }
+  };
+
+  const handleToggleTicketsReveal = async () => {
+    const updatedReveal = !revealTickets;
+    setRevealTickets(updatedReveal);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          theme_name: themeName,
+          reveal_theme: revealTheme,
+          reveal_date: revealDate,
+          reveal_countdown: revealCountdown,
+          event_date: eventDate,
+          event_time: eventTime,
+          event_day: eventDay,
+          countdown_target: countdownTarget,
+          about_theme_name: aboutThemeName,
+          about_theme_desc: aboutThemeDesc,
+          reveal_about_theme: revealAboutTheme,
+          reveal_team: revealTeam,
+          reveal_speakers: revealSpeakers,
+          reveal_partners: revealPartners,
+          reveal_register: revealRegister,
+          reveal_tickets: updatedReveal,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save settings.");
+      onSettingsUpdate();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error toggling ticket download reveal: " + errorMessage);
+      setRevealTickets(!updatedReveal);
+    }
+  };
+
+  const handleSavePartner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!partnerLogoUrl) {
+      alert("Please upload a partner logo first.");
+      return;
+    }
+    setSavingPartner(true);
+    try {
+      const res = await fetch("/api/partners", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: editingPartnerId,
+          name: partnerName,
+          role: partnerRole,
+          level: partnerLevel,
+          logo: partnerLogoUrl,
+          description: partnerDescription,
+          email: partnerEmail,
+          phone: partnerPhone,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save partner.");
+
+      alert(editingPartnerId ? "Partner profile updated!" : "New partner added!");
+      handleResetPartnerForm();
+      
+      // Reload partners list
+      const partnersRes = await fetch("/api/partners");
+      const partnersData = await partnersRes.json();
+      if (partnersRes.ok && partnersData.partners) {
+        setPartnersList(partnersData.partners);
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to save partner.";
+      alert("Error saving partner: " + errorMessage);
+    } finally {
+      setSavingPartner(false);
+    }
+  };
+
+  const handleEditPartner = (partner: Partner) => {
+    setEditingPartnerId(partner.id);
+    setPartnerName(partner.name);
+    setPartnerRole(partner.role);
+    setPartnerLevel(partner.level || "Silver");
+    setPartnerLogoUrl(partner.logo);
+    setPartnerDescription(partner.description || "");
+    setPartnerEmail(partner.email || "");
+    setPartnerPhone(partner.phone || "");
+  };
+
+  const handleDeletePartner = async (id: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this partner?")) return;
+    try {
+      const res = await fetch(`/api/partners?id=${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete partner.");
+
+      setPartnersList(prev => prev.filter(p => p.id !== id));
+      alert("Partner deleted successfully!");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error deleting partner: " + errorMessage);
+    }
+  };
+
+  const handleResetPartnerForm = () => {
+    setEditingPartnerId(null);
+    setPartnerName("");
+    setPartnerRole("");
+    setPartnerLevel("Silver");
+    setPartnerLogoUrl("");
+    setPartnerDescription("");
+    setPartnerEmail("");
+    setPartnerPhone("");
+  };
+
+  const handlePartnerLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Logo size should be less than 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPartnerLogoUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   useEffect(() => {
     if (isAdmin) {
       const timer = setTimeout(() => {
@@ -471,27 +711,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     }
   }, [isAdmin]);
 
-  const updateStatus = async (id: string, newStatus: string) => {
-    try {
-      const res = await fetch("/api/admin/registrations", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id, ticketStatus: newStatus }),
-      });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to update record.");
-
-      setRegistrations(prev => 
-        prev.map(r => r.id === id ? { ...r, ticket_status: newStatus } : r)
-      );
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
-      alert("Error updating status: " + errorMessage);
-    }
-  };
 
   const deleteRegistration = async (id: string) => {
     if (!window.confirm("Are you sure you want to permanently delete this registration?")) return;
@@ -555,8 +775,6 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
   // Calculate quick stats
   const totalRegistrations = registrations.length;
-  const confirmedCount = registrations.filter(r => r.ticket_status === "confirmed" || r.ticket_status === "approved").length;
-  const pendingCount = totalRegistrations - confirmedCount;
   const totalMessages = messages.length;
 
   return (
@@ -582,18 +800,10 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       )}
 
       {/* Bento Grid Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         <div className="bg-ted-dark-gray/30 border border-white/5 p-6 rounded-2xl">
-          <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Total Registers</span>
+          <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Total Successful Registrations</span>
           <span className="text-3xl font-black text-white">{totalRegistrations}</span>
-        </div>
-        <div className="bg-ted-dark-gray/30 border border-white/5 p-6 rounded-2xl">
-          <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Confirmed passes</span>
-          <span className="text-3xl font-black text-green-500">{confirmedCount}</span>
-        </div>
-        <div className="bg-ted-dark-gray/30 border border-white/5 p-6 rounded-2xl">
-          <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Pending Approvals</span>
-          <span className="text-3xl font-black text-yellow-500">{pendingCount}</span>
         </div>
         <div className="bg-ted-dark-gray/30 border border-white/5 p-6 rounded-2xl">
           <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Total Inbox Messages</span>
@@ -604,6 +814,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       {/* Subtab Switcher */}
       <div className="flex flex-wrap gap-3 border-b border-white/5 pb-4 mb-6">
         <button
+          type="button"
           onClick={() => setActiveSubTab("registrations")}
           className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "registrations" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
@@ -612,6 +823,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           Registrations ({totalRegistrations})
         </button>
         <button
+          type="button"
           onClick={() => setActiveSubTab("messages")}
           className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "messages" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
@@ -620,6 +832,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           Contact Messages ({totalMessages})
         </button>
         <button
+          type="button"
           onClick={() => setActiveSubTab("settings")}
           className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "settings" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
@@ -628,6 +841,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           Event Controls
         </button>
         <button
+          type="button"
           onClick={() => setActiveSubTab("team")}
           className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "team" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
@@ -636,6 +850,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           Team Manager ({teamMembers.length})
         </button>
         <button
+          type="button"
           onClick={() => setActiveSubTab("speakers")}
           className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "speakers" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
@@ -644,6 +859,16 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           Speakers Manager ({speakersList.length})
         </button>
         <button
+          type="button"
+          onClick={() => setActiveSubTab("partners")}
+          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+            activeSubTab === "partners" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+          }`}
+        >
+          Partners Manager ({partnersList.length})
+        </button>
+        <button
+          type="button"
           onClick={fetchData}
           disabled={loading}
           className="md:ml-auto px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all text-xs font-mono uppercase tracking-widest font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50"
@@ -663,78 +888,115 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           </div>
         ) : activeSubTab === "registrations" ? (
           /* REGISTRATIONS VIEW */
-          <div className="overflow-x-auto">
-            {registrations.length === 0 ? (
-              <p className="text-center text-white/40 py-16 font-mono text-sm">No registrations recorded yet.</p>
-            ) : (
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-white/10 text-white/40 font-mono uppercase tracking-wider">
-                    <th className="pb-4 pr-4">Name</th>
-                    <th className="pb-4 px-4">Contact Info</th>
-                    <th className="pb-4 px-4">Organization</th>
-                    <th className="pb-4 px-4">LinkedIn</th>
-                    <th className="pb-4 px-4">Status</th>
-                    <th className="pb-4 pl-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {registrations.map((reg) => (
-                    <tr key={reg.id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="py-4 pr-4 font-bold text-white uppercase tracking-wider">{reg.full_name}</td>
-                      <td className="py-4 px-4 space-y-1">
-                        <div className="text-white/80">{reg.email}</div>
-                        <div className="text-white/40 font-mono">{reg.phone}</div>
-                      </td>
-                      <td className="py-4 px-4 uppercase text-white/80">{reg.organization}</td>
-                      <td className="py-4 px-4">
-                        {reg.linkedin ? (
-                          <a href={reg.linkedin} target="_blank" rel="noopener noreferrer" className="text-ted-red hover:underline font-mono">
-                            View URL
-                          </a>
-                        ) : (
-                          <span className="text-white/20 font-mono">-</span>
-                        )}
-                      </td>
-                      <td className="py-4 px-4">
-                        {reg.ticket_status === "confirmed" || reg.ticket_status === "approved" ? (
-                          <span className="px-2 py-1 rounded bg-green-500/10 border border-green-500/25 text-green-500 font-mono text-[10px] uppercase font-bold">
-                            Confirmed
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/25 text-yellow-500 font-mono text-[10px] uppercase font-bold">
-                            Pending
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-4 pl-4 text-right space-x-2 whitespace-nowrap">
-                        {reg.ticket_status !== "confirmed" && reg.ticket_status !== "approved" ? (
-                          <button
-                            onClick={() => updateStatus(reg.id, "confirmed")}
-                            className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg uppercase cursor-pointer"
-                          >
-                            Approve
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => updateStatus(reg.id, "pending_approval")}
-                            className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-lg uppercase cursor-pointer"
-                          >
-                            Revoke
-                          </button>
-                        )}
-                        <button
-                          onClick={() => deleteRegistration(reg.id)}
-                          className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white rounded-lg uppercase text-white/50 cursor-pointer font-bold"
-                        >
-                          Delete
-                        </button>
-                      </td>
+          <div className="space-y-6">
+            {/* Visibility toggle control cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono">
+              {/* Register Now toggle card */}
+              <div className="border border-white/10 p-5 rounded-2xl bg-black/40 flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Visibility Controls"}</span>
+                  <label className="text-xs font-bold text-white uppercase tracking-wider block">Reveal Registrations Form (Register Now)</label>
+                  <span className="text-[9px] text-white/30 block">
+                    {revealRegister 
+                      ? "Currently showing intake form on website" 
+                      : "Currently hiding registration intake globally"
+                    }
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleRegisterReveal}
+                  className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                    revealRegister ? "bg-ted-red" : "bg-white/10"
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                      revealRegister ? "translate-x-7" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Get My Pass toggle card */}
+              <div className="border border-white/10 p-5 rounded-2xl bg-black/40 flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Visibility Controls"}</span>
+                  <label className="text-xs font-bold text-white uppercase tracking-wider block">Reveal Ticket Download (Get My Pass)</label>
+                  <span className="text-[9px] text-white/30 block">
+                    {revealTickets 
+                      ? "Currently showing ticket pass download on website" 
+                      : "Currently hiding ticket pass downloader globally"
+                    }
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleTicketsReveal}
+                  className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                    revealTickets ? "bg-ted-red" : "bg-white/10"
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                      revealTickets ? "translate-x-7" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              {registrations.length === 0 ? (
+                <p className="text-center text-white/40 py-16 font-mono text-sm">No registrations recorded yet.</p>
+              ) : (
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-white/40 font-mono uppercase tracking-wider">
+                      <th className="pb-4 pr-4">Name</th>
+                      <th className="pb-4 px-4">Contact Info</th>
+                      <th className="pb-4 px-4">Organization</th>
+                      <th className="pb-4 px-4">LinkedIn</th>
+                      <th className="pb-4 px-4">Payment ID</th>
+                      <th className="pb-4 pl-4 text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {registrations.map((reg) => (
+                      <tr key={reg.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-4 pr-4 font-bold text-white uppercase tracking-wider">{reg.full_name}</td>
+                        <td className="py-4 px-4 space-y-1">
+                          <div className="text-white/80">{reg.email}</div>
+                          <div className="text-white/40 font-mono">{reg.phone}</div>
+                        </td>
+                        <td className="py-4 px-4 uppercase text-white/80">{reg.organization}</td>
+                        <td className="py-4 px-4">
+                          {reg.linkedin ? (
+                            <a href={reg.linkedin} target="_blank" rel="noopener noreferrer" className="text-ted-red hover:underline font-mono">
+                              View URL
+                            </a>
+                          ) : (
+                            <span className="text-white/20 font-mono">-</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 font-mono text-white/70">
+                          {reg.payment_id || <span className="text-white/25">No Payment</span>}
+                        </td>
+                        <td className="py-4 pl-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => deleteRegistration(reg.id)}
+                            className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white rounded-lg uppercase text-white/50 cursor-pointer font-bold transition-all"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         ) : activeSubTab === "messages" ? (
           /* MESSAGES VIEW */
@@ -1002,6 +1264,66 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                     />
                   </button>
                 </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Reveal Partners Section</label>
+                    <span className="text-[9px] text-white/30 block">Toggle off to show &apos;THE JOURNEY TAKES SHAPE SOON&apos; placeholder on website</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRevealPartners(!revealPartners)}
+                    className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                      revealPartners ? "bg-ted-red" : "bg-white/10"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                        revealPartners ? "translate-x-7" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Reveal &apos;Register Now&apos; Tab</label>
+                    <span className="text-[9px] text-white/30 block">Toggle off to hide the registration intake form navigation tab globally</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRevealRegister(!revealRegister)}
+                    className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                      revealRegister ? "bg-ted-red" : "bg-white/10"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                        revealRegister ? "translate-x-7" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Reveal &apos;Get My Pass&apos; Tab</label>
+                    <span className="text-[9px] text-white/30 block">Toggle off to hide the ticket pass downloader navigation tab globally</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRevealTickets(!revealTickets)}
+                    className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                      revealTickets ? "bg-ted-red" : "bg-white/10"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                        revealTickets ? "translate-x-7" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1259,7 +1581,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               )}
             </div>
           </div>
-        ) : (
+        ) : activeSubTab === "speakers" ? (
           /* SPEAKERS MANAGER VIEW */
           <div className="space-y-8 font-mono text-xs">
             {/* Visibility toggle control card */}
@@ -1514,6 +1836,260 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                           onClick={() => handleDeleteSpeaker(speaker.id)}
                           className="p-1.5 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white text-white rounded transition-colors cursor-pointer animate-none"
                           title="Delete Speaker"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* PARTNERS MANAGER VIEW */
+          <div className="space-y-8 font-mono text-xs">
+            {/* Visibility toggle control card */}
+            <div className="border border-white/10 p-6 rounded-2xl bg-black/40 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Visibility Controls"}</span>
+                <label className="text-sm font-bold text-white uppercase tracking-wider block">Reveal Partners Section on Website</label>
+                <span className="text-[9px] text-white/30 block">
+                  {revealPartners 
+                    ? "Currently showing partners section on website" 
+                    : "Currently showing 'THE JOURNEY TAKES SHAPE SOON' placeholder"
+                  }
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleTogglePartnersReveal}
+                className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                  revealPartners ? "bg-ted-red" : "bg-white/10"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                    revealPartners ? "translate-x-7" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Editor panel: Add / Edit Partner */}
+            <div className="border border-white/10 p-6 rounded-2xl bg-black/40 space-y-4">
+              <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">
+                {editingPartnerId ? `// Edit Partner Profile` : `// Add New Partner`}
+              </span>
+              
+              <form onSubmit={handleSavePartner} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Partner / Sponsor Name</label>
+                    <input
+                      type="text"
+                      value={partnerName}
+                      onChange={(e) => setPartnerName(e.target.value)}
+                      placeholder="e.g. Global Tech Corp"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Partner Role / Title (displayed above logo)</label>
+                    <input
+                      type="text"
+                      value={partnerRole}
+                      onChange={(e) => setPartnerRole(e.target.value)}
+                      placeholder="e.g. Hydration Partner"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Sponsorship Level</label>
+                    <select
+                      value={partnerLevel}
+                      onChange={(e) => setPartnerLevel(e.target.value)}
+                      className="w-full bg-neutral-900 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
+                      required
+                    >
+                      <option value="Platinum">Platinum</option>
+                      <option value="Gold">Gold</option>
+                      <option value="Silver">Silver</option>
+                      <option value="Title">Title</option>
+                      <option value="In-Kind">In-Kind</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Email Address (Optional)</label>
+                    <input
+                      type="email"
+                      value={partnerEmail}
+                      onChange={(e) => setPartnerEmail(e.target.value)}
+                      placeholder="e.g. sponsor@company.com"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Phone Number (Optional)</label>
+                    <input
+                      type="text"
+                      value={partnerPhone}
+                      onChange={(e) => setPartnerPhone(e.target.value)}
+                      placeholder="e.g. +91 98765 43210"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Description / Bio</label>
+                    <input
+                      type="text"
+                      value={partnerDescription}
+                      onChange={(e) => setPartnerDescription(e.target.value)}
+                      placeholder="Provide brief details about this partnership..."
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-2">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Upload Partner Logo</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePartnerLogoChange}
+                      className="w-full bg-white/5 border border-white/10 p-2.5 text-xs text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono cursor-pointer"
+                    />
+                    <span className="text-[9px] text-white/30 block">Select a partner logo image from your computer (under 2MB)</span>
+                  </div>
+
+                  {partnerLogoUrl && (
+                    <div className="flex items-center gap-4 border border-white/5 bg-black/30 p-3 rounded-xl">
+                      <div className="w-16 h-16 rounded border border-white/20 overflow-hidden shrink-0 bg-white p-1 flex items-center justify-center">
+                        <img src={partnerLogoUrl} alt="Preview" className="max-w-full max-h-full object-contain" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-white uppercase block">Logo Preview</span>
+                        <button
+                          type="button"
+                          onClick={() => setPartnerLogoUrl("")}
+                          className="text-[9px] text-ted-red hover:underline uppercase font-bold cursor-pointer"
+                        >
+                          Remove Logo
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+                  {editingPartnerId && (
+                    <button
+                      type="button"
+                      onClick={handleResetPartnerForm}
+                      className="px-6 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold uppercase tracking-widest text-[10px] transition-colors rounded-lg cursor-pointer"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={savingPartner}
+                    className="px-6 py-2.5 bg-ted-red hover:bg-white text-white hover:text-black font-black uppercase tracking-widest text-[10px] transition-colors rounded-lg cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {savingPartner ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Saving Partner...
+                      </>
+                    ) : editingPartnerId ? (
+                      "Update Partner"
+                    ) : (
+                      "Add Partner"
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* List/Table panel: Current Partners */}
+            <div className="border border-white/10 p-6 rounded-2xl bg-black/40 space-y-4">
+              <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Event Partners & Sponsors"}</span>
+              
+              {partnersList.length === 0 ? (
+                <p className="text-center text-white/40 py-8 font-mono">No partners registered. Add partners above.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {partnersList.map((partner) => (
+                    <div
+                      key={partner.id}
+                      className="flex gap-4 border border-white/5 bg-black/20 p-4 rounded-xl items-start relative group"
+                    >
+                      <div className="w-16 h-16 border border-white/15 overflow-hidden shrink-0 bg-white p-1 flex items-center justify-center">
+                        {partner.logo ? (
+                          <img src={partner.logo} alt={partner.name} className="max-w-full max-h-full object-contain" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white/20 font-bold bg-white/5 text-[9px] uppercase">
+                            No Logo
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 flex-grow pr-16">
+                        <div className="space-y-0.5">
+                          <h5 className="font-bold text-white uppercase tracking-wider text-sm">{partner.name}</h5>
+                          <div className="text-[10px] text-ted-red uppercase tracking-widest">{partner.role} ({partner.level})</div>
+                        </div>
+                        
+                        <div className="flex gap-2.5 pt-0.5">
+                          {partner.email ? (
+                            <span className="text-[9px] text-white/50 bg-white/5 px-2 py-0.5 rounded font-mono" title={partner.email}>
+                              ✉️ Email
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-white/20 bg-white/[0.02] px-2 py-0.5 rounded font-mono line-through">
+                              ✉️ Email
+                            </span>
+                          )}
+                          {partner.phone ? (
+                            <span className="text-[9px] text-white/50 bg-white/5 px-2 py-0.5 rounded font-mono" title={partner.phone}>
+                              📞 Phone
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-white/20 bg-white/[0.02] px-2 py-0.5 rounded font-mono line-through">
+                              📞 Phone
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-[10px] text-white/40 leading-relaxed font-sans line-clamp-2 max-w-sm" title={partner.description}>
+                          {partner.description}
+                        </p>
+                      </div>
+
+                      <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEditPartner(partner)}
+                          className="p-1.5 bg-white/5 border border-white/10 hover:bg-ted-red/20 hover:border-ted-red text-white hover:text-white rounded transition-colors cursor-pointer animate-none"
+                          title="Edit Partner"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeletePartner(partner.id)}
+                          className="p-1.5 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white text-white rounded transition-colors cursor-pointer animate-none"
+                          title="Delete Partner"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

@@ -16,6 +16,9 @@ export interface EventSettings {
   reveal_about_theme: boolean;
   reveal_team: boolean;
   reveal_speakers: boolean;
+  reveal_partners: boolean;
+  reveal_register: boolean;
+  reveal_tickets: boolean;
 }
 
 const DEFAULT_SETTINGS: EventSettings = {
@@ -32,6 +35,9 @@ const DEFAULT_SETTINGS: EventSettings = {
   reveal_about_theme: true,
   reveal_team: true,
   reveal_speakers: true,
+  reveal_partners: true,
+  reveal_register: true,
+  reveal_tickets: true,
 };
 
 const SETTINGS_FILE_PATH = path.join(process.cwd(), "src", "lib", "settings.json");
@@ -47,6 +53,35 @@ export async function getSettings(): Promise<EventSettings> {
       .single();
 
     if (!error && data) {
+      let localRevealPartners = data.reveal_partners;
+      let localRevealRegister = data.reveal_register;
+      let localRevealTickets = data.reveal_tickets;
+
+      // Local JSON File Overrides fallback checks
+      try {
+        if (
+          localRevealPartners === undefined || localRevealPartners === null ||
+          localRevealRegister === undefined || localRevealRegister === null ||
+          localRevealTickets === undefined || localRevealTickets === null
+        ) {
+          if (fs.existsSync(SETTINGS_FILE_PATH)) {
+            const fileData = fs.readFileSync(SETTINGS_FILE_PATH, "utf-8");
+            const parsed = JSON.parse(fileData);
+            if (localRevealPartners === undefined || localRevealPartners === null) {
+              localRevealPartners = parsed.reveal_partners;
+            }
+            if (localRevealRegister === undefined || localRevealRegister === null) {
+              localRevealRegister = parsed.reveal_register;
+            }
+            if (localRevealTickets === undefined || localRevealTickets === null) {
+              localRevealTickets = parsed.reveal_tickets;
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+
       return {
         theme_name: data.theme_name ?? DEFAULT_SETTINGS.theme_name,
         reveal_theme: data.reveal_theme ?? DEFAULT_SETTINGS.reveal_theme,
@@ -61,6 +96,9 @@ export async function getSettings(): Promise<EventSettings> {
         reveal_about_theme: data.reveal_about_theme ?? DEFAULT_SETTINGS.reveal_about_theme,
         reveal_team: data.reveal_team ?? DEFAULT_SETTINGS.reveal_team,
         reveal_speakers: data.reveal_speakers ?? DEFAULT_SETTINGS.reveal_speakers,
+        reveal_partners: localRevealPartners ?? DEFAULT_SETTINGS.reveal_partners,
+        reveal_register: localRevealRegister ?? DEFAULT_SETTINGS.reveal_register,
+        reveal_tickets: localRevealTickets ?? DEFAULT_SETTINGS.reveal_tickets,
       };
     }
   } catch (err) {
@@ -86,6 +124,9 @@ export async function getSettings(): Promise<EventSettings> {
         reveal_about_theme: parsed.reveal_about_theme ?? DEFAULT_SETTINGS.reveal_about_theme,
         reveal_team: parsed.reveal_team ?? DEFAULT_SETTINGS.reveal_team,
         reveal_speakers: parsed.reveal_speakers ?? DEFAULT_SETTINGS.reveal_speakers,
+        reveal_partners: parsed.reveal_partners ?? DEFAULT_SETTINGS.reveal_partners,
+        reveal_register: parsed.reveal_register ?? DEFAULT_SETTINGS.reveal_register,
+        reveal_tickets: parsed.reveal_tickets ?? DEFAULT_SETTINGS.reveal_tickets,
       };
     }
   } catch (err) {
@@ -123,6 +164,9 @@ export async function saveSettings(settings: EventSettings): Promise<boolean> {
         reveal_about_theme: settings.reveal_about_theme,
         reveal_team: settings.reveal_team,
         reveal_speakers: settings.reveal_speakers,
+        reveal_partners: settings.reveal_partners,
+        reveal_register: settings.reveal_register,
+        reveal_tickets: settings.reveal_tickets,
         updated_at: new Date().toISOString(),
       };
 

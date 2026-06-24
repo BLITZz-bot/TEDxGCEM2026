@@ -13,6 +13,13 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    // Check if tickets/passes are open for download
+    const { getSettings } = await import("@/lib/settings-service");
+    const settings = await getSettings();
+    if (settings.reveal_tickets === false) {
+      return NextResponse.json({ error: "Ticket downloads are currently closed." }, { status: 403 });
+    }
+
     // Query registration details based on server session email
     const { data, error } = await supabase
       .from("registrations")

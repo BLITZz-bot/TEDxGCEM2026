@@ -3,17 +3,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { TabId } from "@/components/ui/TabNav";
+import { EventSettings } from "@/lib/settings-service";
 
 interface HeroProps {
   onTabChange: (id: TabId) => void;
-  settings?: {
-    theme_name: string;
-    reveal_theme: boolean;
-    event_date: string;
-    event_time: string;
-    event_day: string;
-    countdown_target: string;
-  } | null;
+  settings?: EventSettings | null;
 }
 
 interface BgSettings {
@@ -381,7 +375,7 @@ export default function Hero({ onTabChange, settings }: HeroProps) {
           </motion.button>
         </div>
       </motion.div>
-
+ 
       {/* Mobile-Only Absolute Positioned Stacked Console at the bottom */}
       <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-20 flex md:hidden flex-col sm:flex-row items-center gap-4 w-full max-w-xs sm:max-w-md px-0 pointer-events-auto">
         <motion.button

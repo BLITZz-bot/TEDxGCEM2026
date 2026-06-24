@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { EventSettings } from "@/lib/settings-service";
 
 export type TabId = 
   | "home" 
@@ -35,9 +36,10 @@ const mobileMenuConfig = {
 interface TabNavProps {
   activeTab: TabId;
   onTabChange: (id: TabId) => void;
+  settings?: EventSettings | null;
 }
 
-export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
+export default function TabNav({ activeTab, onTabChange, settings }: TabNavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { user, isAdmin, loginWithGoogle, logout } = useAuth();
@@ -48,8 +50,8 @@ export default function TabNav({ activeTab, onTabChange }: TabNavProps) {
     { id: "speakers", label: "Speakers" },
     { id: "schedule", label: "Schedule" },
     { id: "partners", label: "Partners" },
-    { id: "register", label: "Register Now" },
-    { id: "get-pass", label: "Get My Pass" },
+    ...(settings?.reveal_register !== false ? [{ id: "register", label: "Register Now" } as Tab] : []),
+    ...(settings?.reveal_tickets !== false ? [{ id: "get-pass", label: "Get My Pass" } as Tab] : []),
     { id: "contact", label: "Contact" },
     ...(isAdmin ? [{ id: "admin", label: "Admin Console" }] as Tab[] : []),
   ];

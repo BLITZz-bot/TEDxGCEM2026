@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { EventSettings } from "@/lib/settings-service";
+import { Partner } from "@/lib/partners-service";
 
-const partners = [
+const DEFAULT_PARTNERS = [
   { 
     name: "Global Tech Corp", 
+    role: "Hydration Partner",
     level: "Platinum", 
     logo: "/GRAFIK1.png",
     description: "Global Tech Corp is a leading multinational technology firm specializing in enterprise software development, cloud infrastructure, and digital transformation services.",
@@ -14,6 +17,7 @@ const partners = [
   },
   { 
     name: "Future Systems", 
+    role: "Technology Partner",
     level: "Platinum", 
     logo: "/GRAFIK1.png",
     description: "Future Systems is at the forefront of cyber-physical engineering, delivering automation, robotics, and smart city infrastructure solutions worldwide.",
@@ -22,6 +26,7 @@ const partners = [
   },
   { 
     name: "Innovate AI", 
+    role: "AI Partner",
     level: "Gold", 
     logo: "/GRAFIK1.png",
     description: "Innovate AI leverages state-of-the-art machine learning models to provide automated business analytics, predictive modeling, and intelligent agent systems.",
@@ -30,6 +35,7 @@ const partners = [
   },
   { 
     name: "Eco Solutions", 
+    role: "Sustainability Partner",
     level: "Gold", 
     logo: "/GRAFIK1.png",
     description: "Eco Solutions develops sustainable technologies, green energy grids, and resource management software to help enterprises lower their carbon footprints.",
@@ -38,6 +44,7 @@ const partners = [
   },
   { 
     name: "Creative Media", 
+    role: "Media Partner",
     level: "Silver", 
     logo: "/GRAFIK1.png",
     description: "Creative Media is an award-winning digital design agency crafting immersive web experiences, brand identities, and high-impact marketing campaigns.",
@@ -46,6 +53,7 @@ const partners = [
   },
   { 
     name: "Urban Planning Co", 
+    role: "Venue Partner",
     level: "Silver", 
     logo: "/GRAFIK1.png",
     description: "Urban Planning Co designs smart architectural spaces and coordinates eco-friendly community infrastructure projects for futuristic municipalities.",
@@ -54,6 +62,7 @@ const partners = [
   },
   { 
     name: "NextGen Education", 
+    role: "Education Partner",
     level: "Silver", 
     logo: "/GRAFIK1.png",
     description: "NextGen Education provides online learning platforms, interactive academic curricula, and AI-driven tutoring tools to schools across the globe.",
@@ -62,6 +71,7 @@ const partners = [
   },
   { 
     name: "Digital Arts", 
+    role: "Creative Partner",
     level: "Silver", 
     logo: "/GRAFIK1.png",
     description: "Digital Arts is a creative collaborative providing digital illustration, visual effects, and high-fidelity rendering software to creators.",
@@ -70,8 +80,24 @@ const partners = [
   },
 ];
 
-export default function Partners() {
-  const [activePartner, setActivePartner] = useState<typeof partners[0] | null>(null);
+export default function Partners({ settings }: { settings?: EventSettings | null }) {
+  const [partnersList, setPartnersList] = useState<Partner[]>(DEFAULT_PARTNERS as Partner[]);
+  const [activePartner, setActivePartner] = useState<Partner | null>(null);
+
+  useEffect(() => {
+    async function loadPartners() {
+      try {
+        const res = await fetch("/api/partners");
+        const data = await res.json();
+        if (res.ok && data.partners && data.partners.length > 0) {
+          setPartnersList(data.partners);
+        }
+      } catch (err) {
+        console.error("Error loading partners:", err);
+      }
+    }
+    loadPartners();
+  }, []);
 
   // Disable body scroll and hide mobile hamburger when modal is open
   useEffect(() => {
@@ -90,10 +116,10 @@ export default function Partners() {
 
   return (
     <section className="min-h-screen pt-20 md:pt-32 pb-24 px-6 max-w-7xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
         
         {/* Left Column: Sticky Editorial Manifesto */}
-        <div className="lg:col-span-5 lg:sticky lg:top-32 h-fit space-y-8">
+        <div className="lg:col-span-6 lg:sticky lg:top-32 h-fit space-y-8">
           <div className="space-y-6">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ted-red/10 border border-ted-red/20 text-ted-red text-[10px] uppercase tracking-widest font-black font-mono shadow-[0_0_15px_rgba(235,0,40,0.1)]">
               <span className="w-1.5 h-1.5 rounded-full bg-ted-red" />
@@ -125,93 +151,101 @@ export default function Partners() {
           </div>
         </div>
 
-        {/* Right Column: Scrollable Logo Grid */}
-        <div className="lg:col-span-7 space-y-20">
-          
-          {/* Platinum Partners */}
-          <div>
-            <div className="flex items-center gap-3 mb-8 border-b border-white/5 pb-4">
-              <span className="h-1.5 w-1.5 rounded-full bg-ted-red" />
-              <h4 className="text-white/50 uppercase tracking-[0.3em] text-[10px] font-mono font-bold">Platinum Partners</h4>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
-              {partners.filter(p => p.level === "Platinum").map((partner, i) => (
-                <motion.div
-                  key={i}
-                  whileHover={{ y: -4 }}
-                  onClick={() => setActivePartner(partner)}
-                  className="flex flex-col items-center justify-center p-8 group cursor-pointer transition-all duration-300 border border-white/20 bg-white/[0.04] backdrop-blur-md rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md hover:border-ted-red/60 hover:bg-white/[0.07] shadow-[0_4px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.18)]"
-                >
-                  <img 
-                    src={partner.logo} 
-                    alt={`${partner.name} Logo`} 
-                    className="w-full max-w-[200px] h-28 object-contain transition-all duration-500" 
-                  />
-                  <div className="text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-white group-hover:text-ted-red transition-colors duration-300 mt-4 text-center">
-                    {partner.name}
+        {/* Right Column: Scrollable Logo Grid / Placeholder */}
+        <div className="lg:col-span-6 w-full">
+          {settings?.reveal_partners !== false ? (
+            /* Top Partners Grid */
+            <div>
+              <div className="flex items-center gap-3 mb-8 border-b border-white/5 pb-4">
+                <span className="h-1.5 w-1.5 rounded-full bg-ted-red" />
+                <h4 className="text-white/50 uppercase tracking-[0.3em] text-[10px] font-mono font-bold">Our Partners</h4>
+              </div>
+              <div className="grid grid-cols-1 gap-10 sm:gap-12">
+                {partnersList.slice(0, 2).map((partner, i) => (
+                  <div key={partner.id || i} className="flex flex-col w-full">
+                    <h5 className="text-sm sm:text-lg md:text-xl font-mono font-black uppercase tracking-[0.25em] text-white mb-3 text-center">
+                      {partner.role}
+                    </h5>
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      onClick={() => setActivePartner(partner)}
+                      className="flex flex-col items-center justify-center p-6 sm:p-8 group cursor-pointer transition-all duration-300 border border-white/20 bg-white/[0.04] backdrop-blur-md rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md hover:border-ted-red/60 hover:bg-white/[0.07] shadow-[0_4px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.18)]"
+                    >
+                      <img 
+                        src={partner.logo} 
+                        alt={`${partner.name} Logo`} 
+                        className="w-full max-w-[140px] sm:max-w-[210px] h-20 sm:h-28 object-contain transition-all duration-500" 
+                      />
+                      <div className="text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-white/50 group-hover:text-ted-red transition-colors duration-300 mt-4 text-center">
+                        {partner.name}
+                      </div>
+                    </motion.div>
                   </div>
-                </motion.div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* Gold Partners */}
-          <div>
-            <div className="flex items-center gap-3 mb-8 border-b border-white/5 pb-4">
-              <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
-              <h4 className="text-white/50 uppercase tracking-[0.3em] text-[10px] font-mono font-bold">Gold Partners</h4>
-            </div>
-            <div className="grid grid-cols-2 gap-8">
-              {partners.filter(p => p.level === "Gold").map((partner, i) => (
-                <motion.div
-                  key={i}
-                  whileHover={{ y: -3 }}
-                  onClick={() => setActivePartner(partner)}
-                  className="flex flex-col items-center justify-center p-6 group cursor-pointer transition-all duration-300 border border-white/20 bg-white/[0.04] backdrop-blur-md rounded-tl-2xl rounded-br-2xl rounded-tr-sm rounded-bl-sm hover:border-ted-red/60 hover:bg-white/[0.07] shadow-[0_4px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_25px_rgba(235,0,40,0.15)]"
-                >
-                  <img 
-                    src={partner.logo} 
-                    alt={`${partner.name} Logo`} 
-                    className="w-full max-w-[150px] h-20 object-contain transition-all duration-500" 
-                  />
-                  <div className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-white group-hover:text-ted-red transition-colors duration-300 mt-3.5 text-center">
-                    {partner.name}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* Silver Partners (Spans full width below the split columns) */}
-      <div className="mt-24 border-t border-white/5 pt-16">
-        <div className="flex items-center gap-3 mb-10">
-          <span className="h-1.5 w-1.5 rounded-full bg-white/40" />
-          <h4 className="text-white/50 uppercase tracking-[0.3em] text-[10px] font-mono font-bold">Silver Partners</h4>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8">
-          {partners.filter(p => p.level === "Silver").map((partner, i) => (
+          ) : (
+            /* Brutalist Placeholder */
             <motion.div
-              key={i}
-              whileHover={{ y: -2 }}
-              onClick={() => setActivePartner(partner)}
-              className="flex flex-col items-center justify-center p-5 group cursor-pointer transition-all duration-300 border border-white/20 bg-white/[0.04] backdrop-blur-md rounded-tl-2xl rounded-br-2xl rounded-tr-sm rounded-bl-sm hover:border-ted-red/60 hover:bg-white/[0.07] shadow-[0_4px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_20px_rgba(235,0,40,0.12)]"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: false }}
+              transition={{ duration: 0.6 }}
+              className="mt-8 lg:mt-16"
             >
-              <img 
-                src={partner.logo} 
-                alt={`${partner.name} Logo`} 
-                className="w-full max-w-[130px] h-16 object-contain transition-all duration-500" 
-              />
-              <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-white group-hover:text-ted-red transition-colors duration-300 mt-3 text-center">
-                {partner.name}
+              <div className="border-2 border-white/10 p-12 bg-black/40 text-center space-y-4 max-w-xl mx-auto shadow-[6px_6px_0px_0px_#EB0028] relative overflow-hidden">
+                <div className="absolute -top-[1.5px] -left-[1.5px] w-3 h-3 border-t-2 border-l-2 border-ted-red" />
+                <div className="absolute -top-[1.5px] -right-[1.5px] w-3 h-3 border-t-2 border-r-2 border-ted-red" />
+                <div className="absolute -bottom-[1.5px] -left-[1.5px] w-3 h-3 border-b-2 border-l-2 border-ted-red" />
+                <div className="absolute -bottom-[1.5px] -right-[1.5px] w-3 h-3 border-b-2 border-r-2 border-ted-red" />
+                
+                <h3 className="text-xl md:text-2xl font-black italic tracking-tighter uppercase text-white leading-tight">
+                  Partners in
+                </h3>
+                <h3 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase text-ted-red leading-none mt-2">
+                  Bringing Ideas to Life
+                </h3>
+                
+                <div className="h-[1.5px] w-12 bg-ted-red/30 mx-auto my-2" />
+                
+                <p className="text-white/60 font-mono tracking-[0.2em] uppercase text-xs">
+                  STAY TUNED FOR REVEALS
+                </p>
               </div>
             </motion.div>
-          ))}
+          )}
         </div>
+
       </div>
+
+      {/* Remaining Partners Grid (Spans full page width below the split columns layout) */}
+      {settings?.reveal_partners !== false && partnersList.length > 2 && (
+        <div className="mt-8 sm:mt-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-12">
+            {partnersList.slice(2).map((partner, i) => (
+              <div key={partner.id || (i + 2)} className="flex flex-col w-full">
+                <h5 className="text-sm sm:text-lg md:text-xl font-mono font-black uppercase tracking-[0.25em] text-white mb-3 text-center">
+                  {partner.role}
+                </h5>
+                <motion.div
+                  whileHover={{ y: -4 }}
+                  onClick={() => setActivePartner(partner)}
+                  className="flex flex-col items-center justify-center p-6 sm:p-8 group cursor-pointer transition-all duration-300 border border-white/20 bg-white/[0.04] backdrop-blur-md rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md hover:border-ted-red/60 hover:bg-white/[0.07] shadow-[0_4px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.18)]"
+                >
+                  <img 
+                    src={partner.logo} 
+                    alt={`${partner.name} Logo`} 
+                    className="w-full max-w-[140px] sm:max-w-[210px] h-20 sm:h-28 object-contain transition-all duration-500" 
+                  />
+                  <div className="text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-white/50 group-hover:text-ted-red transition-colors duration-300 mt-4 text-center">
+                    {partner.name}
+                  </div>
+                </motion.div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Partner Info Modal Dialog */}
       <AnimatePresence>
@@ -248,12 +282,8 @@ export default function Partners() {
               </button>
 
               {/* Badge */}
-              <span className={`text-[9px] font-mono tracking-widest font-black uppercase px-2.5 py-0.5 rounded-sm mb-6 ${
-                activePartner.level === "Platinum" ? "bg-ted-red/10 text-ted-red" :
-                activePartner.level === "Gold" ? "bg-yellow-500/10 text-yellow-500" :
-                "bg-white/10 text-white/70"
-              }`}>
-                {activePartner.level} Partner
+              <span className="text-[9px] font-mono tracking-widest font-black uppercase px-2.5 py-0.5 rounded-sm mb-6 bg-ted-red/10 text-ted-red">
+                {activePartner.role}
               </span>
 
               {/* Logo */}

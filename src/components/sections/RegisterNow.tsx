@@ -4,12 +4,14 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TabId } from "@/components/ui/TabNav";
 import { useAuth } from "@/hooks/useAuth";
+import { EventSettings } from "@/lib/settings-service";
 
 interface RegisterNowProps {
   onTabChange: (id: TabId) => void;
+  settings?: EventSettings | null;
 }
 
-export default function RegisterNow({ onTabChange }: RegisterNowProps) {
+export default function RegisterNow({ onTabChange, settings }: RegisterNowProps) {
   const { user, loading, loginWithGoogle } = useAuth();
   const [formData, setFormData] = useState({
     fullName: "",
@@ -130,6 +132,40 @@ export default function RegisterNow({ onTabChange }: RegisterNowProps) {
       });
     }
   };
+
+  if (settings?.reveal_register === false) {
+    return (
+      <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col justify-center items-center font-mono">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full bg-ted-dark-gray/50 border border-white/10 p-12 rounded-[2rem] shadow-2xl backdrop-blur-sm text-center space-y-8 relative overflow-hidden"
+        >
+          {/* Decorative Glow */}
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-ted-red/10 blur-[80px] rounded-full" />
+          
+          <div className="w-20 h-20 bg-ted-red/20 border border-ted-red/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#EB0028" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <div className="space-y-3">
+            <h4 className="text-3xl font-black uppercase tracking-tight text-white">Registrations Closed</h4>
+            <p className="text-white/60 max-w-md mx-auto text-xs leading-relaxed font-sans font-light">
+              Attendee pass registrations for TEDxGCEM 2026 are currently closed. Follow our official channels for release details, or log in with your admin credentials to customize visibility.
+            </p>
+          </div>
+          <button 
+            onClick={() => onTabChange("home")}
+            className="px-8 py-4 bg-ted-red hover:bg-white text-white hover:text-black font-black rounded-full text-xs transition-all uppercase tracking-widest cursor-pointer border border-ted-red shadow-[0_0_15px_rgba(235,0,40,0.25)]"
+          >
+            Return Home
+          </button>
+        </motion.div>
+      </section>
+    );
+  }
 
   return (
     <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col">

@@ -15,6 +15,7 @@ import Countdown from "@/components/sections/Countdown";
 import Highlights from "@/components/sections/Highlights";
 import EventDate from "@/components/sections/EventDate";
 import AdminConsole from "@/components/sections/AdminConsole";
+import { EventSettings } from "@/lib/settings-service";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
@@ -25,21 +26,7 @@ export default function Home() {
   const devCreditRef = useRef<HTMLDivElement>(null);
   
   // Dynamic settings state
-  const [settings, setSettings] = useState<{
-    theme_name: string;
-    reveal_theme: boolean;
-    reveal_date: boolean;
-    reveal_countdown: boolean;
-    event_date: string;
-    event_time: string;
-    event_day: string;
-    countdown_target: string;
-    about_theme_name: string;
-    about_theme_desc: string;
-    reveal_about_theme: boolean;
-    reveal_team: boolean;
-    reveal_speakers: boolean;
-  } | null>(null);
+  const [settings, setSettings] = useState<EventSettings | null>(null);
 
   const fetchSettings = () => {
     fetch("/api/settings")
@@ -132,13 +119,13 @@ export default function Home() {
       case "speakers":
         return <Speakers key="speakers" settings={settings} />;
       case "schedule":
-        return <Schedule key="schedule" />;
+        return <Schedule key="schedule" settings={settings} />;
       case "partners":
-        return <Partners key="partners" />;
+        return <Partners key="partners" settings={settings} />;
       case "register":
-        return <RegisterNow key="register" onTabChange={handleTabChange} />;
+        return <RegisterNow key="register" onTabChange={handleTabChange} settings={settings} />;
       case "get-pass":
-        return <GetMyPass key="get-pass" onTabChange={handleTabChange} />;
+        return <GetMyPass key="get-pass" onTabChange={handleTabChange} settings={settings} />;
       case "contact":
         return <Contact key="contact" />;
       case "admin":
