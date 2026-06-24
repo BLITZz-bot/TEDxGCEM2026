@@ -21,7 +21,7 @@ export function getEventYear(eventDate?: string | null): string {
     if (match) {
       return match[0];
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
   return "2026";
