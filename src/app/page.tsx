@@ -6,6 +6,7 @@ import TabNav, { TabId } from "@/components/ui/TabNav";
 import Hero from "@/components/sections/Hero";
 import About from "@/components/sections/About";
 import Speakers from "@/components/sections/Speakers";
+import Team from "@/components/sections/Team";
 import Schedule from "@/components/sections/Schedule";
 import Partners from "@/components/sections/Partners";
 import RegisterNow from "@/components/sections/RegisterNow";
@@ -24,6 +25,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [showDevLinks, setShowDevLinks] = useState(false);
   const devCreditRef = useRef<HTMLDivElement>(null);
+  const scrollInitiatedRef = useRef(false);
   
   // Dynamic settings state
   const [settings, setSettings] = useState<EventSettings | null>(null);
@@ -77,15 +79,88 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    if (activeTab !== "register" && activeTab !== "get-pass") return;
+
+    const observerOptions = {
+      root: null,
+      rootMargin: "-20% 0px -60% 0px",
+      threshold: 0,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          if (id === "register-section" && activeTab !== "register" && !scrollInitiatedRef.current) {
+            setActiveTab("register");
+          } else if (id === "ticket-section" && activeTab !== "get-pass" && !scrollInitiatedRef.current) {
+            setActiveTab("get-pass");
+          }
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    const registerEl = document.getElementById("register-section");
+    const ticketEl = document.getElementById("ticket-section");
+
+    if (registerEl) observer.observe(registerEl);
+    if (ticketEl) observer.observe(ticketEl);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (scrollInitiatedRef.current) {
+      if (activeTab === "get-pass") {
+        const element = document.getElementById("ticket-section");
+        if (element) {
+          const timer = setTimeout(() => {
+            element.scrollIntoView({ behavior: "smooth" });
+          }, 100);
+          return () => clearTimeout(timer);
+        }
+      } else if (activeTab === "register") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      const timer = setTimeout(() => {
+        scrollInitiatedRef.current = false;
+      }, 800);
+      return () => clearTimeout(timer);
+    } else {
+      if (activeTab !== "register" && activeTab !== "get-pass") {
+        window.scrollTo(0, 0);
+      }
+    }
   }, [activeTab]);
 
   const handleTabChange = (id: TabId) => {
-    if (id === activeTab) return;
+    if (id === activeTab) {
+      if (id === "register") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (id === "get-pass") {
+        const element = document.getElementById("ticket-section");
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+      return;
+    }
+
+    if (id === "register" || id === "get-pass") {
+      scrollInitiatedRef.current = true;
+    }
     
     // Only apply red/black curtain transition on desktop/laptop sizes (md breakpoint)
     const isDesktop = window.innerWidth >= 768;
-    if (isDesktop) {
+    const isRegisterAndPassTransition = 
+      (activeTab === "register" && id === "get-pass") || 
+      (activeTab === "get-pass" && id === "register");
+
+    if (isDesktop && !isRegisterAndPassTransition) {
       setIsTransitioning(true);
       
       // Switch the page content at 580ms (when screen is fully covered by red and black layers)
@@ -118,14 +193,24 @@ export default function Home() {
         return <About key="about" settings={settings} />;
       case "speakers":
         return <Speakers key="speakers" settings={settings} />;
+      case "team":
+        return <Team key="team" settings={settings} />;
       case "schedule":
         return <Schedule key="schedule" settings={settings} />;
       case "partners":
         return <Partners key="partners" settings={settings} />;
       case "register":
-        return <RegisterNow key="register" onTabChange={handleTabChange} settings={settings} />;
       case "get-pass":
-        return <GetMyPass key="get-pass" onTabChange={handleTabChange} settings={settings} />;
+        return (
+          <div key="register-and-pass" className="flex flex-col w-full">
+            <div id="register-section">
+              <RegisterNow onTabChange={handleTabChange} settings={settings} />
+            </div>
+            <div id="ticket-section" className="w-full">
+              <GetMyPass onTabChange={handleTabChange} settings={settings} />
+            </div>
+          </div>
+        );
       case "contact":
         return <Contact key="contact" />;
       case "admin":
@@ -209,7 +294,7 @@ export default function Home() {
         <div className="relative z-20">
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeTab}
+              key={activeTab === "get-pass" ? "register" : activeTab}
               initial={isMobile ? { opacity: 0, x: 30 } : { opacity: 0, scale: 0.99 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={isMobile ? { opacity: 0, x: -30 } : { opacity: 0 }}
@@ -269,6 +354,7 @@ export default function Home() {
                     { id: "home", label: "Home" },
                     { id: "about", label: "About" },
                     { id: "speakers", label: "Speakers" },
+                    { id: "team", label: "Team" },
                     { id: "schedule", label: "Schedule" },
                     { id: "partners", label: "Partners" },
                     { id: "register", label: "Register" },

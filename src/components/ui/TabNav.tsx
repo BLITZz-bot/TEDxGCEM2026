@@ -11,6 +11,7 @@ export type TabId =
   | "home" 
   | "about" 
   | "speakers" 
+  | "team" 
   | "schedule" 
   | "partners" 
   | "register" 
@@ -48,10 +49,10 @@ export default function TabNav({ activeTab, onTabChange, settings }: TabNavProps
     { id: "home", label: "Home" },
     { id: "about", label: "About" },
     { id: "speakers", label: "Speakers" },
+    { id: "team", label: "Team" },
     { id: "schedule", label: "Schedule" },
     { id: "partners", label: "Partners" },
     ...(settings?.reveal_register !== false ? [{ id: "register", label: "Register Now" } as Tab] : []),
-    ...(settings?.reveal_tickets !== false ? [{ id: "get-pass", label: "Get My Pass" } as Tab] : []),
     { id: "contact", label: "Contact" },
     ...(isAdmin ? [{ id: "admin", label: "Admin Console" }] as Tab[] : []),
   ];
@@ -99,10 +100,10 @@ export default function TabNav({ activeTab, onTabChange, settings }: TabNavProps
               onClick={() => onTabChange(tab.id)}
               className={cn(
                 "relative px-4 py-2 text-xs md:text-sm font-medium transition-colors duration-200 rounded-full outline-none whitespace-nowrap cursor-pointer",
-                activeTab === tab.id ? "text-white" : "text-white/50 hover:text-white/80"
+                (activeTab === tab.id || (activeTab === "get-pass" && tab.id === "register")) ? "text-white" : "text-white/50 hover:text-white/80"
               )}
             >
-              {activeTab === tab.id && (
+              {(activeTab === tab.id || (activeTab === "get-pass" && tab.id === "register")) && (
                 <motion.div
                   layoutId="active-tab"
                   className="absolute inset-0 bg-ted-red rounded-full"
@@ -262,7 +263,7 @@ export default function TabNav({ activeTab, onTabChange, settings }: TabNavProps
                 style={{ gap: `${mobileMenuConfig.itemsGap}px` }}
               >
                 {tabs.map((tab, idx) => {
-                  const isActive = activeTab === tab.id;
+                  const isActive = activeTab === tab.id || (activeTab === "get-pass" && tab.id === "register");
                   const formattedNum = String(idx + 1).padStart(2, "0");
                   
                   return (

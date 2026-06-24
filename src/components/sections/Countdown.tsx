@@ -237,7 +237,7 @@ export default function Countdown({ onTabChange, settings }: CountdownProps) {
                 SECURE YOUR PASS
               </h4>
               <p className="text-white/50 text-[11px] font-light leading-relaxed font-mono">
-                Seats are strictly limited. Tickets are rolled out in batches. Get your tickets now !!<br/> Apply for your passes today!
+                Seats are strictly limited. Tickets are rolled out in batches.<br/>Get your tickets now !!
               </p>
             </div>
 
