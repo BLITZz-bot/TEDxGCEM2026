@@ -186,7 +186,7 @@ export default function Home() {
             <Hero onTabChange={handleTabChange} settings={settings} />
             <EventDate settings={settings} />
             <Countdown onTabChange={handleTabChange} settings={settings} />
-            <Highlights />
+            <Highlights settings={settings} />
           </div>
         );
       case "about":

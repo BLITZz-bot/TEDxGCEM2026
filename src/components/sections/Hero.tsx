@@ -4,6 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { TabId } from "@/components/ui/TabNav";
 import { EventSettings } from "@/lib/settings-service";
+import { getEventYear } from "@/lib/utils";
 
 interface HeroProps {
   onTabChange: (id: TabId) => void;
@@ -350,7 +351,7 @@ export default function Hero({ onTabChange, settings }: HeroProps) {
           {settings 
             ? (settings.reveal_theme 
               ? "A single idea can act as a catalyst, creating ripples that expand outward to challenge status quos, spark new connections, and transform communities."
-              : "Get ready for TEDxGCEM 2026. A single idea can act as a catalyst, creating ripples that expand outward to challenge status quos and transform communities. Stay tuned as we unveil our central theme.")
+              : `Get ready for TEDxGCEM ${getEventYear(settings?.event_date)}. A single idea can act as a catalyst, creating ripples that expand outward to challenge status quos and transform communities. Stay tuned as we unveil our central theme.`)
             : "A single idea can act as a catalyst, creating ripples that expand outward to challenge status quos, spark new connections, and transform communities."}
         </p>
 
@@ -537,7 +538,7 @@ export default function Hero({ onTabChange, settings }: HeroProps) {
               {/* Theme Year Size Slider */}
               <div className="space-y-1">
                 <div className="flex justify-between text-[9px] font-bold text-white/50 font-sans">
-                  <span>2026 Size</span>
+                  <span>{getEventYear(settings?.event_date)} Size</span>
                   <span className="text-white font-mono">{bgSettings.themeYearSize}px</span>
                 </div>
                 <input 

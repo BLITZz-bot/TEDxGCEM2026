@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { EventSettings } from "@/lib/settings-service";
+import { getEventYear } from "@/lib/utils";
 
 export type TabId = 
   | "home" 
@@ -253,7 +254,7 @@ export default function TabNav({ activeTab, onTabChange, settings }: TabNavProps
                 <div className="text-lg tracking-[0.25em] font-black uppercase font-sans">
                   <span className="text-ted-red">TED<span className="lowercase">x</span></span>
                   <span className="text-white">GCEM</span>
-                  <span className="text-white/40 tracking-[0.2em] font-sans ml-1 text-xs">2026</span>
+                  <span className="text-white/40 tracking-[0.2em] font-sans ml-1 text-xs">{getEventYear(settings?.event_date)}</span>
                 </div>
               </motion.div>
 

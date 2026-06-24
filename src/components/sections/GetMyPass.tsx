@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TabId } from "@/components/ui/TabNav";
 import { useAuth } from "@/hooks/useAuth";
 import { EventSettings } from "@/lib/settings-service";
+import { getEventYear } from "@/lib/utils";
 
 interface GetMyPassProps {
   onTabChange: (id: TabId) => void;
@@ -113,7 +114,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
           <div className="space-y-3">
             <h4 className="text-3xl font-black uppercase tracking-tight text-white">Downloads Closed</h4>
             <p className="text-white/60 max-w-md mx-auto text-xs leading-relaxed font-sans font-light">
-              Ticket pass checking and downloads for TEDxGCEM 2026 are currently closed. Check back closer to the event schedule, or log in with your admin credentials to modify setting options.
+              Ticket pass checking and downloads for TEDxGCEM {getEventYear(settings?.event_date)} are currently closed. Check back closer to the event schedule, or log in with your admin credentials to modify setting options.
             </p>
           </div>
           <button 
@@ -248,7 +249,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
                             })}
                           </div>
                           <span className="text-[8px] font-mono tracking-[0.3em] text-white/50 print:text-black/50">
-                            {`*TEDX2026${registration.id.slice(0, 8).toUpperCase()}*`}
+                            {`*TEDX${getEventYear(settings?.event_date)}${registration.id.slice(0, 8).toUpperCase()}*`}
                           </span>
                         </div>
                       </div>

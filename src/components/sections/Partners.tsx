@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EventSettings } from "@/lib/settings-service";
 import { Partner } from "@/lib/partners-service";
+import { getEventYear } from "@/lib/utils";
 
 const DEFAULT_PARTNERS = [
   { 
@@ -123,7 +124,7 @@ export default function Partners({ settings }: { settings?: EventSettings | null
           <div className="space-y-6">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ted-red/10 border border-ted-red/20 text-ted-red text-[10px] uppercase tracking-widest font-black font-mono shadow-[0_0_15px_rgba(235,0,40,0.1)]">
               <span className="w-1.5 h-1.5 rounded-full bg-ted-red" />
-              Sponsorships 2026
+              Sponsorships {getEventYear(settings?.event_date)}
             </span>
             <h2 className="text-5xl md:text-6xl font-black italic tracking-tighter leading-[0.95] uppercase text-white">
               POWERING THE <br />

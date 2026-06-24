@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, MapPin, User, ChevronDown, ChevronUp, Radio } from "lucide-react";
 import type { EventSettings } from "@/lib/settings-service";
+import { getEventYear } from "@/lib/utils";
 
 interface ScheduleItem {
   time: string;
@@ -146,7 +147,10 @@ export default function Schedule({ settings }: ScheduleProps) {
     };
   }, []);
 
-  const filteredSchedule = schedule.filter(item => {
+  const filteredSchedule = schedule.map(item => ({
+    ...item,
+    desc: item.desc.replace("TEDxGCEM 2026", `TEDxGCEM ${getEventYear(settings?.event_date)}`)
+  })).filter(item => {
     if (activeFilter === "all") return true;
     return item.type === activeFilter;
   });

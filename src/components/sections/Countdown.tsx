@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, MapPin, Ticket } from "lucide-react";
 import { TabId } from "@/components/ui/TabNav";
+import { getEventYear } from "@/lib/utils";
 
 interface CountdownProps {
   onTabChange: (id: TabId) => void;
@@ -131,7 +132,7 @@ export default function Countdown({ onTabChange, settings }: CountdownProps) {
                 className="flex items-center gap-3 px-6 py-3 bg-ted-red text-white font-mono uppercase tracking-[0.2em] text-sm md:text-base border border-white/20 shadow-[0_0_25px_rgba(235,0,40,0.4)]"
               >
                 <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
-                <span>TEDxGCEM 2026 is LIVE!</span>
+                <span>TEDxGCEM {getEventYear(settings?.event_date)} is LIVE!</span>
               </motion.div>
             ) : (
               <motion.div

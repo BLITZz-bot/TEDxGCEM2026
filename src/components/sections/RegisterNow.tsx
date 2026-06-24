@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TabId } from "@/components/ui/TabNav";
 import { useAuth } from "@/hooks/useAuth";
 import { EventSettings } from "@/lib/settings-service";
+import { getEventYear } from "@/lib/utils";
 
 interface RegisterNowProps {
   onTabChange: (id: TabId) => void;
@@ -154,7 +155,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
           transition={{ duration: 0.6, delay: 0.15 }}
           className="text-white/60 text-lg md:text-xl font-light leading-relaxed max-w-xl"
         >
-          Secure your spot at TEDxGCEM 2026. Limited seats are available for selected applicants. Apply now to be part of the experience.
+          Secure your spot at TEDxGCEM {getEventYear(settings?.event_date)}. Limited seats are available for selected applicants. Apply now to be part of the experience.
         </motion.p>
       </div>
 
@@ -176,7 +177,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
           <div className="space-y-3">
             <h4 className="text-3xl font-black uppercase tracking-tight text-white">Registration Opens Soon </h4>
             <p className="text-white/60 max-w-md mx-auto text-xs leading-relaxed font-sans font-light">
-              Attendee pass registrations for TEDxGCEM 2026 are opening soon. Follow our official channels for release details.
+              Attendee pass registrations for TEDxGCEM {getEventYear(settings?.event_date)} are opening soon. Follow our official channels for release details.
             </p>
           </div>
           <button 
@@ -229,7 +230,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                     </span>
                   </h4>
                   <p className="text-white/75 text-sm md:text-base leading-relaxed font-light">
-                    TEDxGCEM 2026 is more than a stage. It&apos;s a convergence of visionaries, catalysts, and innovators pushing the boundaries of what is possible. Join us for a day filled with mind-expanding talks, electrifying performances, and networking opportunities that could redefine your trajectory.
+                    TEDxGCEM {getEventYear(settings?.event_date)} is more than a stage. It&apos;s a convergence of visionaries, catalysts, and innovators pushing the boundaries of what is possible. Join us for a day filled with mind-expanding talks, electrifying performances, and networking opportunities that could redefine your trajectory.
                   </p>
                 </div>
 
@@ -362,7 +363,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
 
                 <div className="text-center mb-6">
                   <p className="text-white/60">
-                    Complete the form below to register for <span className="text-ted-red uppercase font-bold">TED</span><span className="text-ted-red lowercase font-bold">x</span><span className="text-white uppercase font-bold">GCEM</span> 2026. Limited seats available.
+                    Complete the form below to register for <span className="text-ted-red uppercase font-bold">TED</span><span className="text-ted-red lowercase font-bold">x</span><span className="text-white uppercase font-bold">GCEM</span> {getEventYear(settings?.event_date)}. Limited seats available.
                   </p>
                 </div>
 

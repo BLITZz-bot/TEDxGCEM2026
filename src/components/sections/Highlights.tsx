@@ -3,8 +3,14 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Lightbulb, Users, Mic2, Target } from "lucide-react";
+import { EventSettings } from "@/lib/settings-service";
+import { getEventYear } from "@/lib/utils";
 
-export default function Highlights() {
+interface HighlightsProps {
+  settings?: EventSettings | null;
+}
+
+export default function Highlights({ settings }: HighlightsProps) {
   const items = [
     {
       num: "01",
@@ -71,7 +77,7 @@ export default function Highlights() {
             transition={{ delay: 0.15 }}
             className="text-xs font-mono text-white/40 uppercase tracking-widest"
           >
-            TEDxGCEM 2026
+            TEDxGCEM {getEventYear(settings?.event_date)}
           </motion.div>
         </div>
 
