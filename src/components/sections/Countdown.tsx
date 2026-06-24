@@ -204,7 +204,7 @@ export default function Countdown({ onTabChange, settings }: CountdownProps) {
                 GCEM MAIN AUDITORIUM
               </h3>
               <p className="text-white/60 text-xs md:text-sm font-light leading-relaxed max-w-2xl font-mono">
-                Get ready for GCEM&apos;s flagship independent event. We have curated a stellar lineup of speakers covering breakthroughs in artificial intelligence, bio-architecture, design systems, and grassroots activism.
+                Get ready for GCEM&apos;s flagship independent event. We have curated a stellar lineup of speakers and performers.
               </p>
             </div>
 
@@ -237,7 +237,7 @@ export default function Countdown({ onTabChange, settings }: CountdownProps) {
                 SECURE YOUR PASS
               </h4>
               <p className="text-white/50 text-[11px] font-light leading-relaxed font-mono">
-                Seats are strictly limited to license quotas. Selected registrations are confirmed in rolling batches. Apply for your passes today!
+                Seats are strictly limited. Tickets are rolled out in batches. Get your tickets now !!<br/> Apply for your passes today!
               </p>
             </div>
 
@@ -246,7 +246,7 @@ export default function Countdown({ onTabChange, settings }: CountdownProps) {
               className="mt-6 w-full py-3 bg-ted-red hover:bg-white text-white hover:text-black font-black uppercase text-xs tracking-[0.2em] transition-all duration-300 rounded-none cursor-pointer flex items-center justify-center gap-2 border border-ted-red group-hover:-translate-y-1 group-hover:shadow-lg"
             >
               <Ticket size={14} />
-              <span>APPLY FOR TICKETS</span>
+              <span>GET YOUR TICKETS</span>
             </button>
           </motion.div>
         </div>

@@ -106,13 +106,7 @@ export default function About({ settings }: AboutProps) {
             
             <div className="mt-8 pt-4 border-t border-white/5 flex justify-between items-center text-xs text-white/40">
               <span className="font-mono">HOST: GCEM BANGALORE</span>
-              <div className="flex items-center gap-2 text-ted-red font-bold uppercase cursor-pointer group-hover:text-white transition-colors duration-300">
-                <span className="group-hover:translate-x-1.5 transition-transform duration-300">View Guidelines</span>
-                <svg width="22" height="8" viewBox="0 0 22 8" fill="currentColor" className="transform group-hover:translate-x-1.5 transition-transform duration-300">
-                  <path d="M21.1035 3.75177L14.5377 7.50366L14.5377 -0.000122357L21.1035 3.75177Z" />
-                  <path d="M0 3.75183H15.9455" stroke="currentColor" strokeWidth="2" />
-                </svg>
-              </div>
+              
             </div>
           </motion.div>
 

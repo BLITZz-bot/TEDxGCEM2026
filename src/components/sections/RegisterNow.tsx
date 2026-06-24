@@ -151,9 +151,9 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
             </svg>
           </div>
           <div className="space-y-3">
-            <h4 className="text-3xl font-black uppercase tracking-tight text-white">Registrations Closed</h4>
+            <h4 className="text-3xl font-black uppercase tracking-tight text-white">Registration Opens Soon </h4>
             <p className="text-white/60 max-w-md mx-auto text-xs leading-relaxed font-sans font-light">
-              Attendee pass registrations for TEDxGCEM 2026 are currently closed. Follow our official channels for release details, or log in with your admin credentials to customize visibility.
+              Attendee pass registrations for TEDxGCEM 2026 are opening soon. Follow our official channels for release details.
             </p>
           </div>
           <button 

@@ -171,7 +171,7 @@ export default function EventDate({ settings }: EventDateProps) {
                 <Clock size={14} className="text-ted-red mt-0.5 shrink-0" />
                 <div className="space-y-0.5">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-white">Full Event Day</span>
-                  <p className="text-[9px] font-mono text-white/40 leading-tight">Curated Talks & Interactive Sessions</p>
+                  <p className="text-[9px] font-mono text-white/40 leading-tight">Curated Talks, Performances and Interactive Sessions</p>
                 </div>
               </div>
             </div>
