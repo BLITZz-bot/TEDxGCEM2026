@@ -318,9 +318,9 @@ export default function Hero({ onTabChange, settings }: HeroProps) {
         className="relative z-10 max-w-xl flex flex-col items-start text-left space-y-6 -translate-y-48 md:-translate-y-4"
       >
         <h1 className={`font-black leading-[0.9] tracking-tighter text-left uppercase select-none ${
-          settings && !settings.reveal_theme 
-            ? "text-4xl sm:text-5xl md:text-6xl lg:text-7xl" 
-            : "text-7xl md:text-9xl"
+          settings && settings.reveal_theme 
+            ? "text-7xl md:text-9xl" 
+            : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
         }`}>
           <motion.span 
             className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff_20%,#EB0028_45%,#EB0028_55%,#ffffff_80%)] bg-[length:200%_100%] inline-block cursor-default"
