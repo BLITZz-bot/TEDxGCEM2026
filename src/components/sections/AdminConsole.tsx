@@ -1912,21 +1912,6 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs text-white/50 uppercase tracking-wider block">Sponsorship Level</label>
-                    <select
-                      value={partnerLevel}
-                      onChange={(e) => setPartnerLevel(e.target.value)}
-                      className="w-full bg-neutral-900 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-bold"
-                      required
-                    >
-                      <option value="Platinum">Platinum</option>
-                      <option value="Gold">Gold</option>
-                      <option value="Silver">Silver</option>
-                      <option value="Title">Title</option>
-                      <option value="In-Kind">In-Kind</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
                     <label className="text-xs text-white/50 uppercase tracking-wider block">Email Address (Optional)</label>
                     <input
                       type="email"
@@ -1936,9 +1921,6 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                       className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs text-white/50 uppercase tracking-wider block">Phone Number (Optional)</label>
                     <input
@@ -1949,16 +1931,17 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                       className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs text-white/50 uppercase tracking-wider block">Description / Bio</label>
-                    <input
-                      type="text"
-                      value={partnerDescription}
-                      onChange={(e) => setPartnerDescription(e.target.value)}
-                      placeholder="Provide brief details about this partnership..."
-                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg"
-                    />
-                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs text-white/50 uppercase tracking-wider block">Description / Bio</label>
+                  <input
+                    type="text"
+                    value={partnerDescription}
+                    onChange={(e) => setPartnerDescription(e.target.value)}
+                    placeholder="Provide brief details about this partnership..."
+                    className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-2">
@@ -2047,7 +2030,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                       <div className="space-y-1.5 flex-grow pr-16">
                         <div className="space-y-0.5">
                           <h5 className="font-bold text-white uppercase tracking-wider text-sm">{partner.name}</h5>
-                          <div className="text-[10px] text-ted-red uppercase tracking-widest">{partner.role} ({partner.level})</div>
+                          <div className="text-[10px] text-ted-red uppercase tracking-widest">{partner.role}</div>
                         </div>
                         
                         <div className="flex gap-2.5 pt-0.5">
