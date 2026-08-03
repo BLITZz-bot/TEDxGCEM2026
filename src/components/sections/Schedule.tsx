@@ -178,7 +178,7 @@ export default function Schedule({ settings }: ScheduleProps) {
           </h2>
         </motion.div>
 
-        {settings?.reveal_date ? (
+        {settings?.reveal_schedule ? (
           <>
             {/* Cyber-Brutalist Tabs */}
             <div className="grid grid-cols-3 md:flex md:flex-wrap gap-2 md:gap-3 mb-16 w-full">

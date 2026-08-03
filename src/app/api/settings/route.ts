@@ -47,7 +47,8 @@ export async function POST(request: Request) {
       reveal_speakers,
       reveal_partners,
       reveal_register,
-      reveal_tickets
+      reveal_tickets,
+      reveal_schedule
     } = body;
 
     // Validation
@@ -67,7 +68,8 @@ export async function POST(request: Request) {
       typeof reveal_speakers !== "boolean" ||
       (reveal_partners !== undefined && typeof reveal_partners !== "boolean") ||
       (reveal_register !== undefined && typeof reveal_register !== "boolean") ||
-      (reveal_tickets !== undefined && typeof reveal_tickets !== "boolean")
+      (reveal_tickets !== undefined && typeof reveal_tickets !== "boolean") ||
+      (reveal_schedule !== undefined && typeof reveal_schedule !== "boolean")
     ) {
       return NextResponse.json({ error: "Invalid parameters." }, { status: 400 });
     }
@@ -89,6 +91,7 @@ export async function POST(request: Request) {
       reveal_partners: reveal_partners !== undefined ? reveal_partners : true,
       reveal_register: reveal_register !== undefined ? reveal_register : true,
       reveal_tickets: reveal_tickets !== undefined ? reveal_tickets : true,
+      reveal_schedule: reveal_schedule !== undefined ? reveal_schedule : true,
     };
 
     const success = await saveSettings(settingsToSave);

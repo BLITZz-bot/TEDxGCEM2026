@@ -60,6 +60,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [revealPartners, setRevealPartners] = useState(settings ? !!settings.reveal_partners : true);
   const [revealRegister, setRevealRegister] = useState(settings ? !!settings.reveal_register : true);
   const [revealTickets, setRevealTickets] = useState(settings ? !!settings.reveal_tickets : true);
+  const [revealSchedule, setRevealSchedule] = useState(settings ? !!settings.reveal_schedule : true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
 
@@ -115,6 +116,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       setRevealPartners(settings.reveal_partners ?? true);
       setRevealRegister(settings.reveal_register ?? true);
       setRevealTickets(settings.reveal_tickets ?? true);
+      setRevealSchedule(settings.reveal_schedule ?? true);
     }
   }, [settings]);
 
@@ -187,6 +189,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           reveal_partners: revealPartners,
           reveal_register: revealRegister,
           reveal_tickets: revealTickets,
+          reveal_schedule: revealSchedule,
         }),
       });
 
@@ -328,6 +331,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           reveal_partners: revealPartners,
           reveal_register: revealRegister,
           reveal_tickets: revealTickets,
+          reveal_schedule: revealSchedule,
         }),
       });
 
@@ -367,6 +371,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           reveal_partners: revealPartners,
           reveal_register: revealRegister,
           reveal_tickets: revealTickets,
+          reveal_schedule: revealSchedule,
         }),
       });
 
@@ -510,6 +515,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           reveal_partners: updatedReveal,
           reveal_register: revealRegister,
           reveal_tickets: revealTickets,
+          reveal_schedule: revealSchedule,
         }),
       });
 
@@ -549,6 +555,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           reveal_partners: revealPartners,
           reveal_register: updatedReveal,
           reveal_tickets: revealTickets,
+          reveal_schedule: revealSchedule,
         }),
       });
 
@@ -588,6 +595,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           reveal_partners: revealPartners,
           reveal_register: revealRegister,
           reveal_tickets: updatedReveal,
+          reveal_schedule: revealSchedule,
         }),
       });
 
@@ -598,6 +606,44 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
       alert("Error toggling ticket download reveal: " + errorMessage);
       setRevealTickets(!updatedReveal);
+    }
+  };
+
+  const handleToggleScheduleReveal = async () => {
+    const updatedReveal = !revealSchedule;
+    setRevealSchedule(updatedReveal);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          theme_name: themeName,
+          reveal_theme: revealTheme,
+          reveal_date: revealDate,
+          reveal_countdown: revealCountdown,
+          event_date: eventDate,
+          event_time: eventTime,
+          event_day: eventDay,
+          countdown_target: countdownTarget,
+          about_theme_name: aboutThemeName,
+          about_theme_desc: aboutThemeDesc,
+          reveal_about_theme: revealAboutTheme,
+          reveal_team: revealTeam,
+          reveal_speakers: revealSpeakers,
+          reveal_partners: revealPartners,
+          reveal_register: revealRegister,
+          reveal_tickets: revealTickets,
+          reveal_schedule: updatedReveal,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save settings.");
+      onSettingsUpdate();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("Error toggling schedule reveal: " + errorMessage);
+      setRevealSchedule(!updatedReveal);
     }
   };
 
@@ -1324,7 +1370,55 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                     />
                   </button>
                 </div>
+
+                {/* Schedule Section Toggle */}
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Reveal Event Schedule Section</label>
+                    <span className="text-[9px] text-white/30 block">Toggle off to show &apos;THE JOURNEY TAKES SHAPE SOON&apos; placeholder on the Schedule section</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRevealSchedule(!revealSchedule)}
+                    className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                      revealSchedule ? "bg-ted-red" : "bg-white/10"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                        revealSchedule ? "translate-x-7" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
+            </div>
+
+            {/* Standalone instant-save Schedule toggle card */}
+            <div className="border border-white/10 p-5 rounded-2xl bg-black/40 flex items-center justify-between font-mono">
+              <div className="space-y-1">
+                <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Schedule Visibility"}</span>
+                <label className="text-xs font-bold text-white uppercase tracking-wider block">Quick Toggle — Reveal Event Schedule</label>
+                <span className="text-[9px] text-white/30 block">
+                  {revealSchedule
+                    ? "Currently showing full event schedule timeline on website"
+                    : "Currently hiding schedule — showing 'CHRONOLOGY LOCKED' placeholder globally"
+                  }
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleScheduleReveal}
+                className={`w-14 h-7 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                  revealSchedule ? "bg-ted-red" : "bg-white/10"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform duration-200 ${
+                    revealSchedule ? "translate-x-7" : "translate-x-0"
+                  }`}
+                />
+              </button>
             </div>
 
             <div className="flex justify-end pt-4">

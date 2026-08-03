@@ -19,6 +19,7 @@ export interface EventSettings {
   reveal_partners: boolean;
   reveal_register: boolean;
   reveal_tickets: boolean;
+  reveal_schedule: boolean;
 }
 
 const DEFAULT_SETTINGS: EventSettings = {
@@ -38,6 +39,7 @@ const DEFAULT_SETTINGS: EventSettings = {
   reveal_partners: true,
   reveal_register: true,
   reveal_tickets: true,
+  reveal_schedule: true,
 };
 
 const SETTINGS_FILE_PATH = path.join(process.cwd(), "src", "lib", "settings.json");
@@ -99,6 +101,7 @@ export async function getSettings(): Promise<EventSettings> {
         reveal_partners: localRevealPartners ?? DEFAULT_SETTINGS.reveal_partners,
         reveal_register: localRevealRegister ?? DEFAULT_SETTINGS.reveal_register,
         reveal_tickets: localRevealTickets ?? DEFAULT_SETTINGS.reveal_tickets,
+        reveal_schedule: data.reveal_schedule ?? DEFAULT_SETTINGS.reveal_schedule,
       };
     }
   } catch (err) {
@@ -127,6 +130,7 @@ export async function getSettings(): Promise<EventSettings> {
         reveal_partners: parsed.reveal_partners ?? DEFAULT_SETTINGS.reveal_partners,
         reveal_register: parsed.reveal_register ?? DEFAULT_SETTINGS.reveal_register,
         reveal_tickets: parsed.reveal_tickets ?? DEFAULT_SETTINGS.reveal_tickets,
+        reveal_schedule: parsed.reveal_schedule ?? DEFAULT_SETTINGS.reveal_schedule,
       };
     }
   } catch (err) {
@@ -167,6 +171,7 @@ export async function saveSettings(settings: EventSettings): Promise<boolean> {
         reveal_partners: settings.reveal_partners,
         reveal_register: settings.reveal_register,
         reveal_tickets: settings.reveal_tickets,
+        reveal_schedule: settings.reveal_schedule,
         updated_at: new Date().toISOString(),
       };
 

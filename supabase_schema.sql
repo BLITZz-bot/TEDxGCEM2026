@@ -230,5 +230,7 @@ USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
 -- ALTER TABLE public.event_settings 
 -- ADD COLUMN IF NOT EXISTS reveal_register BOOLEAN DEFAULT true NOT NULL,
 -- ADD COLUMN IF NOT EXISTS reveal_tickets BOOLEAN DEFAULT true NOT NULL;
-
-
+-- 12. SCHEDULE VISIBILITY MIGRATION
+-- Run this in your Supabase SQL Editor if the event_settings table already exists:
+ALTER TABLE public.event_settings
+ADD COLUMN IF NOT EXISTS reveal_schedule BOOLEAN DEFAULT true NOT NULL;
