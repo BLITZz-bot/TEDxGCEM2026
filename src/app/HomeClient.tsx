@@ -413,7 +413,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
                     <span className="group-hover:text-ted-red group-hover:translate-x-1 transition-[color,transform] duration-150">TWITTER</span>
                   </a>
                   <a 
-                    href="https://whatsapp.com/channel/0029Vb37kqMCBtxKXypYFt2q" 
+                    href="https://whatsapp.com/channel/0029VbDVD8cH5JLySv7Xpt16" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 text-white hover:text-white transition-[color] duration-150 group font-mono text-[11px] tracking-widest"
