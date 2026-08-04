@@ -401,17 +401,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
                     </div>
                     <span className="group-hover:text-ted-red group-hover:translate-x-1 transition-[color,transform] duration-150">LINKEDIN</span>
                   </a>
-                  <a 
-                    href="https://x.com/tedxgcem" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-white hover:text-white transition-[color] duration-150 group font-mono text-[11px] tracking-widest"
-                  >
-                    <div className="w-8 h-8 rounded-none border border-white/10 flex items-center justify-center group-hover:border-ted-red group-hover:bg-ted-red group-hover:text-white transition-[border-color,background-color,color] duration-150">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
-                    </div>
-                    <span className="group-hover:text-ted-red group-hover:translate-x-1 transition-[color,transform] duration-150">TWITTER</span>
-                  </a>
+                  
                   <a 
                     href="https://whatsapp.com/channel/0029VbDVD8cH5JLySv7Xpt16" 
                     target="_blank" 
