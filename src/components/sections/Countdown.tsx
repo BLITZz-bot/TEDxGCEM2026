@@ -149,8 +149,13 @@ export default function Countdown({ onTabChange, settings }: CountdownProps) {
 
         {/* Bento Grid Countdown Block */}
         {settings && (!settings.reveal_countdown || !settings.reveal_date) ? (
-          <div className="border border-dashed border-white/20 bg-neutral-950/40 backdrop-blur-md p-8 md:p-12 rounded-3xl max-w-2xl mx-auto flex flex-col items-center justify-center text-center space-y-4 mb-16 shadow-[0_0_30px_rgba(235,0,40,0.05)] hover:border-ted-red/30 transition-all duration-300">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ted-red/10 border border-ted-red/20 text-ted-red text-[10px] uppercase tracking-widest font-black font-mono">
+          <div className="border border-dashed border-white/20 bg-neutral-950/40 backdrop-blur-md p-8 md:p-12 max-w-2xl mx-auto flex flex-col items-center justify-center text-center space-y-4 mb-16 shadow-[0_0_30px_rgba(235,0,40,0.05)] hover:border-ted-red/30 transition-all duration-300 relative">
+            {/* Corner brackets */}
+            <div className="absolute -top-[1.5px] -left-[1.5px] w-3 h-3 border-t-2 border-l-2 border-ted-red" />
+            <div className="absolute -top-[1.5px] -right-[1.5px] w-3 h-3 border-t-2 border-r-2 border-ted-red" />
+            <div className="absolute -bottom-[1.5px] -left-[1.5px] w-3 h-3 border-b-2 border-l-2 border-ted-red" />
+            <div className="absolute -bottom-[1.5px] -right-[1.5px] w-3 h-3 border-b-2 border-r-2 border-ted-red" />
+            <span className="inline-flex items-center gap-2 px-3 py-1 bg-ted-red/10 border border-ted-red/20 text-ted-red text-[10px] uppercase tracking-widest font-black font-mono">
               <span className="w-1.5 h-1.5 rounded-full bg-ted-red animate-pulse" />
               Transmission Pending
             </span>
@@ -164,28 +169,68 @@ export default function Countdown({ onTabChange, settings }: CountdownProps) {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-4 gap-2 xs:gap-3 md:gap-6 mb-16 max-w-2xl mx-auto">
+          <div className="flex gap-2 xs:gap-3 md:gap-5 mb-16 max-w-3xl mx-auto justify-center items-end w-full">
             {timeBlocks.map((block, idx) => (
-              <motion.div
-                key={block.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.08 }}
-                className="bg-neutral-900/40 backdrop-blur-md border border-white/10 rounded-2xl p-2.5 xs:p-3 md:p-6 flex flex-col items-center justify-center shadow-lg hover:border-ted-red/50 hover:bg-neutral-900/60 transition-all duration-300 relative group cursor-default"
-              >
-                {/* Top ambient accent dot */}
-                <div className="w-1 h-1 rounded-full bg-white/20 group-hover:bg-ted-red mb-1 md:mb-2 transition-colors duration-300" />
+              <React.Fragment key={block.label}>
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  className="relative flex-1 max-w-[150px] group cursor-default"
+                >
+                  {/* Outer border with red box-shadow brutalist style */}
+                  <div className="relative bg-black border-2 border-white shadow-[4px_4px_0px_0px_#EB0028] group-hover:shadow-[6px_6px_0px_0px_#EB0028] group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
+                    
+                    {/* Scanline overlay for CRT effect */}
+                    <div
+                      className="absolute inset-0 pointer-events-none z-10 opacity-[0.04]"
+                      style={{
+                        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,1) 2px, rgba(255,255,255,1) 4px)",
+                      }}
+                    />
 
-                {/* Ticking Number */}
-                <span className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black font-mono tracking-tight text-white select-none">
-                  {block.value}
-                </span>
+                    {/* Red top accent bar */}
+                    <div className="h-[3px] bg-ted-red w-full" />
 
-                {/* Label */}
-                <span className="text-[7px] xs:text-[8px] md:text-[9px] font-mono font-bold uppercase tracking-[0.1em] md:tracking-[0.2em] text-white/40 group-hover:text-white/80 transition-colors duration-300 mt-1">
-                  {block.label}
-                </span>
-              </motion.div>
+                    {/* Inner content */}
+                    <div className="px-2 md:px-4 py-3 md:py-5 flex flex-col items-center justify-center">
+                      {/* Digit */}
+                      <AnimatePresence mode="popLayout">
+                        <motion.span
+                          key={block.value}
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.18, ease: "easeOut" }}
+                          className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-tight text-white select-none leading-none tabular-nums"
+                        >
+                          {block.value}
+                        </motion.span>
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Bottom label strip */}
+                    <div className="border-t border-white/10 px-2 py-1.5 md:py-2 flex items-center justify-center gap-1.5 bg-neutral-950/60">
+                      <span className="w-1 h-1 rounded-full bg-ted-red group-hover:animate-pulse" />
+                      <span className="text-[7px] xs:text-[8px] md:text-[9px] font-mono font-bold uppercase tracking-[0.18em] md:tracking-[0.25em] text-white/50 group-hover:text-white/90 transition-colors duration-200">
+                        {block.label}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Corner accents */}
+                  <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t-2 border-l-2 border-ted-red z-20" />
+                  <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t-2 border-r-2 border-ted-red z-20" />
+                </motion.div>
+
+                {/* Separator colon between blocks (not after last) */}
+                {idx < timeBlocks.length - 1 && (
+                  <div className="flex flex-col gap-1.5 items-center pb-6 md:pb-8 shrink-0">
+                    <span className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-ted-red animate-pulse" />
+                    <span className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-ted-red animate-pulse [animation-delay:0.5s]" />
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </div>
         )}
