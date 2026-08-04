@@ -202,7 +202,7 @@ export default function Countdown({ onTabChange, settings }: CountdownProps) {
             <div>
              
               <h3 className="text-2xl md:text-3xl font-black italic uppercase text-white mb-4 leading-tight">
-                GCEM MAIN AUDITORIUM
+                GIS AUDITORIUM
               </h3>
               <p className="text-white/60 text-xs md:text-sm font-light leading-relaxed max-w-2xl font-mono">
                 Get ready for GCEM&apos;s flagship independent event. We have curated a stellar lineup of speakers and performers.
@@ -218,7 +218,7 @@ export default function Countdown({ onTabChange, settings }: CountdownProps) {
                 <div className="flex items-center gap-2">
                   <Calendar size={12} className="text-ted-red" />
                   <span>
-                    DATE: {settings ? settings.event_date : "October 15, 2026"} {"//"} {settings ? settings.event_time : "09:00 AM"} IST
+                    DATE: {settings ? settings.event_date : "October 15, 2026"} 
                   </span>
                 </div>
               )}
