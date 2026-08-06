@@ -74,7 +74,9 @@ export function useAuth() {
 
     // Listen for tab focus/visibility change to re-verify session status immediately
     const handleFocus = () => {
-      fetchSession();
+      if (document.visibilityState === "visible") {
+        fetchSession();
+      }
     };
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleFocus);
