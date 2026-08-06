@@ -12,6 +12,13 @@ interface RegisterNowProps {
   settings?: EventSettings | null;
 }
 
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Razorpay: any;
+  }
+}
+
 export default function RegisterNow({ onTabChange, settings }: RegisterNowProps) {
   const { user, loading, loginWithGoogle } = useAuth();
   const [formData, setFormData] = useState({
@@ -19,13 +26,16 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
     email: "",
     phone: "",
     organization: "",
+    designation: "Student",
     linkedin: "",
+    referral: "",
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [verifiedPaymentId, setVerifiedPaymentId] = useState<string | null>(null);
 
   // Autofill user credentials when auth state loads
   useEffect(() => {
@@ -48,7 +58,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.fullName.trim()) newErrors.fullName = "Name is required";
+    if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
     
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
@@ -58,11 +68,12 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
     
     if (!formData.phone.trim()) {
       newErrors.phone = "Phone number is required";
-    } else if (!/^\+?[\d\s-]{10,14}$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid phone number (minimum 10 digits)";
+    } else if (!/^\+?[\d\s-]{10,14}$/.test(formData.phone.trim())) {
+      newErrors.phone = "Please enter a valid 10-digit phone number";
     }
     
     if (!formData.organization.trim()) newErrors.organization = "College / Organization is required";
+    if (!formData.designation.trim()) newErrors.designation = "Please select your designation / role";
     
     // Validate LinkedIn URL format only if provided
     if (formData.linkedin.trim() && !/^https?:\/\/(www\.)?linkedin\.com\/in\/.+/i.test(formData.linkedin.trim())) {
@@ -73,13 +84,26 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleSubmitAndPay = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
     if (!user) return;
 
     setIsSubmitting(true);
-    // Clear previous generic submit errors
     if (errors.submit) {
       setErrors((prev) => {
         const copy = { ...prev };
@@ -89,42 +113,105 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
     }
 
     try {
-      const res = await fetch("/api/register", {
+      // 1. Create Razorpay order on server (amount is server-controlled, never client-controlled)
+      const orderRes = await fetch("/api/payment/create-order", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fullName: formData.fullName,
-          phone: formData.phone,
-          organization: formData.organization,
-          linkedin: formData.linkedin,
-        }),
+        headers: { "Content-Type": "application/json" },
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to submit registration.");
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) {
+        throw new Error(orderData.error || "Failed to create payment order.");
       }
 
-      setIsSuccess(true);
+      // 2. Load Checkout script
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        throw new Error("Failed to load Razorpay payment SDK. Please check your network connection.");
+      }
+
+      // 3. Configure Razorpay Popup options
+      const options = {
+        key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "TEDxGCEM 2026",
+        description: "Attendee Registration Pass",
+        image: "/favicon.ico",
+        order_id: orderData.orderId,
+        prefill: {
+          name: formData.fullName,
+          email: formData.email,
+          contact: formData.phone,
+        },
+        theme: {
+          color: "#EB0028", // TED Red
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        handler: async (response: any) => {
+          try {
+            // 4. Verify Payment Server-Side
+            const verifyRes = await fetch("/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                fullName: formData.fullName,
+                phone: formData.phone,
+                organization: formData.organization,
+                designation: formData.designation,
+                linkedin: formData.linkedin,
+                referral: formData.referral,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok) {
+              throw new Error(verifyData.error || "Payment verification failed.");
+            }
+
+            setVerifiedPaymentId(response.razorpay_payment_id);
+            setIsSuccess(true);
+          } catch (verifyError: unknown) {
+            console.error("Verification error:", verifyError);
+            const msg = verifyError instanceof Error ? verifyError.message : "Payment verification failed.";
+            setErrors((prev) => ({ ...prev, submit: msg }));
+          } finally {
+            setIsSubmitting(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setIsSubmitting(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (response: { error?: { description?: string } }) {
+        setIsSubmitting(false);
+        setErrors((prev) => ({
+          ...prev,
+          submit: response.error?.description || "Payment failed or cancelled. Please try again.",
+        }));
+      });
+      rzp.open();
     } catch (err: unknown) {
-      console.error("Error submitting registration:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to submit registration. Please try again.";
+      console.error("Error initiating payment:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to initiate payment. Please try again.";
       setErrors((prev) => ({
         ...prev,
         submit: errorMessage,
       }));
-    } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error for field when user starts typing
     if (errors[name]) {
       setErrors((prev) => {
         const copy = { ...prev };
@@ -133,8 +220,6 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
       });
     }
   };
-
-
 
   return (
     <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col">
@@ -175,7 +260,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
             </svg>
           </div>
           <div className="space-y-3">
-            <h4 className="text-3xl font-black uppercase tracking-tight text-white">Registration Opens Soon </h4>
+            <h4 className="text-3xl font-black uppercase tracking-tight text-white">Registration Opens Soon</h4>
             <p className="text-white/60 max-w-md mx-auto text-xs leading-relaxed font-sans font-light">
               Attendee pass registrations for TEDxGCEM {getEventYear(settings?.event_date)} are opening soon. Follow our official channels for release details.
             </p>
@@ -331,10 +416,10 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.35, ease: "easeInOut" }}
-                onSubmit={handleSubmit}
+                onSubmit={handleSubmitAndPay}
                 className="relative z-10 space-y-8"
               >
-                {/* Form Back Button & Progress */}
+                {/* Form Back Button & Header */}
                 <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
                   <button
                     type="button"
@@ -353,7 +438,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                     <span>Back</span>
                   </button>
                   <div className="flex items-center gap-3 overflow-hidden max-w-[60%]">
-                    <span className="text-[9px] uppercase tracking-widest font-mono text-white/40 shrink-0">Sender:</span>
+                    <span className="text-[9px] uppercase tracking-widest font-mono text-white/40 shrink-0">Logged in as:</span>
                     <span className="text-[9px] uppercase tracking-widest font-mono text-white font-bold truncate">{user?.email}</span>
                   </div>
                   <span className="text-[10px] uppercase tracking-widest font-mono text-ted-red font-black shrink-0">
@@ -363,14 +448,33 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
 
                 <div className="text-center mb-6">
                   <p className="text-white/60">
-                    Complete the form below to register for <span className="text-ted-red uppercase font-bold">TED</span><span className="text-ted-red lowercase font-bold">x</span><span className="text-white uppercase font-bold">GCEM</span> {getEventYear(settings?.event_date)}. Limited seats available.
+                    Complete your details below to register for <span className="text-ted-red uppercase font-bold">TED</span><span className="text-ted-red lowercase font-bold">x</span><span className="text-white uppercase font-bold">GCEM</span> {getEventYear(settings?.event_date)}.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Full Name */}
+                  {/* 1. Gmail / Email (Locked) */}
                   <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Full Name</label>
+                    <div className="flex items-center justify-between ml-4">
+                      <label className="text-xs uppercase tracking-widest text-white/40 font-bold">Gmail / Email Address</label>
+                      <span className="text-[10px] text-ted-red font-mono font-bold uppercase tracking-wider flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        Verified via Google
+                      </span>
+                    </div>
+                    <input 
+                      type="email" 
+                      name="email"
+                      value={formData.email}
+                      disabled
+                      className="w-full bg-black/20 border border-white/10 rounded-2xl px-6 py-4 outline-none text-white/60 font-mono text-sm cursor-not-allowed select-none"
+                      title="Your logged-in Google email (locked)"
+                    />
+                  </div>
+
+                  {/* 2. Full Name (Auto-filled, Editable) */}
+                  <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Full Name <span className="text-ted-red">*</span></label>
                     <input 
                       type="text" 
                       name="fullName"
@@ -382,22 +486,9 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                     {errors.fullName && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.fullName}</p>}
                   </div>
 
-                  {/* Email Address */}
+                  {/* 3. Phone Number (With +91 format) */}
                   <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Email Address</label>
-                    <input 
-                      type="email" 
-                      name="email"
-                      value={formData.email}
-                      disabled
-                      className="w-full bg-black/20 border border-white/5 rounded-2xl px-6 py-4 outline-none text-white/50 cursor-not-allowed"
-                      title="Your logged-in Google email"
-                    />
-                  </div>
-
-                  {/* Phone Number */}
-                  <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Phone Number</label>
+                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Phone Number <span className="text-ted-red">*</span></label>
                     <input 
                       type="tel" 
                       name="phone"
@@ -409,22 +500,57 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                     {errors.phone && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.phone}</p>}
                   </div>
 
-                  {/* Organization */}
+                  {/* 4. College / Organization */}
                   <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Organization / College</label>
+                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">College / Organization <span className="text-ted-red">*</span></label>
                     <input 
                       type="text" 
                       name="organization"
                       value={formData.organization}
                       onChange={handleChange}
-                      placeholder="GCEM" 
+                      placeholder="e.g. Gopalan College of Engineering & Management" 
                       className={`w-full bg-black/40 border ${errors.organization ? 'border-ted-red' : 'border-white/10'} rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white`}
                     />
                     {errors.organization && <p className="text-ted-red text-[11px] ml-4 font-semibold">{errors.organization}</p>}
                   </div>
+
+                  {/* 5. Designation / Role (Dropdown) */}
+                  <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">Designation / Role <span className="text-ted-red">*</span></label>
+                    <select
+                      name="designation"
+                      value={formData.designation}
+                      onChange={handleChange}
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white cursor-pointer"
+                    >
+                      <option value="Student" className="bg-ted-dark-gray text-white">Student</option>
+                      <option value="Working Professional" className="bg-ted-dark-gray text-white">Working Professional</option>
+                      <option value="Entrepreneur" className="bg-ted-dark-gray text-white">Entrepreneur / Founder</option>
+                      <option value="Faculty / Academician" className="bg-ted-dark-gray text-white">Faculty / Academician</option>
+                      <option value="Other" className="bg-ted-dark-gray text-white">Other</option>
+                    </select>
+                  </div>
+
+                  {/* 6. How did you hear about us? (Referral Dropdown) */}
+                  <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">How did you hear about us? (Optional)</label>
+                    <select
+                      name="referral"
+                      value={formData.referral}
+                      onChange={handleChange}
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-ted-red focus:shadow-[0_0_15px_rgba(235,0,40,0.1)] transition-all text-white cursor-pointer"
+                    >
+                      <option value="" className="bg-ted-dark-gray text-white/50">-- Select Source --</option>
+                      <option value="Instagram / Social Media" className="bg-ted-dark-gray text-white">Instagram / Social Media</option>
+                      <option value="Friends / Word of Mouth" className="bg-ted-dark-gray text-white">Friends / Word of Mouth</option>
+                      <option value="College Notice / Poster" className="bg-ted-dark-gray text-white">College Notice / Poster</option>
+                      <option value="LinkedIn" className="bg-ted-dark-gray text-white">LinkedIn</option>
+                      <option value="Other" className="bg-ted-dark-gray text-white">Other</option>
+                    </select>
+                  </div>
                 </div>
 
-                {/* LinkedIn Profile */}
+                {/* 7. LinkedIn Profile (Optional) */}
                 <div className="space-y-2">
                   <label className="text-xs uppercase tracking-widest text-white/40 ml-4 font-bold">LinkedIn Profile (Optional)</label>
                   <input 
@@ -439,9 +565,10 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                 </div>
 
                 {errors.submit && (
-                  <p className="text-ted-red text-xs font-mono text-center">{errors.submit}</p>
+                  <p className="text-ted-red text-xs font-mono text-center bg-ted-red/10 border border-ted-red/30 p-3 rounded-xl">{errors.submit}</p>
                 )}
 
+                {/* Submit button opens Razorpay */}
                 <button 
                   type="submit"
                   disabled={isSubmitting}
@@ -450,10 +577,13 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                   {isSubmitting ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Processing...
+                      Opening Payment Gateway...
                     </>
                   ) : (
-                    "Submit Registration"
+                    <>
+                      <span>Proceed to Payment</span>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </>
                   )}
                 </button>
               </motion.form>
@@ -470,16 +600,23 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
             </div>
 
             <div>
-              <h4 className="text-3xl font-black mb-3">Registration Submitted!</h4>
+              <h4 className="text-3xl font-black mb-3 text-white">Payment Successful & Pass Confirmed!</h4>
               <p className="text-white/60 max-w-md mx-auto">
-                Thank you for registering, <span className="text-white font-bold">{formData.fullName}</span>. We are processing your request. Keep an eye on your inbox (<span className="text-ted-red font-medium">{formData.email}</span>) for your entry pass.
+                Thank you, <span className="text-white font-bold">{formData.fullName}</span>! Your attendee pass for <span className="text-ted-red font-bold">TEDxGCEM {getEventYear(settings?.event_date)}</span> has been confirmed.
               </p>
             </div>
 
-            <div className="bg-black/40 border border-white/5 rounded-3xl p-6 max-w-sm mx-auto text-left space-y-3">
+            <div className="bg-black/40 border border-white/10 rounded-3xl p-6 max-w-md mx-auto text-left space-y-3 font-mono">
               <div className="flex justify-between items-center text-xs pb-2 border-b border-white/5">
                 <span className="text-white/40">Status</span>
-                <span className="text-green-500 font-bold uppercase tracking-wider">Pending Approval</span>
+                <span className="text-green-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  Confirmed & Paid
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs pb-2 border-b border-white/5">
+                <span className="text-white/40">Payment ID</span>
+                <span className="text-ted-red font-bold">{verifiedPaymentId || "Verified"}</span>
               </div>
               <div className="flex justify-between items-center text-xs pb-2 border-b border-white/5">
                 <span className="text-white/40">Ticket Type</span>
@@ -496,17 +633,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                 onClick={() => onTabChange("get-pass")}
                 className="px-8 py-4.5 bg-ted-red border border-ted-red text-white font-black rounded-2xl text-base shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest cursor-pointer"
               >
-                View My Pass
-              </button>
-              <button 
-                onClick={() => {
-                  setIsSuccess(false);
-                  setShowForm(false);
-                  setFormData({ fullName: "", email: "", phone: "", organization: "", linkedin: "" });
-                }}
-                className="px-8 py-4.5 bg-transparent border border-white/10 text-white/60 font-bold rounded-2xl text-base hover:bg-white/5 transition-all uppercase tracking-widest cursor-pointer"
-              >
-                New Register
+                View & Download Pass
               </button>
             </div>
           </motion.div>

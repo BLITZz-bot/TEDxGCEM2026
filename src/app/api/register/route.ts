@@ -1,48 +1,19 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 
-export async function POST(request: Request) {
-  try {
-    const supabase = await createClient();
-    
-    // Verify user authentication server-side
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || !user.email) {
-      return NextResponse.json({ error: "Unauthorized. Please sign in with Google." }, { status: 401 });
-    }
-
-    // Check if registrations are open
-    const { getSettings } = await import("@/lib/settings-service");
-    const settings = await getSettings();
-    if (settings.reveal_register === false) {
-      return NextResponse.json({ error: "Registrations are currently closed." }, { status: 403 });
-    }
-
-    const { fullName, phone, organization, linkedin } = await request.json();
-
-    if (!fullName || !phone || !organization) {
-      return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
-    }
-
-    // Insert registration record into Supabase using the authenticated user's credentials
-    const { error } = await supabase.from("registrations").insert({
-      full_name: fullName,
-      email: user.email,
-      phone,
-      organization,
-      linkedin,
-      user_id: user.id,
-      ticket_status: "pending_approval",
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    console.error("Server Registration submission error:", error);
-    const message = error instanceof Error ? error.message : "Failed to submit registration.";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// This endpoint is DEPRECATED.
+// All registrations now go through the secure Razorpay payment flow:
+//   POST /api/payment/create-order  → creates Razorpay order
+//   POST /api/payment/verify        → verifies payment & saves registration
+//
+// This route is intentionally disabled to prevent bypassing payment.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function POST() {
+  return NextResponse.json(
+    {
+      error:
+        "Direct registration is no longer supported. Please use the Register Now form on the website to complete your registration with payment.",
+    },
+    { status: 410 } // 410 Gone — intentionally retired
+  );
 }

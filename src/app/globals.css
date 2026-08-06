@@ -76,3 +76,40 @@ body.modal-open .mobile-nav-logo {
   pointer-events: none;
 }
 
+/* Dedicated Print Styles for Pass Download */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  html, body {
+    background: #000000 !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #printable-pass-card, #printable-pass-card * {
+    visibility: visible;
+  }
+  #printable-pass-card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 450px !important;
+    max-width: 90% !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    border: 2px solid #ffffff !important;
+    background: #000000 !important;
+    color: #ffffff !important;
+    border-radius: 24px !important;
+  }
+}
+
+

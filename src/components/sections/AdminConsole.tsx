@@ -13,10 +13,17 @@ interface AdminRegistration {
   email: string;
   phone: string;
   organization: string;
-  linkedin: string;
+  designation?: string | null;
+  linkedin?: string | null;
+  referral?: string | null;
   ticket_status: string;
   created_at: string;
   payment_id?: string | null;
+  razorpay_order_id?: string | null;
+  razorpay_payment_id?: string | null;
+  razorpay_signature?: string | null;
+  utr_number?: string | null;
+  payment_method?: string | null;
 }
 
 interface AdminMessage {
@@ -40,8 +47,62 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [speakersList, setSpeakersList] = useState<Speaker[]>([]);
   const [partnersList, setPartnersList] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages" | "settings" | "team" | "speakers" | "partners">("registrations");
+  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages" | "settings" | "team" | "speakers" | "partners" | "scanner">("registrations");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Ticket Scanner States
+  const [scanSearchInput, setScanSearchInput] = useState("");
+  const [scanMatchedReg, setScanMatchedReg] = useState<AdminRegistration | null>(null);
+  const [isScanningCamera, setIsScanningCamera] = useState(false);
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
+
+  // Initialize camera scanner when toggled
+  useEffect(() => {
+    if (!isScanningCamera) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let scannerInstance: any = null;
+    const timer = setTimeout(async () => {
+      try {
+        const { Html5QrcodeScanner } = await import("html5-qrcode");
+        scannerInstance = new Html5QrcodeScanner(
+          "admin-camera-reader",
+          { fps: 10, qrbox: { width: 220, height: 220 } },
+          /* verbose= */ false
+        );
+        scannerInstance.render(
+          (decodedText: string) => {
+            const query = decodedText.toLowerCase();
+            const found = registrations.find(
+              (r) =>
+                r.id.toLowerCase().includes(query.replace("tedx-", "")) ||
+                r.email.toLowerCase().includes(query) ||
+                r.full_name.toLowerCase().includes(query) ||
+                (query.includes("id=") && query.includes(r.id.slice(0, 8).toLowerCase()))
+            );
+            if (found) {
+              setScanMatchedReg(found);
+              setScanMessage(null);
+            } else {
+              setScanMessage("Scanned QR code data: " + decodedText + " (No record matched)");
+            }
+          },
+          () => {}
+        );
+      } catch (err) {
+        console.error("Camera scanner error:", err);
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      if (scannerInstance) {
+        try {
+          scannerInstance.clear();
+        } catch {}
+      }
+    };
+  }, [isScanningCamera, registrations]);
 
   // Event settings states
   const [themeName, setThemeName] = useState(settings?.theme_name || "");
@@ -915,6 +976,15 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         </button>
         <button
           type="button"
+          onClick={() => setActiveSubTab("scanner")}
+          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-2 ${
+            activeSubTab === "scanner" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+          }`}
+        >
+          <span>📷</span> Ticket Scanner
+        </button>
+        <button
+          type="button"
           onClick={fetchData}
           disabled={loading}
           className="md:ml-auto px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all text-xs font-mono uppercase tracking-widest font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50"
@@ -999,46 +1069,89 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-white/10 text-white/40 font-mono uppercase tracking-wider">
-                      <th className="pb-4 pr-4">Name</th>
+                      <th className="pb-4 pr-4">Attendee</th>
                       <th className="pb-4 px-4">Contact Info</th>
-                      <th className="pb-4 px-4">Organization</th>
-                      <th className="pb-4 px-4">LinkedIn</th>
-                      <th className="pb-4 px-4">Payment ID</th>
+                      <th className="pb-4 px-4">Organization / Role</th>
+                      <th className="pb-4 px-4">Status & Method</th>
+                      <th className="pb-4 px-4">Razorpay Payment ID / UTR</th>
+                      <th className="pb-4 px-4">Source & LinkedIn</th>
                       <th className="pb-4 pl-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {registrations.map((reg) => (
-                      <tr key={reg.id} className="hover:bg-white/[0.02] transition-colors">
-                        <td className="py-4 pr-4 font-bold text-white uppercase tracking-wider">{reg.full_name}</td>
-                        <td className="py-4 px-4 space-y-1">
-                          <div className="text-white/80">{reg.email}</div>
-                          <div className="text-white/40 font-mono">{reg.phone}</div>
-                        </td>
-                        <td className="py-4 px-4 uppercase text-white/80">{reg.organization}</td>
-                        <td className="py-4 px-4">
-                          {reg.linkedin ? (
-                            <a href={reg.linkedin} target="_blank" rel="noopener noreferrer" className="text-ted-red hover:underline font-mono">
-                              View URL
-                            </a>
-                          ) : (
-                            <span className="text-white/20 font-mono">-</span>
-                          )}
-                        </td>
-                        <td className="py-4 px-4 font-mono text-white/70">
-                          {reg.payment_id || <span className="text-white/25">No Payment</span>}
-                        </td>
-                        <td className="py-4 pl-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => deleteRegistration(reg.id)}
-                            className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white rounded-lg uppercase text-white/50 cursor-pointer font-bold transition-all"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {registrations.map((reg) => {
+                      const isConfirmed = reg.ticket_status === "confirmed" || reg.ticket_status === "approved" || !!reg.razorpay_payment_id || !!reg.payment_id;
+                      const paymentId = reg.razorpay_payment_id || reg.payment_id;
+                      return (
+                        <tr key={reg.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="py-4 pr-4">
+                            <div className="font-bold text-white uppercase tracking-wider">{reg.full_name}</div>
+                            <div className="text-[10px] text-white/30 font-mono mt-0.5">{new Date(reg.created_at).toLocaleDateString()}</div>
+                          </td>
+                          <td className="py-4 px-4 space-y-1">
+                            <div className="text-white/90 font-mono">{reg.email}</div>
+                            <div className="text-ted-red font-mono text-[11px]">{reg.phone}</div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="uppercase text-white/80 font-bold">{reg.organization}</div>
+                            <div className="text-[10px] text-white/40">{reg.designation || "Student"}</div>
+                          </td>
+                          <td className="py-4 px-4 space-y-1">
+                            {isConfirmed ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 font-mono text-[10px] uppercase font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                Confirmed / Paid
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-mono text-[10px] uppercase font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
+                                Pending
+                              </span>
+                            )}
+                            {reg.payment_method && (
+                              <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
+                                Method: <span className="text-white">{reg.payment_method}</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 font-mono space-y-1">
+                            {paymentId ? (
+                              <div>
+                                <div className="text-ted-red font-bold">{paymentId}</div>
+                                {reg.utr_number ? (
+                                  <div className="text-[10px] text-white/60">UTR: <span className="text-white font-bold">{reg.utr_number}</span></div>
+                                ) : (
+                                  <div className="text-[10px] text-white/30">UTR: N/A</div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-white/25 italic">No Payment Record</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 space-y-1">
+                            {reg.linkedin ? (
+                              <a href={reg.linkedin} target="_blank" rel="noopener noreferrer" className="text-ted-red hover:underline font-mono block text-xs">
+                                LinkedIn Profile →
+                              </a>
+                            ) : (
+                              <span className="text-white/20 font-mono block text-xs">-</span>
+                            )}
+                            {reg.referral && (
+                              <div className="text-[10px] text-white/40 font-sans">Source: {reg.referral}</div>
+                            )}
+                          </td>
+                          <td className="py-4 pl-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => deleteRegistration(reg.id)}
+                              className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white rounded-lg uppercase text-white/50 cursor-pointer font-bold transition-all text-xs"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
@@ -1942,7 +2055,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               )}
             </div>
           </div>
-        ) : (
+        ) : activeSubTab === "partners" ? (
           /* PARTNERS MANAGER VIEW */
           <div className="space-y-8 font-mono text-xs">
             {/* Visibility toggle control card */}
@@ -2179,7 +2292,161 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               )}
             </div>
           </div>
-        )}
+        ) : activeSubTab === "scanner" ? (
+          /* SCANNER SUBTAB VIEW */
+          <div className="space-y-8 font-mono">
+            <div className="border border-white/10 p-6 rounded-2xl bg-black/40 space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <div>
+                  <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// Event Day Control"}</span>
+                  <h4 className="text-xl font-bold text-white uppercase tracking-tight">Admin Ticket Scanner & Entry Control</h4>
+                  <p className="text-xs text-white/40 mt-1">Scan delegate pass QR code via camera or enter Pass ID / Email manually to verify payment & grant venue access.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsScanningCamera(!isScanningCamera)}
+                  className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all flex items-center gap-2 cursor-pointer ${
+                    isScanningCamera ? "bg-ted-red text-white" : "bg-white/10 text-white hover:bg-white/20"
+                  }`}
+                >
+                  <span>📷</span>
+                  {isScanningCamera ? "Stop Camera" : "Start Camera Scanner"}
+                </button>
+              </div>
+
+              {/* Camera Scanner Viewport */}
+              {isScanningCamera && (
+                <div className="p-4 bg-black border border-ted-red/30 rounded-2xl flex flex-col items-center justify-center space-y-3">
+                  <span className="text-xs text-ted-red font-bold animate-pulse">● CAMERA LIVE — POINT QR CODE AT CAMERA</span>
+                  <div id="admin-camera-reader" className="w-full max-w-sm rounded-xl overflow-hidden bg-zinc-900 border border-white/10 min-h-[250px]" />
+                </div>
+              )}
+
+              {/* Manual Pass ID / Email Lookup Bar */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!scanSearchInput.trim()) return;
+                  const query = scanSearchInput.trim().toLowerCase();
+                  const found = registrations.find(
+                    (r) =>
+                      r.id.toLowerCase().includes(query.replace("tedx-", "")) ||
+                      r.email.toLowerCase().includes(query) ||
+                      r.full_name.toLowerCase().includes(query)
+                  );
+                  if (found) {
+                    setScanMatchedReg(found);
+                    setScanMessage(null);
+                  } else {
+                    setScanMatchedReg(null);
+                    setScanMessage("No registration record found matching: " + scanSearchInput);
+                  }
+                }}
+                className="flex flex-col sm:flex-row gap-3"
+              >
+                <input
+                  type="text"
+                  value={scanSearchInput}
+                  onChange={(e) => setScanSearchInput(e.target.value)}
+                  placeholder="Enter Pass ID (e.g. TEDX-27197CEA), Email, or Name..."
+                  className="flex-grow bg-white/5 border border-white/10 p-4 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-xl font-bold"
+                />
+                <button
+                  type="submit"
+                  className="px-8 py-4 bg-ted-red hover:bg-white hover:text-ted-red text-white font-bold uppercase text-xs tracking-widest rounded-xl transition-all cursor-pointer"
+                >
+                  Verify Ticket
+                </button>
+              </form>
+
+              {scanMessage && (
+                <div className="p-4 bg-ted-red/10 border border-ted-red/30 rounded-xl text-ted-red text-xs font-bold">
+                  {scanMessage}
+                </div>
+              )}
+
+              {/* Verification Result Card */}
+              {scanMatchedReg && (
+                <div className="border-2 border-white/20 bg-black/60 p-6 md:p-8 rounded-2xl space-y-6 relative overflow-hidden">
+                  <div className="flex justify-between items-start border-b border-white/10 pb-4">
+                    <div>
+                      <span className="text-[10px] text-white/40 uppercase block">ATTENDEE DELEGATE</span>
+                      <h3 className="text-2xl font-black text-white uppercase">{scanMatchedReg.full_name}</h3>
+                      {scanMatchedReg.designation && (
+                        <span className="text-xs text-ted-red font-bold uppercase block mt-0.5">● {scanMatchedReg.designation}</span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      {scanMatchedReg.ticket_status === "confirmed" || scanMatchedReg.ticket_status === "approved" || !!scanMatchedReg.razorpay_payment_id || !!scanMatchedReg.payment_id ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-bold uppercase">
+                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                          Confirmed / Paid
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs font-bold uppercase">
+                          <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                          Unpaid / Pending
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <span className="text-[9px] text-white/40 block">EMAIL ADDRESS</span>
+                      <span className="text-white font-bold">{scanMatchedReg.email}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-white/40 block">PHONE</span>
+                      <span className="text-ted-red font-bold">{scanMatchedReg.phone}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-white/40 block">INSTITUTION</span>
+                      <span className="text-white font-bold uppercase">{scanMatchedReg.organization}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-4 border-t border-white/10">
+                    <div>
+                      <span className="text-[9px] text-white/40 block">RAZORPAY PAYMENT ID</span>
+                      <span className="text-ted-red font-bold font-mono">{scanMatchedReg.razorpay_payment_id || scanMatchedReg.payment_id || "No Record"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-white/40 block">UTR NUMBER</span>
+                      <span className="text-white font-bold font-mono">{scanMatchedReg.utr_number || "N/A"}</span>
+                    </div>
+                  </div>
+
+                  {/* Entry Action Button */}
+                  <div className="pt-4 flex items-center justify-between border-t border-white/10">
+                    <span className="text-xs text-white/50">Ticket Pass ID: <strong className="text-white">TEDX-{scanMatchedReg.id.slice(0, 8).toUpperCase()}</strong></span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch("/api/admin/registrations", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: scanMatchedReg.id, ticketStatus: "checked_in" }),
+                          });
+                          if (res.ok) {
+                            alert(`✅ ENTRY GRANTED! ${scanMatchedReg.full_name} has been marked checked-in.`);
+                            fetchData();
+                          }
+                        } catch {
+                          alert("Failed to update status.");
+                        }
+                      }}
+                      className="px-6 py-3 bg-green-500 text-black font-black uppercase text-xs tracking-wider rounded-xl hover:bg-white transition-all cursor-pointer shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                    >
+                      ✓ Grant Entry & Mark Checked-In
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );

@@ -17,12 +17,18 @@ interface Registration {
   full_name: string;
   email: string;
   organization: string;
+  designation?: string | null;
   ticket_status: string;
+  payment_id?: string | null;
+  razorpay_payment_id?: string | null;
+  utr_number?: string | null;
+  payment_method?: string | null;
 }
 
 export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
   const { user, loading, loginWithGoogle } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [registration, setRegistration] = useState<Registration | null>(null);
 
   const checkRegistration = async () => {
@@ -43,7 +49,6 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
   };
 
   useEffect(() => {
-    // Wait until settings are loaded to determine if we should fetch
     if (settings === null || settings === undefined) {
       return;
     }
@@ -69,22 +74,220 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
     }
   }, [user, settings]);
 
-  const handlePrint = () => {
-    window.print();
+  const eventYear = getEventYear(settings?.event_date);
+  const ticketId = registration?.id
+    ? `TEDX-${registration.id.slice(0, 8).toUpperCase()}`
+    : "TEDX-PASS";
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PORTRAIT CANVAS PASS GENERATOR (800 × 1200 VERTICAL DELEGATE BADGE)
+  // ─────────────────────────────────────────────────────────────────────────
+  const handleDownloadImage = async () => {
+    if (!registration) return;
+    setIsDownloading(true);
+
+    try {
+      const W = 800;
+      const H = 1200;
+      const R = 36;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext("2d")!;
+
+      const roundRect = (x: number, y: number, w: number, h: number, r: number) => {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      };
+
+      // Background
+      roundRect(0, 0, W, H, R);
+      ctx.fillStyle = "#09090b";
+      ctx.fill();
+
+      // Outer White Border
+      roundRect(0, 0, W, H, R);
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Top Red Accent Header Banner
+      roundRect(0, 0, W, 140, R);
+      ctx.fillStyle = "#EB0028";
+      ctx.fill();
+      ctx.fillRect(0, 70, W, 70); // Fill bottom half of banner
+
+      // Top Lanyard Slot Graphic (Mock Hole)
+      ctx.beginPath();
+      ctx.arc(W / 2, 35, 14, 0, Math.PI * 2);
+      ctx.fillStyle = "#09090b";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.4)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Banner Text: TEDxGCEM 2026
+      ctx.font = "bold 44px Arial, sans-serif";
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.fillText(`TEDxGCEM ${eventYear}`, W / 2, 105);
+
+      // Subtitle below banner
+      ctx.font = "14px 'Courier New', monospace";
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.fillText("x = independently organized TED event", W / 2, 175);
+
+      // Category Pill: DELEGATE PASS
+      ctx.fillStyle = "rgba(235, 0, 40, 0.15)";
+      roundRect(W / 2 - 130, 205, 260, 40, 20);
+      ctx.fill();
+      ctx.strokeStyle = "#EB0028";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.font = "bold 16px 'Courier New', monospace";
+      ctx.fillStyle = "#EB0028";
+      ctx.fillText("● OFFICIAL DELEGATE PASS", W / 2, 230);
+
+      // ATTENDEE NAME (Large & Bold)
+      ctx.font = "13px 'Courier New', monospace";
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.fillText("ATTENDEE NAME", W / 2, 310);
+
+      ctx.font = "bold 56px Arial, sans-serif";
+      ctx.fillStyle = "#ffffff";
+      let nameText = (registration.full_name || "").toUpperCase();
+      while (ctx.measureText(nameText).width > W - 100 && nameText.length > 0) {
+        nameText = nameText.slice(0, -1);
+      }
+      ctx.fillText(nameText, W / 2, 375);
+
+      // Designation Role
+      if (registration.designation) {
+        ctx.font = "bold 20px 'Courier New', monospace";
+        ctx.fillStyle = "#EB0028";
+        ctx.fillText(registration.designation.toUpperCase(), W / 2, 420);
+      }
+
+      // Institution / Organization
+      ctx.font = "13px 'Courier New', monospace";
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.fillText("INSTITUTION / ORGANIZATION", W / 2, 480);
+
+      ctx.font = "bold 26px Arial, sans-serif";
+      ctx.fillStyle = "#ffffff";
+      let orgText = (registration.organization || "").toUpperCase();
+      while (ctx.measureText(orgText).width > W - 120 && orgText.length > 0) {
+        orgText = orgText.slice(0, -1);
+      }
+      ctx.fillText(orgText, W / 2, 520);
+
+      // Divider Line
+      ctx.setLineDash([10, 6]);
+      ctx.strokeStyle = "rgba(255,255,255,0.2)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(60, 565);
+      ctx.lineTo(W - 60, 565);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // QR Code Container Box
+      const qrBoxSize = 250;
+      const qrBoxX = W / 2 - qrBoxSize / 2;
+      const qrBoxY = 600;
+
+      ctx.fillStyle = "#ffffff";
+      roundRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 20);
+      ctx.fill();
+
+      // Load & Draw QR Code Image inside white box (encode verification URL so phone camera opens web page)
+      const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.com";
+      const verifyUrl = `${siteOrigin}/api/verify-pass?id=${encodeURIComponent(ticketId)}&email=${encodeURIComponent(registration.email)}`;
+      const qrImg = new window.Image();
+      qrImg.crossOrigin = "anonymous";
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(verifyUrl)}&color=000000&bgcolor=ffffff`;
+
+      const finishCanvas = () => {
+        // Label under QR Code
+        ctx.font = "bold 13px 'Courier New', monospace";
+        ctx.fillStyle = "rgba(255,255,255,0.5)";
+        ctx.textAlign = "center";
+        ctx.fillText("EVENT DAY CHECK-IN SCAN QR", W / 2, qrBoxY + qrBoxSize + 30);
+
+        // Barcode Strip
+        const bcY = 910;
+        const bcH = 100;
+        const barWidths = [3, 1, 2, 1, 4, 1, 2, 3, 1, 2, 1, 4, 2, 1, 3, 1, 2, 4, 1, 2, 3, 1, 1, 2, 4, 3, 1, 2, 1, 3, 1, 4, 2, 1, 2];
+        let totalW = 0;
+        barWidths.forEach((w) => (totalW += w * 5));
+        let bx = W / 2 - totalW / 2;
+
+        barWidths.forEach((w, i) => {
+          if (i % 2 === 0) {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(bx, bcY, w * 5, bcH);
+          }
+          bx += w * 5;
+        });
+
+        // Pass ID text
+        ctx.font = "bold 20px 'Courier New', monospace";
+        ctx.fillStyle = "#EB0028";
+        ctx.fillText(ticketId, W / 2, bcY + bcH + 35);
+
+        // Bottom Footer Bar
+        ctx.fillStyle = "rgba(255,255,255,0.05)";
+        ctx.fillRect(0, H - 75, W, 75);
+
+        ctx.font = "14px 'Courier New', monospace";
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillText("VENUE: GCEM AUDITORIUM, BENGALURU", W / 2, H - 32);
+
+        // Download PNG Image
+        const link = document.createElement("a");
+        const safeName = (registration?.full_name || "Delegate").replace(/[^a-zA-Z0-9]/g, "_");
+        link.download = `TEDxGCEM_Pass_${safeName}.png`;
+        link.href = canvas.toDataURL("image/png", 1.0);
+        link.click();
+        setIsDownloading(false);
+      };
+
+      qrImg.onload = () => {
+        ctx.drawImage(qrImg, qrBoxX + 15, qrBoxY + 15, qrBoxSize - 30, qrBoxSize - 30);
+        finishCanvas();
+      };
+
+      qrImg.onerror = () => {
+        ctx.font = "12px monospace";
+        ctx.fillStyle = "#000000";
+        ctx.fillText("QR SCAN CODE", W / 2, qrBoxY + 130);
+        finishCanvas();
+      };
+    } catch (err) {
+      console.error("Failed to generate pass image:", err);
+      setIsDownloading(false);
+    }
   };
 
   return (
-    <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col print:pt-0 print:pb-0 print:px-0">
-      {/* Hero Banner Manifesto - Hide during print */}
-      <div className="w-full mb-24 flex flex-col justify-between items-start gap-6 border-b border-white/10 pb-16 print:hidden">
+    <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 max-w-4xl mx-auto flex flex-col">
+      {/* Hero Banner */}
+      <div className="w-full mb-20 flex flex-col justify-between items-start gap-6 border-b border-white/10 pb-16">
         <motion.h2 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="text-4xl md:text-6xl font-black italic tracking-tighter leading-[0.95] uppercase"
         >
-          RETRIEVE YOUR <br />
-          ATTENDEE <span className="text-ted-red">PASS</span>
+          YOUR ATTENDEE <br />
+          <span className="text-ted-red">PASS BADGE</span>
         </motion.h2>
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
@@ -92,7 +295,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
           transition={{ duration: 0.6, delay: 0.15 }}
           className="text-white/60 text-lg md:text-xl font-light leading-relaxed max-w-xl"
         >
-          Access your verified registration, check application status, and view/print your entry pass.
+          Download your official verified entry pass. Present this pass at the registration desk on event day for quick entry.
         </motion.p>
       </div>
 
@@ -102,9 +305,6 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
           animate={{ opacity: 1, scale: 1 }}
           className="w-full bg-ted-dark-gray/50 border border-white/10 p-12 rounded-[2rem] shadow-2xl backdrop-blur-sm text-center space-y-8 relative overflow-hidden"
         >
-          {/* Decorative Glow */}
-          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-ted-red/10 blur-[80px] rounded-full" />
-          
           <div className="w-20 h-20 bg-ted-red/20 border border-ted-red/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#EB0028" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -114,7 +314,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
           <div className="space-y-3">
             <h4 className="text-3xl font-black uppercase tracking-tight text-white">Downloads Closed</h4>
             <p className="text-white/60 max-w-md mx-auto text-xs leading-relaxed font-sans font-light">
-              Ticket pass checking and downloads for TEDxGCEM {getEventYear(settings?.event_date)} are currently closed. Check back closer to the event schedule, or log in with your admin credentials to modify setting options.
+              Ticket pass downloads for TEDxGCEM {eventYear} are currently closed.
             </p>
           </div>
           <button 
@@ -128,11 +328,8 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-full bg-ted-dark-gray/50 border border-white/10 p-8 md:p-12 rounded-[2.5rem] shadow-2xl backdrop-blur-sm relative overflow-hidden print:bg-white print:border-none print:p-0 print:text-black print:shadow-none print:rounded-none"
+          className="w-full bg-ted-dark-gray/50 border border-white/10 p-6 md:p-12 rounded-[2.5rem] shadow-2xl backdrop-blur-sm relative overflow-hidden"
         >
-          {/* Decorative Background Element - Hide during print */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-ted-red/10 blur-[80px] rounded-full print:hidden" />
-          
           <div className="relative z-10">
             <AnimatePresence mode="wait">
               {loading || isChecking ? (
@@ -161,7 +358,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
                   <div className="space-y-2">
                     <h4 className="text-2xl font-black uppercase tracking-tight text-white">Google Login Required</h4>
                     <p className="text-white/50 text-sm leading-relaxed max-w-sm mx-auto">
-                      Please sign in with the Google Account you used during registration to retrieve your verified attendee pass.
+                      Please sign in with your registered Google Account to view your attendee pass.
                     </p>
                   </div>
 
@@ -183,150 +380,145 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
                   key="pass-details"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="space-y-8"
+                  className="space-y-8 flex flex-col items-center"
                 >
                   {/* Status Badge */}
-                  <div className="flex justify-center print:hidden">
+                  <div className="flex justify-center">
                     {registration.ticket_status === "confirmed" || registration.ticket_status === "approved" ? (
-                      <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/25 text-green-500 text-[10px] uppercase tracking-[0.2em] font-black font-mono shadow-[0_0_15px_rgba(34,197,94,0.08)]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                        Ticket Verified & Confirmed
+                      <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-xs uppercase tracking-[0.2em] font-black font-mono shadow-[0_0_20px_rgba(34,197,94,0.12)]">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        Pass Confirmed & Verified
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/25 text-yellow-500 text-[10px] uppercase tracking-[0.2em] font-black font-mono shadow-[0_0_15px_rgba(234,179,8,0.08)]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
-                        Pending Organizer Approval
+                      <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs uppercase tracking-[0.2em] font-black font-mono shadow-[0_0_20px_rgba(234,179,8,0.12)]">
+                        <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                        Pending Review
                       </span>
                     )}
                   </div>
 
                   {registration.ticket_status === "confirmed" || registration.ticket_status === "approved" ? (
-                    /* Premium Printable brutalist pass */
-                    <div className="max-w-md mx-auto border-2 border-white bg-black p-6 md:p-8 rounded-[1.5rem] relative overflow-hidden print:border-black print:text-black print:bg-white print:rounded-none">
-                      {/* Top ticket strip */}
-                      <div className="flex justify-between items-start border-b border-dashed border-white/30 pb-6 mb-6 print:border-black/30">
-                        <div>
-                          <div className="text-xl font-black italic tracking-tighter uppercase">
-                            <span className="text-ted-red">TED<span className="lowercase">x</span></span>
-                            <span className="text-white print:text-black">GCEM</span>
-                          </div>
-                          <span className="text-[8px] font-mono tracking-widest text-white/50 print:text-black/50 uppercase">Ideas Worth Spreading</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[8px] font-mono tracking-widest text-white/40 print:text-black/40 block">TICKET ID</span>
-                          <span className="text-xs font-mono font-bold text-white print:text-black">
-                            {`TEDX-${registration.id.slice(0, 8).toUpperCase()}`}
-                          </span>
-                        </div>
+                    /* Beautiful Vertical Portrait Pass Card Preview */
+                    <div 
+                      id="printable-pass-card" 
+                      className="w-full max-w-[360px] bg-black border-2 border-white rounded-[2.2rem] overflow-hidden shadow-[0_0_50px_rgba(235,0,40,0.2)] text-white text-center flex flex-col items-center relative"
+                    >
+                      {/* Top Red Header */}
+                      <div className="w-full bg-ted-red py-6 px-6 relative flex flex-col items-center justify-center">
+                        {/* Mock Lanyard Hole */}
+                        <div className="w-7 h-3 rounded-full bg-black/40 border border-white/20 mb-3" />
+                        <h3 className="text-2xl font-black italic tracking-tighter uppercase text-white leading-none">
+                          TED<span className="lowercase">x</span>GCEM <span className="text-black font-mono text-xl">{eventYear}</span>
+                        </h3>
                       </div>
 
-                      {/* Pass Details */}
-                      <div className="space-y-6">
+                      {/* Card Body */}
+                      <div className="p-6 w-full flex flex-col items-center space-y-5">
+                        {/* Delegate Pill */}
+                        <span className="inline-block px-4 py-1 rounded-full bg-ted-red/10 border border-ted-red text-ted-red font-mono text-[10px] font-bold uppercase tracking-widest">
+                          ● OFFICIAL DELEGATE PASS
+                        </span>
+
+                        {/* Name */}
                         <div>
-                          <span className="text-[8px] font-mono tracking-widest text-white/40 print:text-black/40 uppercase block mb-1">ATTENDEE NAME</span>
-                          <span className="text-2xl font-black uppercase text-white print:text-black leading-none">{registration.full_name}</span>
+                          <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest block mb-1">ATTENDEE NAME</span>
+                          <h2 className="text-2xl md:text-3xl font-black uppercase text-white leading-tight">
+                            {registration.full_name}
+                          </h2>
+                          {registration.designation && (
+                            <span className="text-[11px] font-mono text-ted-red font-bold uppercase tracking-wider block mt-1">
+                              {registration.designation}
+                            </span>
+                          )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <span className="text-[8px] font-mono tracking-widest text-white/40 print:text-black/40 uppercase block mb-1">INSTITUTION</span>
-                            <span className="text-sm font-bold uppercase text-white print:text-black">{registration.organization}</span>
-                          </div>
-                          <div>
-                            <span className="text-[8px] font-mono tracking-widest text-white/40 print:text-black/40 uppercase block mb-1">ACCESS CATEGORY</span>
-                            <span className="text-sm font-bold uppercase text-ted-red">GENERAL PASS</span>
-                          </div>
+                        {/* Institution */}
+                        <div className="w-full border-t border-b border-white/10 py-3">
+                          <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest block mb-0.5">INSTITUTION</span>
+                          <span className="text-xs font-bold uppercase text-white/90 block truncate">{registration.organization}</span>
                         </div>
 
-                        {/* Mock Barcode / QR Code for check-in */}
-                        <div className="pt-6 border-t border-white/10 flex flex-col items-center justify-center space-y-3 print:border-black/10">
-                          {/* Brutalist Barcode representation */}
-                          <div className="h-12 w-full bg-white flex gap-[2px] p-2 overflow-hidden justify-center select-none" title="Scan Ticket Code">
-                            {Array.from({ length: 60 }).map((_, idx) => {
-                              const width = (idx % 3 === 0) ? "w-[3px]" : (idx % 2 === 0) ? "w-[1px]" : "w-[2px]";
-                              const opacity = (idx % 7 === 0) ? "bg-transparent" : "bg-black";
-                              return <div key={idx} className={`${width} ${opacity} h-full`} />;
-                            })}
-                          </div>
-                          <span className="text-[8px] font-mono tracking-[0.3em] text-white/50 print:text-black/50">
-                            {`*TEDX${getEventYear(settings?.event_date)}${registration.id.slice(0, 8).toUpperCase()}*`}
+                        {/* QR Code (Encodes web verification URL) */}
+                        <div className="bg-white p-3 rounded-2xl shadow-xl flex flex-col items-center justify-center">
+                          <img 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent((typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.com") + '/api/verify-pass?id=' + encodeURIComponent(ticketId) + '&email=' + encodeURIComponent(registration.email))}&color=000000&bgcolor=ffffff`} 
+                            alt="Event Day Scan QR Code" 
+                            className="w-32 h-32 object-contain"
+                            crossOrigin="anonymous"
+                          />
+                        </div>
+
+                        <span className="text-[9px] font-mono text-white/50 uppercase tracking-widest font-bold">
+                          EVENT DAY CHECK-IN SCAN QR
+                        </span>
+
+                        {/* Pass ID Barcode Tag */}
+                        <div className="pt-2 border-t border-dashed border-white/20 w-full flex flex-col items-center">
+                          <span className="text-xs font-mono font-black text-ted-red tracking-widest uppercase">
+                            {ticketId}
+                          </span>
+                          <span className="text-[8px] font-mono text-white/30 uppercase mt-1">
+                            VENUE: GCEM AUDITORIUM, BENGALURU
                           </span>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    /* Pending Ticket UI */
-                    <div className="max-w-md mx-auto text-center space-y-6 py-6 print:hidden">
-                      <p className="text-white/70 leading-relaxed text-sm md:text-base">
-                        Hi <span className="text-white font-bold">{registration.full_name}</span>, your registration is currently **Pending Approval**. Our team checks applications in batches to verify details and seating limits.
-                      </p>
-                      <p className="text-white/40 text-xs font-light">
-                        A confirmation email containing payment/ticket instructions will be dispatched to <span className="text-ted-red font-medium">{registration.email}</span> once approved. You can also reload this page to download your pass immediately.
+                    <div className="max-w-md mx-auto text-center space-y-4 py-6">
+                      <p className="text-white/70 text-sm">
+                        Hi <span className="text-white font-bold">{registration.full_name}</span>, your registration is currently <span className="text-yellow-400 font-bold">Pending Review</span>.
                       </p>
                     </div>
                   )}
 
-                  {/* Print/Download actions */}
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 print:hidden">
-                    {registration.ticket_status === "confirmed" || registration.ticket_status === "approved" ? (
+                  {/* Single Download Button */}
+                  {(registration.ticket_status === "confirmed" || registration.ticket_status === "approved") && (
+                    <div className="pt-4 w-full flex justify-center">
                       <button 
-                        onClick={handlePrint}
-                        className="px-8 py-5 bg-ted-red border border-ted-red text-white font-black rounded-2xl text-lg shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
+                        onClick={handleDownloadImage}
+                        disabled={isDownloading}
+                        className="px-10 py-5 bg-ted-red border border-ted-red text-white font-black rounded-2xl text-base shadow-[0_0_30px_rgba(235,0,40,0.4)] hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                        Print Pass
+                        {isDownloading ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span>Generating High-Res Pass...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span>Download Official Pass (.PNG)</span>
+                          </>
+                        )}
                       </button>
-                    ) : (
-                      <button 
-                        onClick={() => checkRegistration()}
-                        className="px-8 py-5 bg-ted-red border border-ted-red text-white font-black rounded-2xl text-lg shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                        Refresh Status
-                      </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </motion.div>
               ) : (
-                /* No Registration Found */
                 <motion.div
                   key="no-pass"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="relative z-10 text-center space-y-6 py-6"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-ted-red shadow-inner mx-auto">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                  </div>
-
                   <div className="space-y-2">
                     <h4 className="text-2xl font-black uppercase tracking-tight text-white">No Pass Application Found</h4>
                     <p className="text-white/50 text-sm leading-relaxed max-w-sm mx-auto">
-                      We could not find any active attendee pass application associated with your email: <span className="text-white font-bold font-mono">{user.email}</span>.
+                      We could not find any active pass associated with <span className="text-white font-bold font-mono">{user.email}</span>.
                     </p>
                   </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                    <button 
-                      onClick={() => onTabChange("register")}
-                      className="px-8 py-4.5 bg-ted-red border border-ted-red text-white font-black rounded-2xl text-base shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest cursor-pointer"
-                    >
-                      Apply Now
-                    </button>
-                  </div>
+                  <button 
+                    onClick={() => onTabChange("register")}
+                    className="px-8 py-4 bg-ted-red border border-ted-red text-white font-black rounded-2xl text-base shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest cursor-pointer"
+                  >
+                    Apply Now
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </motion.div>
       )}
-
-      {/* Footer Navigation Help - Hide during print */}
-      <div className="mt-12 flex flex-col items-center gap-4 print:hidden">
-        <p className="text-white/20 text-[10px] uppercase tracking-widest">
-          For technical issues, CONTACT US
-        </p>
-      </div>
     </section>
   );
 }
