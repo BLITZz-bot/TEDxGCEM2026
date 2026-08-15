@@ -164,7 +164,7 @@ interface SpeakersProps {
 export default function Speakers({ settings }: SpeakersProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  const [speakers, setSpeakers] = useState<Speaker[]>(DEFAULT_SPEAKERS);
+  const [speakers, setSpeakers] = useState<Speaker[]>([]);
   const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null);
 
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
@@ -174,7 +174,7 @@ export default function Speakers({ settings }: SpeakersProps) {
     fetch("/api/speakers")
       .then((res) => res.json())
       .then((data) => {
-        if (data && data.speakers && data.speakers.length > 0) {
+        if (data && Array.isArray(data.speakers)) {
           const formatted = data.speakers.map((s: DBSpeaker) => ({
             id: s.id,
             name: s.name,
@@ -450,82 +450,90 @@ export default function Speakers({ settings }: SpeakersProps) {
 
         {/* Speakers Grid - 2 per row, compact size, centered */}
         {settings?.reveal_speakers !== false ? (
-          <div 
-            className="grid grid-cols-1 sm:grid-cols-2 gap-8 mx-auto"
-            style={{ maxWidth: gridMaxWidth }}
-          >
-            {speakers.map((speaker, index) => {
-              const isCardHovered = hoveredCardIndex === index;
-              return (
-                <motion.div
-                  key={speaker.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: false }}
-                  transition={{ duration: 0.5, delay: index * 0.08 }}
-                  onClick={() => setSelectedSpeaker(speaker)}
-                  className={`group relative border rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 cursor-pointer select-none w-full mx-auto speaker-card backdrop-blur-md ${
-                    isCardHovered
-                      ? "border-ted-red/50 bg-white/[0.07] shadow-[0_0_25px_rgba(235,0,40,0.08)]"
-                      : "border-white/15 bg-white/[0.04] hover:bg-white/[0.07] hover:border-ted-red/50"
-                  }`}
-                  style={{ maxWidth: BOX_SETTINGS.width, height: BOX_SETTINGS.height }}
-                  data-index={index}
-                >
-                  {/* Asymmetric Polaroid Frame Container (Portrait Aspect Ratio) */}
-                  <div 
-                    className="relative w-full mb-4"
-                    style={{ aspectRatio: BOX_SETTINGS.aspectRatio }}
-                  >
-                    {/* Behind Shadow Layer */}
-                    <div className={`absolute inset-0 bg-ted-red rounded-2xl transform transition-transform duration-300 ease-out z-0 ${
-                      isCardHovered 
-                        ? "translate-x-2.5 translate-y-2.5" 
-                        : "translate-x-2.5 translate-y-2.5 md:translate-x-0 md:translate-y-0 md:group-hover:translate-x-2.5 md:group-hover:translate-y-2.5"
-                    }`} />
-                    
-                    {/* Front Image Frame */}
-                    <div className={`absolute inset-0 rounded-2xl overflow-hidden border bg-zinc-900 z-10 transition-[transform,border-color] duration-300 ease-out ${
+          speakers.length > 0 ? (
+            <div 
+              className="grid grid-cols-1 sm:grid-cols-2 gap-8 mx-auto"
+              style={{ maxWidth: gridMaxWidth }}
+            >
+              {speakers.map((speaker, index) => {
+                const isCardHovered = hoveredCardIndex === index;
+                return (
+                  <motion.div
+                    key={speaker.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: false }}
+                    transition={{ duration: 0.5, delay: index * 0.08 }}
+                    onClick={() => setSelectedSpeaker(speaker)}
+                    className={`group relative border rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 cursor-pointer select-none w-full mx-auto speaker-card backdrop-blur-md ${
                       isCardHovered
-                        ? "border-ted-red/30 -translate-x-1 -translate-y-1"
-                        : "border-white/15 group-hover:border-ted-red/30 -translate-x-1 -translate-y-1 md:translate-x-0 md:translate-y-0 md:group-hover:-translate-x-1 md:group-hover:-translate-y-1"
-                    }`}>
-                      <img 
-                        src={speaker.photo} 
-                        alt={speaker.name} 
-                        className={`w-full h-full object-cover transition-[transform,filter] duration-300 ease-out transform-gpu [will-change:transform,filter] ${
-                          isCardHovered
-                            ? "grayscale-0 scale-105"
-                            : "grayscale-0 md:grayscale md:group-hover:grayscale-0 md:group-hover:scale-105"
-                        }`}
-                      />
+                        ? "border-ted-red/50 bg-white/[0.07] shadow-[0_0_25px_rgba(235,0,40,0.08)]"
+                        : "border-white/15 bg-white/[0.04] hover:bg-white/[0.07] hover:border-ted-red/50"
+                    }`}
+                    style={{ maxWidth: BOX_SETTINGS.width, height: BOX_SETTINGS.height }}
+                    data-index={index}
+                  >
+                    {/* Asymmetric Polaroid Frame Container (Portrait Aspect Ratio) */}
+                    <div 
+                      className="relative w-full mb-4"
+                      style={{ aspectRatio: BOX_SETTINGS.aspectRatio }}
+                    >
+                      {/* Behind Shadow Layer */}
+                      <div className={`absolute inset-0 bg-ted-red rounded-2xl transform transition-transform duration-300 ease-out z-0 ${
+                        isCardHovered 
+                          ? "translate-x-2.5 translate-y-2.5" 
+                          : "translate-x-2.5 translate-y-2.5 md:translate-x-0 md:translate-y-0 md:group-hover:translate-x-2.5 md:group-hover:translate-y-2.5"
+                      }`} />
+                      
+                      {/* Front Image Frame */}
+                      <div className={`absolute inset-0 rounded-2xl overflow-hidden border bg-zinc-900 z-10 transition-[transform,border-color] duration-300 ease-out ${
+                        isCardHovered
+                          ? "border-ted-red/30 -translate-x-1 -translate-y-1"
+                          : "border-white/15 group-hover:border-ted-red/30 -translate-x-1 -translate-y-1 md:translate-x-0 md:translate-y-0 md:group-hover:-translate-x-1 md:group-hover:-translate-y-1"
+                      }`}>
+                        <img 
+                          src={speaker.photo} 
+                          alt={speaker.name} 
+                          className={`w-full h-full object-cover transition-[transform,filter] duration-300 ease-out transform-gpu [will-change:transform,filter] ${
+                            isCardHovered
+                              ? "grayscale-0 scale-105"
+                              : "grayscale-0 md:grayscale md:group-hover:grayscale-0 md:group-hover:scale-105"
+                          }`}
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Editorial Details Underneath */}
-                  <div className="text-left mt-auto">
-                    <h3 className={`text-xl sm:text-2xl font-black italic tracking-tight transition-colors duration-300 leading-tight ${
-                      isCardHovered ? "text-ted-red" : "text-ted-red md:text-white md:group-hover:text-ted-red"
-                    }`}>
-                      {speaker.name}
-                    </h3>
-                    
-                    {/* Designation */}
-                    <p className={`text-[#A0A0A0] text-[11px] sm:text-xs font-medium tracking-wide mt-2.5 transition-all duration-300 ease-out ${
-                      isCardHovered ? "opacity-100" : "opacity-65 group-hover:opacity-100"
-                    }`}>
-                      {speaker.designation}
-                    </p>
-                    
-                    {/* Active hover dash line */}
-                    <div className={`h-[2px] bg-ted-red mt-4 transition-[width] duration-300 ease-out ${
-                      isCardHovered ? "w-12" : "w-12 md:w-0 md:group-hover:w-12"
-                    }`} />
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+                    {/* Editorial Details Underneath */}
+                    <div className="text-left mt-auto">
+                      <h3 className={`text-xl sm:text-2xl font-black italic tracking-tight transition-colors duration-300 leading-tight ${
+                        isCardHovered ? "text-ted-red" : "text-ted-red md:text-white md:group-hover:text-ted-red"
+                      }`}>
+                        {speaker.name}
+                      </h3>
+                      
+                      {/* Designation */}
+                      <p className={`text-[#A0A0A0] text-[11px] sm:text-xs font-medium tracking-wide mt-2.5 transition-all duration-300 ease-out ${
+                        isCardHovered ? "opacity-100" : "opacity-65 group-hover:opacity-100"
+                      }`}>
+                        {speaker.designation}
+                      </p>
+                      
+                      {/* Active hover dash line */}
+                      <div className={`h-[2px] bg-ted-red mt-4 transition-[width] duration-300 ease-out ${
+                        isCardHovered ? "w-12" : "w-12 md:w-0 md:group-hover:w-12"
+                      }`} />
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="border border-white/10 p-12 rounded-3xl bg-white/[0.02] text-center max-w-xl mx-auto space-y-2">
+              <p className="text-white/60 font-mono text-xs uppercase tracking-widest">
+                Speaker lineup to be announced soon
+              </p>
+            </div>
+          )
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 30 }}

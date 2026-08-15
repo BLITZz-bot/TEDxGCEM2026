@@ -82,7 +82,7 @@ const DEFAULT_PARTNERS = [
 ];
 
 export default function Partners({ settings }: { settings?: EventSettings | null }) {
-  const [partnersList, setPartnersList] = useState<Partner[]>(DEFAULT_PARTNERS as Partner[]);
+  const [partnersList, setPartnersList] = useState<Partner[]>([]);
   const [activePartner, setActivePartner] = useState<Partner | null>(null);
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export default function Partners({ settings }: { settings?: EventSettings | null
       try {
         const res = await fetch("/api/partners");
         const data = await res.json();
-        if (res.ok && data.partners && data.partners.length > 0) {
+        if (res.ok && Array.isArray(data.partners)) {
           setPartnersList(data.partners);
         }
       } catch (err) {
@@ -162,27 +162,35 @@ export default function Partners({ settings }: { settings?: EventSettings | null
                 <h4 className="text-white/50 uppercase tracking-[0.3em] text-[10px] font-mono font-bold">Our Partners</h4>
               </div>
               <div className="grid grid-cols-1 gap-10 sm:gap-12">
-                {partnersList.slice(0, 2).map((partner, i) => (
-                  <div key={partner.id || i} className="flex flex-col w-full">
-                    <h5 className="text-sm sm:text-lg md:text-xl font-mono font-black uppercase tracking-[0.25em] text-white mb-3 text-center">
-                      {partner.role}
-                    </h5>
-                    <motion.div
-                      whileHover={{ y: -4 }}
-                      onClick={() => setActivePartner(partner)}
-                      className="flex flex-col items-center justify-center p-6 sm:p-8 group cursor-pointer transition-all duration-300 border border-white/20 bg-white/[0.04] backdrop-blur-md rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md hover:border-ted-red/60 hover:bg-white/[0.07] shadow-[0_4px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.18)]"
-                    >
-                      <img 
-                        src={partner.logo} 
-                        alt={`${partner.name} Logo`} 
-                        className="w-full max-w-[140px] sm:max-w-[210px] h-20 sm:h-28 object-contain transition-all duration-500" 
-                      />
-                      <div className="text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-white/50 group-hover:text-ted-red transition-colors duration-300 mt-4 text-center">
-                        {partner.name}
-                      </div>
-                    </motion.div>
+                {partnersList.length > 0 ? (
+                  partnersList.slice(0, 2).map((partner, i) => (
+                    <div key={partner.id || i} className="flex flex-col w-full">
+                      <h5 className="text-sm sm:text-lg md:text-xl font-mono font-black uppercase tracking-[0.25em] text-white mb-3 text-center">
+                        {partner.role}
+                      </h5>
+                      <motion.div
+                        whileHover={{ y: -4 }}
+                        onClick={() => setActivePartner(partner)}
+                        className="flex flex-col items-center justify-center p-6 sm:p-8 group cursor-pointer transition-all duration-300 border border-white/20 bg-white/[0.04] backdrop-blur-md rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md hover:border-ted-red/60 hover:bg-white/[0.07] shadow-[0_4px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.18)]"
+                      >
+                        <img 
+                          src={partner.logo} 
+                          alt={`${partner.name} Logo`} 
+                          className="w-full max-w-[140px] sm:max-w-[210px] h-20 sm:h-28 object-contain transition-all duration-500" 
+                        />
+                        <div className="text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-white/50 group-hover:text-ted-red transition-colors duration-300 mt-4 text-center">
+                          {partner.name}
+                        </div>
+                      </motion.div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="border border-white/10 p-8 rounded-2xl bg-white/[0.02] text-center space-y-2">
+                    <p className="text-white/60 font-mono text-xs uppercase tracking-widest">
+                      Partners to be announced soon
+                    </p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           ) : (

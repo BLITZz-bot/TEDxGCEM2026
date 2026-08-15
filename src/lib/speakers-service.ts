@@ -96,7 +96,7 @@ export async function getSpeakers(): Promise<Speaker[]> {
       .select("*")
       .order("created_at", { ascending: true });
 
-    if (!error && data && data.length > 0) {
+    if (!error && Array.isArray(data) && data.length > 0) {
       return data;
     }
   } catch (err) {
@@ -107,7 +107,10 @@ export async function getSpeakers(): Promise<Speaker[]> {
   try {
     if (fs.existsSync(SPEAKERS_FILE_PATH)) {
       const fileData = fs.readFileSync(SPEAKERS_FILE_PATH, "utf-8");
-      return JSON.parse(fileData);
+      const parsed = JSON.parse(fileData);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
     }
   } catch (err) {
     console.warn("Local speakers file read error, returning defaults:", err);
@@ -148,9 +151,11 @@ export async function addSpeaker(speaker: Omit<Speaker, "id">): Promise<boolean>
 
   // 2. Read existing local list, append new speaker, and save
   try {
-    let currentSpeakers = DEFAULT_SPEAKERS;
+    let currentSpeakers: Speaker[] = [];
     if (fs.existsSync(SPEAKERS_FILE_PATH)) {
       currentSpeakers = JSON.parse(fs.readFileSync(SPEAKERS_FILE_PATH, "utf-8"));
+    } else {
+      currentSpeakers = [...DEFAULT_SPEAKERS];
     }
     const newSpeaker: Speaker = {
       id: newId,
@@ -168,27 +173,30 @@ export async function addSpeaker(speaker: Omit<Speaker, "id">): Promise<boolean>
 export async function updateSpeaker(speaker: Speaker): Promise<boolean> {
   let supabaseSaved = false;
 
-  // 1. Save to Supabase
+  // 1. Save to Supabase (only if ID is a valid UUID)
   try {
     const supabase = await createClient();
-    const { error } = await supabase
-      .from("speakers")
-      .update({
-        name: speaker.name,
-        designation: speaker.designation,
-        image_url: speaker.image_url,
-        email: speaker.email,
-        linkedin: speaker.linkedin,
-        instagram: speaker.instagram,
-        bio: speaker.bio,
-        details: speaker.details
-      })
-      .eq("id", speaker.id);
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(speaker.id);
+    if (isUUID) {
+      const { error } = await supabase
+        .from("speakers")
+        .update({
+          name: speaker.name,
+          designation: speaker.designation,
+          image_url: speaker.image_url,
+          email: speaker.email,
+          linkedin: speaker.linkedin,
+          instagram: speaker.instagram,
+          bio: speaker.bio,
+          details: speaker.details
+        })
+        .eq("id", speaker.id);
 
-    if (!error) {
-      supabaseSaved = true;
-    } else {
-      console.warn("Supabase update speaker error:", error);
+      if (!error) {
+        supabaseSaved = true;
+      } else {
+        console.warn("Supabase update speaker error:", error);
+      }
     }
   } catch (err) {
     console.warn("Supabase update speaker connection error:", err);
@@ -196,9 +204,11 @@ export async function updateSpeaker(speaker: Speaker): Promise<boolean> {
 
   // 2. Update local file
   try {
-    let currentSpeakers = DEFAULT_SPEAKERS;
+    let currentSpeakers: Speaker[] = [];
     if (fs.existsSync(SPEAKERS_FILE_PATH)) {
       currentSpeakers = JSON.parse(fs.readFileSync(SPEAKERS_FILE_PATH, "utf-8"));
+    } else {
+      currentSpeakers = [...DEFAULT_SPEAKERS];
     }
     currentSpeakers = currentSpeakers.map(s => s.id === speaker.id ? speaker : s);
     await saveSpeakersLocalFallback(currentSpeakers);
@@ -212,18 +222,21 @@ export async function updateSpeaker(speaker: Speaker): Promise<boolean> {
 export async function deleteSpeaker(id: string): Promise<boolean> {
   let supabaseSaved = false;
 
-  // 1. Delete from Supabase
+  // 1. Delete from Supabase (only if ID is a valid UUID)
   try {
     const supabase = await createClient();
-    const { error } = await supabase
-      .from("speakers")
-      .delete()
-      .eq("id", id);
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (isUUID) {
+      const { error } = await supabase
+        .from("speakers")
+        .delete()
+        .eq("id", id);
 
-    if (!error) {
-      supabaseSaved = true;
-    } else {
-      console.warn("Supabase delete speaker error:", error);
+      if (!error) {
+        supabaseSaved = true;
+      } else {
+        console.warn("Supabase delete speaker error:", error);
+      }
     }
   } catch (err) {
     console.warn("Supabase delete speaker connection error:", err);
@@ -231,9 +244,11 @@ export async function deleteSpeaker(id: string): Promise<boolean> {
 
   // 2. Update local file
   try {
-    let currentSpeakers = DEFAULT_SPEAKERS;
+    let currentSpeakers: Speaker[] = [];
     if (fs.existsSync(SPEAKERS_FILE_PATH)) {
       currentSpeakers = JSON.parse(fs.readFileSync(SPEAKERS_FILE_PATH, "utf-8"));
+    } else {
+      currentSpeakers = [...DEFAULT_SPEAKERS];
     }
     currentSpeakers = currentSpeakers.filter(s => s.id !== id);
     await saveSpeakersLocalFallback(currentSpeakers);
