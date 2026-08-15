@@ -66,6 +66,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
   const [couponValidating, setCouponValidating] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCouponInfo | null>(null);
+  const [isCouponExpanded, setIsCouponExpanded] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -494,7 +495,9 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
 
                   {/* TICKET TIERS GRID (2 in a Row, Clean Wide Cyber-Luxury Pass Design) */}
                   {(() => {
-                    const displayTiers = allPublicTiers.length > 0 ? allPublicTiers : [activeTier];
+                    const visibleTiers = (allPublicTiers.length > 0 ? allPublicTiers : [activeTier])
+                      .filter((t) => t.status !== "upcoming");
+                    const displayTiers = visibleTiers.length > 0 ? visibleTiers : [activeTier];
 
                     return (
                       <div
@@ -1033,58 +1036,90 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                   </div>
 
                   {/* ════════════════════════════════════════════════════════════════
-                      PROMO / COUPON CODE SECTION (Only for phases allowing coupons)
+                      PROMO / COUPON CODE SECTION (Collapsible Professional Drawer)
                       ════════════════════════════════════════════════════════════════ */}
                   {activeTier.allow_coupons ? (
-                    <div className="p-5 rounded-2xl bg-black/30 border border-white/10 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-mono uppercase tracking-widest text-white/80 font-bold flex items-center gap-2">
-                          <span>🎟️ Have a Promo / Coupon Code?</span>
-                        </label>
-                        <span className="text-[10px] font-mono text-white/40">10-min promo codes supported</span>
-                      </div>
-
-                      {!appliedCoupon ? (
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={couponInput}
-                            onChange={(e) => {
-                              setCouponInput(e.target.value.toUpperCase());
-                              if (couponError) setCouponError(null);
-                            }}
-                            placeholder="Enter Promo Code (e.g. TEDX-84N2K)"
-                            className="flex-1 bg-black/50 border border-white/15 focus:border-ted-red rounded-xl px-4 py-2.5 text-xs text-white uppercase placeholder:text-white/20 font-mono focus:outline-none tracking-wider"
-                          />
-                          <button
-                            type="button"
-                            disabled={couponValidating || !couponInput.trim()}
-                            onClick={handleApplyCoupon}
-                            className="px-6 py-2.5 bg-white hover:bg-ted-red text-black hover:text-white disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-black font-black rounded-xl text-xs font-mono uppercase tracking-widest transition-all cursor-pointer shrink-0"
-                          >
-                            {couponValidating ? "Checking..." : "Apply Code"}
-                          </button>
-                        </div>
+                    <div className="rounded-2xl bg-black/30 border border-white/10 overflow-hidden transition-all duration-200">
+                      {!isCouponExpanded && !appliedCoupon ? (
+                        <button
+                          type="button"
+                          onClick={() => setIsCouponExpanded(true)}
+                          className="w-full p-4 flex items-center justify-between text-left cursor-pointer group hover:bg-white/[0.02] transition-colors"
+                        >
+                          <span className="text-xs font-mono uppercase tracking-wider text-white/70 font-bold flex items-center gap-2 group-hover:text-white transition-colors">
+                            <span>🎟️ Have a promo or coupon code?</span>
+                          </span>
+                          <span className="text-xs font-mono font-bold text-ted-red group-hover:underline flex items-center gap-1.5 shrink-0">
+                            <span>Redeem</span>
+                            <span className="text-sm font-black">+</span>
+                          </span>
+                        </button>
                       ) : (
-                        <div className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-xs font-mono font-bold text-green-400">
-                              PROMO APPLIED: <strong className="text-white uppercase tracking-wider">{appliedCoupon.code}</strong> — Save ₹{appliedCoupon.discountAmount}.00 ({appliedCoupon.discountPercentage}% OFF)
-                            </span>
+                        <div className="p-5 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-mono uppercase tracking-widest text-white/80 font-bold flex items-center gap-2">
+                              <span>🎟️ Promo / Coupon Code</span>
+                            </label>
+                            {!appliedCoupon && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsCouponExpanded(false);
+                                  setCouponError(null);
+                                }}
+                                className="text-[11px] font-mono text-white/40 hover:text-white transition-colors cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                            )}
                           </div>
-                          <button
-                            type="button"
-                            onClick={handleRemoveCoupon}
-                            className="text-xs font-mono text-red-400 hover:text-red-300 underline cursor-pointer"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      )}
 
-                      {couponError && (
-                        <p className="text-[11px] text-red-400 font-mono">{couponError}</p>
+                          {!appliedCoupon ? (
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={couponInput}
+                                onChange={(e) => {
+                                  setCouponInput(e.target.value.toUpperCase());
+                                  if (couponError) setCouponError(null);
+                                }}
+                                placeholder="Enter Promo Code (e.g. TEDX-84N2K)"
+                                className="flex-1 bg-black/50 border border-white/15 focus:border-ted-red rounded-xl px-4 py-2.5 text-xs text-white uppercase placeholder:text-white/20 font-mono focus:outline-none tracking-wider"
+                              />
+                              <button
+                                type="button"
+                                disabled={couponValidating || !couponInput.trim()}
+                                onClick={handleApplyCoupon}
+                                className="px-6 py-2.5 bg-white hover:bg-ted-red text-black hover:text-white disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-black font-black rounded-xl text-xs font-mono uppercase tracking-widest transition-all cursor-pointer shrink-0"
+                              >
+                                {couponValidating ? "Checking..." : "Apply Code"}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-xs font-mono font-bold text-green-400">
+                                  PROMO APPLIED: <strong className="text-white uppercase tracking-wider">{appliedCoupon.code}</strong> — Save ₹{appliedCoupon.discountAmount}.00 ({appliedCoupon.discountPercentage}% OFF)
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleRemoveCoupon();
+                                  setIsCouponExpanded(false);
+                                }}
+                                className="text-xs font-mono text-red-400 hover:text-red-300 underline cursor-pointer"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          )}
+
+                          {couponError && (
+                            <p className="text-[11px] text-red-400 font-mono">{couponError}</p>
+                          )}
+                        </div>
                       )}
                     </div>
                   ) : null}

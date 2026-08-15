@@ -9,17 +9,20 @@ export async function GET() {
     const allTiers = await getAllTicketTiers();
 
     // Sanitize data for public view: Never leak sold counts or internal capacity numbers to public
-    const publicTiers = allTiers.map((t) => ({
-      id: t.id,
-      name: t.name,
-      tag: t.tag,
-      description: t.description,
-      price: t.price,
-      discount_price: t.discount_price,
-      allow_coupons: t.allow_coupons,
-      status: t.status,
-      sort_order: t.sort_order,
-    }));
+    // Filter out 'upcoming' future tickets so only currently active, sold_out, or closed tickets are shown
+    const publicTiers = allTiers
+      .filter((t) => t.status !== "upcoming")
+      .map((t) => ({
+        id: t.id,
+        name: t.name,
+        tag: t.tag,
+        description: t.description,
+        price: t.price,
+        discount_price: t.discount_price,
+        allow_coupons: t.allow_coupons,
+        status: t.status,
+        sort_order: t.sort_order,
+      }));
 
     const sanitizedActiveTier = {
       id: activeTier.id,
