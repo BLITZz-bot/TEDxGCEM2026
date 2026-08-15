@@ -1,0 +1,58 @@
+[
+  {
+    "id": "early_bird",
+    "name": "Early Bird",
+    "tag": "Priority Pass",
+    "description": "Exclusive early bird access pass with curated kit and all speaker sessions.",
+    "price": 300,
+    "total_capacity": 20,
+    "allow_coupons": false,
+    "discount_price": null,
+    "status": "upcoming",
+    "sort_order": 1,
+    "sold_count": 0,
+    "manual_override": false
+  },
+  {
+    "id": "phase_1",
+    "name": "Phase 1",
+    "tag": "Phase 1 Pass",
+    "description": "Official Phase 1 delegate pass including keynote talks, delegate kit, and networking.",
+    "price": 400,
+    "total_capacity": 35,
+    "allow_coupons": true,
+    "discount_price": 300,
+    "status": "upcoming",
+    "sort_order": 2,
+    "sold_count": 0,
+    "manual_override": false
+  },
+  {
+    "id": "phase_2",
+    "name": "Phase 2",
+    "tag": "Phase 2 Pass",
+    "description": "Phase 2 standard admission with access to all speaker presentations and event goodies.",
+    "price": 500,
+    "total_capacity": 35,
+    "allow_coupons": true,
+    "discount_price": 400,
+    "status": "upcoming",
+    "sort_order": 3,
+    "sold_count": 0,
+    "manual_override": false
+  },
+  {
+    "id": "phase_3",
+    "name": "Phase 3",
+    "tag": "Final Release",
+    "description": "Final release general delegate pass with elite networking opportunities.",
+    "price": 1000,
+    "total_capacity": 10,
+    "allow_coupons": true,
+    "discount_price": 500,
+    "status": "closed",
+    "sort_order": 4,
+    "sold_count": 0,
+    "manual_override": true
+  }
+]

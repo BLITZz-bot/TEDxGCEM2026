@@ -1,6 +1,6 @@
 {
   "theme_name": "RIPPLE",
-  "reveal_theme": true,
+  "reveal_theme": false,
   "reveal_date": true,
   "reveal_countdown": true,
   "event_date": "October 15, 2026",

@@ -6,6 +6,8 @@ import { TeamMember } from "@/lib/team-service";
 import { Speaker } from "@/lib/speakers-service";
 import { Partner } from "@/lib/partners-service";
 import { EventSettings } from "@/lib/settings-service";
+import { TicketTier } from "@/lib/ticket-service";
+import { PromoCoupon } from "@/lib/coupon-service";
 
 interface AdminRegistration {
   id: string;
@@ -24,6 +26,11 @@ interface AdminRegistration {
   razorpay_signature?: string | null;
   utr_number?: string | null;
   payment_method?: string | null;
+  tier_id?: string | null;
+  tier_name?: string | null;
+  coupon_code?: string | null;
+  discount_amount?: number | null;
+  amount_paid?: number | null;
 }
 
 interface AdminMessage {
@@ -39,6 +46,36 @@ interface AdminConsoleProps {
   onSettingsUpdate: () => void;
 }
 
+// Stable live clock store for second-by-second countdowns
+let cachedNow = Date.now();
+const clockListeners = new Set<() => void>();
+let clockIntervalId: ReturnType<typeof setInterval> | null = null;
+
+function subscribeToClock(notify: () => void) {
+  clockListeners.add(notify);
+  if (clockListeners.size === 1) {
+    clockIntervalId = setInterval(() => {
+      cachedNow = Date.now();
+      clockListeners.forEach((fn) => fn());
+    }, 1000);
+  }
+  return () => {
+    clockListeners.delete(notify);
+    if (clockListeners.size === 0 && clockIntervalId) {
+      clearInterval(clockIntervalId);
+      clockIntervalId = null;
+    }
+  };
+}
+
+function getClockSnapshot() {
+  return cachedNow;
+}
+
+function getClockServerSnapshot() {
+  return 0;
+}
+
 export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsoleProps) {
   const { isAdmin, loading: authLoading } = useAuth();
   const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
@@ -46,9 +83,22 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [speakersList, setSpeakersList] = useState<Speaker[]>([]);
   const [partnersList, setPartnersList] = useState<Partner[]>([]);
+  const [ticketTiers, setTicketTiers] = useState<TicketTier[]>([]);
+  const [couponsList, setCouponsList] = useState<PromoCoupon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "messages" | "settings" | "team" | "speakers" | "partners" | "scanner">("registrations");
+  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "tickets" | "coupons" | "messages" | "settings" | "team" | "speakers" | "partners" | "scanner">("registrations");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Ticket Tiers State
+  const [tierActionLoading, setTierActionLoading] = useState<string | null>(null);
+
+  // Coupon Generator States
+  const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [isGeneratingCoupon, setIsGeneratingCoupon] = useState(false);
+  const [couponSuccessNotice, setCouponSuccessNotice] = useState<string | null>(null);
+  const [selectedCouponTierId, setSelectedCouponTierId] = useState<string | null>(null);
+  // Live clock timestamp using useSyncExternalStore with stable cached snapshot
+  const nowTimestamp = React.useSyncExternalStore(subscribeToClock, getClockSnapshot, getClockServerSnapshot);
 
   // Ticket Scanner States
   const [scanSearchInput, setScanSearchInput] = useState("");
@@ -214,12 +264,107 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       const partnersData = await partnersRes.json();
       if (!partnersRes.ok) throw new Error(partnersData.error || "Failed to load partners.");
       setPartnersList(partnersData.partners || []);
+
+      // Fetch Ticket Tiers
+      try {
+        const tiersRes = await fetch("/api/admin/tickets");
+        const tiersData = await tiersRes.json();
+        if (tiersRes.ok && tiersData.tiers) {
+          setTicketTiers(tiersData.tiers);
+        }
+      } catch (tierErr) {
+        console.warn("Could not fetch ticket tiers:", tierErr);
+      }
+
+      // Fetch Coupons
+      try {
+        const couponsRes = await fetch("/api/admin/coupons");
+        const couponsData = await couponsRes.json();
+        if (couponsRes.ok && couponsData.coupons) {
+          setCouponsList(couponsData.coupons);
+        }
+      } catch (cpnErr) {
+        console.warn("Could not fetch coupons:", cpnErr);
+      }
     } catch (err: unknown) {
       console.error("Error loading admin records:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to load database records. Ensure database setup is correct.";
       setErrorMsg(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Ticket Tier Status Toggle
+  const handleToggleTierStatus = async (tierId: string, currentStatus: string) => {
+    setTierActionLoading(tierId);
+    try {
+      const nextStatus = currentStatus === "active" ? "closed" : "active";
+      const res = await fetch("/api/admin/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tierId, action: "update_status", status: nextStatus }),
+      });
+      const data = await res.json();
+      if (res.ok && data.tiers) {
+        setTicketTiers(data.tiers);
+      } else {
+        alert(data.error || "Failed to update ticket tier.");
+      }
+    } catch {
+      alert("Error updating tier.");
+    } finally {
+      setTierActionLoading(null);
+    }
+  };
+
+  // Create or Auto-Generate Coupon
+  const handleCreateCoupon = async (autoGen = false) => {
+    setIsGeneratingCoupon(true);
+    setCouponSuccessNotice(null);
+    try {
+      const res = await fetch("/api/admin/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customCode: autoGen ? "" : couponCodeInput,
+          durationMinutes: 10,
+          autoGenerate: autoGen,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.coupon) {
+        setCouponSuccessNotice(`✅ 10-Minute Promo Passcode "${data.coupon.code}" created! Direct tier rate applies automatically.`);
+        setCouponCodeInput("");
+        if (data.coupons) {
+          setCouponsList(data.coupons);
+        }
+      } else {
+        alert(data.error || "Failed to create coupon code.");
+      }
+    } catch {
+      alert("Error creating coupon.");
+    } finally {
+      setIsGeneratingCoupon(false);
+    }
+  };
+
+  // Revoke / Delete Coupon
+  const handleDeleteCoupon = async (couponId: string) => {
+    if (!confirm("Are you sure you want to revoke/delete this coupon code?")) return;
+    try {
+      const res = await fetch(`/api/admin/coupons?id=${encodeURIComponent(couponId)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok && data.coupons) {
+        setCouponsList(data.coupons);
+      } else {
+        alert(data.error || "Failed to delete coupon.");
+      }
+    } catch {
+      alert("Error deleting coupon.");
     }
   };
 
@@ -854,6 +999,458 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     }
   };
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // BEAUTIFUL STYLED EXCEL SPREADSHEET EXPORT (.XLS)
+  // Generates a fully formatted, color-coded executive spreadsheet that opens
+  // directly in Microsoft Excel, Google Sheets, Numbers, and LibreOffice.
+  // ─────────────────────────────────────────────────────────────────────────────
+  const exportRegistrationsToExcel = (format: "excel" | "csv" = "excel") => {
+    if (registrations.length === 0) {
+      alert("No registrations recorded to export.");
+      return;
+    }
+
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    const formattedExportDate = now.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+    const formattedExportTime = now.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+
+    const confirmedCount = registrations.filter(
+      (r) => r.ticket_status === "confirmed" || r.ticket_status === "approved" || !!r.razorpay_payment_id || !!r.payment_id
+    ).length;
+    const totalRevenue = registrations.reduce((sum, reg) => {
+      const isConfirmed = reg.ticket_status === "confirmed" || reg.ticket_status === "approved" || !!reg.razorpay_payment_id || !!reg.payment_id;
+      if (!isConfirmed) return sum;
+      return sum + (reg.amount_paid !== null && reg.amount_paid !== undefined ? reg.amount_paid : 300);
+    }, 0);
+
+    if (format === "csv") {
+      const headers = [
+        "Sl No",
+        "Ticket ID",
+        "Date",
+        "Time",
+        "Attendee Name",
+        "Email",
+        "Phone",
+        "Organization",
+        "Designation",
+        "Ticket Tier",
+        "Ticket Status",
+        "Amount Paid (INR)",
+        "Coupon Code",
+        "Discount (INR)",
+        "Payment Method",
+        "Razorpay Payment ID",
+        "Razorpay Order ID",
+        "Bank UTR / Ref",
+        "LinkedIn",
+        "Referral",
+        "UUID",
+      ];
+
+      const escapeCSV = (value: unknown): string => {
+        if (value === null || value === undefined) return '""';
+        const str = String(value).replace(/"/g, '""');
+        return `"${str}"`;
+      };
+
+      const rows = registrations.map((reg, idx) => {
+        const ticketId = reg.id ? `TEDX-${reg.id.slice(0, 8).toUpperCase()}` : "TEDX-PASS";
+        const dateObj = reg.created_at ? new Date(reg.created_at) : null;
+        const formattedDate = dateObj
+          ? dateObj.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })
+          : "N/A";
+        const formattedTime = dateObj
+          ? dateObj.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
+          : "N/A";
+        const isConfirmed =
+          reg.ticket_status === "confirmed" ||
+          reg.ticket_status === "approved" ||
+          !!reg.razorpay_payment_id ||
+          !!reg.payment_id;
+        const statusText = isConfirmed ? "Confirmed / Paid" : (reg.ticket_status || "Pending");
+        const paymentId = reg.razorpay_payment_id || reg.payment_id || "N/A";
+        const orderId = reg.razorpay_order_id || "N/A";
+        const utr = reg.utr_number || "N/A";
+        const method = reg.payment_method ? reg.payment_method.toUpperCase() : (isConfirmed ? "ONLINE" : "N/A");
+        const amount = reg.amount_paid !== null && reg.amount_paid !== undefined ? String(reg.amount_paid) : (isConfirmed ? "300" : "0");
+        const tierName = reg.tier_name || "Early Bird";
+        const couponCode = reg.coupon_code || "None";
+        const discountAmount = reg.discount_amount ? String(reg.discount_amount) : "0";
+
+        return [
+          escapeCSV(idx + 1),
+          escapeCSV(ticketId),
+          escapeCSV(formattedDate),
+          escapeCSV(formattedTime),
+          escapeCSV(reg.full_name),
+          escapeCSV(reg.email),
+          escapeCSV(reg.phone),
+          escapeCSV(reg.organization),
+          escapeCSV(reg.designation || "Student"),
+          escapeCSV(tierName),
+          escapeCSV(statusText),
+          escapeCSV(amount),
+          escapeCSV(couponCode),
+          escapeCSV(discountAmount),
+          escapeCSV(method),
+          escapeCSV(paymentId),
+          escapeCSV(orderId),
+          escapeCSV(utr),
+          escapeCSV(reg.linkedin || ""),
+          escapeCSV(reg.referral || ""),
+          escapeCSV(reg.id),
+        ].join(",");
+      });
+
+      const csvContent = "\uFEFF" + [headers.map(escapeCSV).join(","), ...rows].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `TEDxGCEM_Registrations_${timestamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    // ── BEAUTIFULLY STYLED EXCEL (HTML/XML SPREADSHEET) WITH BOOKMAN ANTIQUA (FONT SIZE 9) ──
+    const rowsHtml = registrations
+      .map((reg, idx) => {
+        const ticketId = reg.id ? `TEDX-${reg.id.slice(0, 8).toUpperCase()}` : "TEDX-PASS";
+        const dateObj = reg.created_at ? new Date(reg.created_at) : null;
+        const formattedDate = dateObj
+          ? dateObj.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })
+          : "N/A";
+        const formattedTime = dateObj
+          ? dateObj.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
+          : "N/A";
+        const isConfirmed =
+          reg.ticket_status === "confirmed" ||
+          reg.ticket_status === "approved" ||
+          !!reg.razorpay_payment_id ||
+          !!reg.payment_id;
+        const statusText = isConfirmed ? "CONFIRMED / PAID" : (reg.ticket_status || "PENDING").toUpperCase();
+        const paymentId = reg.razorpay_payment_id || reg.payment_id || "N/A";
+        const orderId = reg.razorpay_order_id || "N/A";
+        const utr = reg.utr_number || "N/A";
+        const method = reg.payment_method ? reg.payment_method.toUpperCase() : (isConfirmed ? "ONLINE" : "N/A");
+        const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined ? reg.amount_paid : (isConfirmed ? 300 : 0);
+        const amount = `₹${paidVal}.00`;
+        const tierName = reg.tier_name || "Early Bird";
+        const couponCode = reg.coupon_code || "-";
+        const discountStr = reg.discount_amount ? `₹${reg.discount_amount}.00` : "-";
+        const rowBg = idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
+        const statusBg = isConfirmed ? "#DCFCE7" : "#FEF08A";
+        const statusColor = isConfirmed ? "#15803D" : "#854D0E";
+
+        return `
+        <tr style="background-color: ${rowBg}; height: 28px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', 'Palatino Linotype', Georgia, serif; font-size: 9pt;">
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #64748B; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${idx + 1}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #EB0028; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${ticketId}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #475569; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${formattedDate}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #64748B; font-size: 9pt; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">${formattedTime}</td>
+          <td style="border: 1px solid #E2E8F0; font-weight: bold; color: #0F172A; text-transform: uppercase; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${reg.full_name || ""}</td>
+          <td style="border: 1px solid #E2E8F0; color: #2563EB; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${reg.email || ""}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #0F172A; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${reg.phone || ""}</td>
+          <td style="border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600; text-transform: uppercase; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${reg.organization || ""}</td>
+          <td style="border: 1px solid #E2E8F0; color: #475569; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${reg.designation || "Student"}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #0F172A; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${tierName}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; background-color: ${statusBg}; color: ${statusColor}; font-weight: bold; font-size: 9pt; letter-spacing: 0.5px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">${statusText}</td>
+          <td style="text-align: right; border: 1px solid #E2E8F0; color: #0F172A; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${amount}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #64748B; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${couponCode}</td>
+          <td style="text-align: right; border: 1px solid #E2E8F0; color: #16A34A; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${discountStr}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #475569; font-weight: 600; text-transform: uppercase; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${method}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #0F172A; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${paymentId}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #64748B; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${orderId}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #0F172A; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${utr}</td>
+          <td style="border: 1px solid #E2E8F0; color: #0284C7; font-size: 9pt; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">${reg.linkedin ? `<a href="${reg.linkedin}" style="color: #0284C7;">${reg.linkedin}</a>` : "-"}</td>
+          <td style="border: 1px solid #E2E8F0; color: #475569; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${reg.referral || "-"}</td>
+          <td style="border: 1px solid #E2E8F0; color: #94A3B8; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${reg.id}</td>
+        </tr>`;
+      })
+      .join("");
+
+    const excelHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>TEDxGCEM 2026 Registrations</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <style>
+          * { font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', 'Palatino Linotype', Georgia, serif !important; font-size: 9pt; }
+          body { font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; margin: 0; padding: 20px; }
+          table { border-collapse: collapse; width: 100%; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; }
+          th, td { vertical-align: middle; padding: 6px 10px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; }
+          .banner-title { font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 13pt; font-weight: 900; color: #FFFFFF; letter-spacing: -0.5px; }
+          .kpi-title { font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 8pt; text-transform: uppercase; color: #94A3B8; font-weight: 700; letter-spacing: 1px; }
+          .kpi-value { font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 11pt; font-weight: 900; color: #FFFFFF; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <!-- BRAND BANNER HEADER -->
+          <tr style="background-color: #000000; height: 45px;">
+            <td colspan="21" style="background-color: #000000; border-top: 4px solid #EB0028; padding: 12px 16px;">
+              <div class="banner-title"><span style="color: #EB0028;">TEDx</span>GCEM 2026 — OFFICIAL ATTENDEE DELEGATE & TRANSACTION REGISTRY</div>
+              <div style="color: #94A3B8; font-size: 9pt; margin-top: 3px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
+                Gopalan College of Engineering & Management &nbsp;|&nbsp; Exported on: <strong>${formattedExportDate} at ${formattedExportTime}</strong> &nbsp;|&nbsp; Confidential Organizing Committee Document
+              </div>
+            </td>
+          </tr>
+
+          <!-- KPI SUMMARY STATS CARDS -->
+          <tr style="background-color: #0F172A; height: 38px;">
+            <td colspan="4" style="background-color: #0F172A; border-right: 1px solid #334155; padding: 8px 12px;">
+              <div class="kpi-title">TOTAL REGISTERED</div>
+              <div class="kpi-value" style="color: #FFFFFF;">${registrations.length} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">Delegates</span></div>
+            </td>
+            <td colspan="4" style="background-color: #0F172A; border-right: 1px solid #334155; padding: 8px 12px;">
+              <div class="kpi-title">CONFIRMED PASSES</div>
+              <div class="kpi-value" style="color: #4ADE80;">${confirmedCount} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">Paid Tickets</span></div>
+            </td>
+            <td colspan="5" style="background-color: #0F172A; border-right: 1px solid #334155; padding: 8px 12px;">
+              <div class="kpi-title">TOTAL REVENUE COLLECTED</div>
+              <div class="kpi-value" style="color: #FACC15;">₹${totalRevenue.toLocaleString("en-IN")} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">INR</span></div>
+            </td>
+            <td colspan="8" style="background-color: #0F172A; padding: 8px 12px;">
+              <div class="kpi-title">PAYMENT SECURITY</div>
+              <div class="kpi-value" style="color: #38BDF8; font-size: 9pt;">Razorpay Gateway Verified (HMAC-SHA256)</div>
+            </td>
+          </tr>
+
+          <!-- EMPTY SPACING ROW -->
+          <tr style="height: 10px;"><td colspan="21" style="border: none;"></td></tr>
+
+          <!-- TABLE COLUMN HEADERS -->
+          <tr style="background-color: #EB0028; height: 34px; color: #FFFFFF; font-weight: bold; text-transform: uppercase; font-size: 9pt; letter-spacing: 0.5px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 45px; font-size: 9pt;">#</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 130px; font-size: 9pt;">Ticket ID</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 110px; font-size: 9pt;">Date</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 95px; font-size: 9pt;">Time</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 180px; font-size: 9pt;">Attendee Name</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 220px; font-size: 9pt;">Email Address</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 130px; font-size: 9pt;">Phone Number</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 200px; font-size: 9pt;">Institution / Org</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 140px; font-size: 9pt;">Designation</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 130px; font-size: 9pt;">Ticket Tier</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 130px; font-size: 9pt;">Ticket Status</th>
+            <th style="border: 1px solid #B91C1C; text-align: right; width: 110px; font-size: 9pt;">Amount</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 120px; font-size: 9pt;">Coupon</th>
+            <th style="border: 1px solid #B91C1C; text-align: right; width: 110px; font-size: 9pt;">Discount</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 110px; font-size: 9pt;">Method</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 170px; font-size: 9pt;">Razorpay Payment ID</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 170px; font-size: 9pt;">Razorpay Order ID</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 140px; font-size: 9pt;">Bank UTR / Ref</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 180px; font-size: 9pt;">LinkedIn Profile</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 140px; font-size: 9pt;">Referral Source</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 150px; font-size: 9pt;">Supabase UUID</th>
+          </tr>
+
+          <!-- DATA ROWS -->
+          ${rowsHtml}
+
+          <!-- SUMMARY FOOTER ROW -->
+          <tr style="background-color: #000000; height: 32px; color: #FFFFFF; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">
+            <td colspan="11" style="text-align: right; border: 1px solid #334155; padding-right: 16px; text-transform: uppercase; font-size: 9pt;">
+              TOTAL CONFIRMED REVENUE (${confirmedCount} TICKETS):
+            </td>
+            <td style="text-align: right; border: 1px solid #334155; color: #4ADE80; font-size: 10pt; font-weight: 900; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
+              ₹${totalRevenue.toLocaleString("en-IN")}.00
+            </td>
+            <td colspan="9" style="border: 1px solid #334155; color: #94A3B8; font-size: 9pt; text-align: right; padding-right: 14px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
+              Generated from TEDxGCEM Admin Portal &nbsp;|&nbsp; All Rights Reserved
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([excelHtml], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `TEDxGCEM_Registrations_${timestamp}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportMessagesToExcel = (format: "excel" | "csv" = "excel") => {
+    if (messages.length === 0) {
+      alert("No messages recorded to export.");
+      return;
+    }
+
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    const formattedExportDate = now.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+    const formattedExportTime = now.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+
+    if (format === "csv") {
+      const headers = ["Sl No", "Message ID", "Date", "Time", "Sender Name", "Sender Email", "Message Body"];
+      const escapeCSV = (value: unknown): string => {
+        if (value === null || value === undefined) return '""';
+        const str = String(value).replace(/"/g, '""');
+        return `"${str}"`;
+      };
+      const rows = messages.map((msg, idx) => {
+        const dateObj = msg.created_at ? new Date(msg.created_at) : null;
+        const formattedDate = dateObj
+          ? dateObj.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })
+          : "N/A";
+        const formattedTime = dateObj
+          ? dateObj.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
+          : "N/A";
+        return [
+          escapeCSV(idx + 1),
+          escapeCSV(msg.id),
+          escapeCSV(formattedDate),
+          escapeCSV(formattedTime),
+          escapeCSV(msg.name),
+          escapeCSV(msg.email),
+          escapeCSV(msg.message),
+        ].join(",");
+      });
+
+      const csvContent = "\uFEFF" + [headers.map(escapeCSV).join(","), ...rows].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `TEDxGCEM_Contact_Messages_${timestamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    // ── BEAUTIFUL STYLED MESSAGES EXCEL (.XLS) WITH BOOKMAN ANTIQUA (FONT SIZE 9) ──
+    const rowsHtml = messages
+      .map((msg, idx) => {
+        const dateObj = msg.created_at ? new Date(msg.created_at) : null;
+        const formattedDate = dateObj
+          ? dateObj.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })
+          : "N/A";
+        const formattedTime = dateObj
+          ? dateObj.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
+          : "N/A";
+        const rowBg = idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
+
+        return `
+        <tr style="background-color: ${rowBg}; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #64748B; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${idx + 1}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #475569; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${formattedDate}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #64748B; font-size: 9pt; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">${formattedTime}</td>
+          <td style="border: 1px solid #E2E8F0; font-weight: bold; color: #0F172A; text-transform: uppercase; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${msg.name}</td>
+          <td style="border: 1px solid #E2E8F0; color: #2563EB; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${msg.email}</td>
+          <td style="border: 1px solid #E2E8F0; color: #1E293B; white-space: pre-wrap; line-height: 1.4; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${msg.message}</td>
+          <td style="border: 1px solid #E2E8F0; color: #94A3B8; font-size: 9pt; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; mso-number-format: '\\@';">${msg.id}</td>
+        </tr>`;
+      })
+      .join("");
+
+    const excelHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>TEDxGCEM Inbox Messages</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <style>
+          * { font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', 'Palatino Linotype', Georgia, serif !important; font-size: 9pt; }
+          body { font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; margin: 0; padding: 20px; }
+          table { border-collapse: collapse; width: 100%; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; }
+          th, td { vertical-align: middle; padding: 6px 10px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; }
+          .banner-title { font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 13pt; font-weight: 900; color: #FFFFFF; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr style="background-color: #000000; height: 45px;">
+            <td colspan="7" style="background-color: #000000; border-top: 4px solid #EB0028; padding: 12px 16px;">
+              <div class="banner-title"><span style="color: #EB0028;">TEDx</span>GCEM 2026 — INBOX CONTACT MESSAGES DIRECTORY</div>
+              <div style="color: #94A3B8; font-size: 9pt; margin-top: 3px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
+                Total Submissions: <strong>${messages.length} Messages</strong> &nbsp;|&nbsp; Exported on: <strong>${formattedExportDate} at ${formattedExportTime}</strong>
+              </div>
+            </td>
+          </tr>
+          <tr style="height: 10px;"><td colspan="7" style="border: none;"></td></tr>
+          <tr style="background-color: #EB0028; height: 34px; color: #FFFFFF; font-weight: bold; text-transform: uppercase; font-size: 9pt; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 45px; font-size: 9pt;">#</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 110px; font-size: 9pt;">Date</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 95px; font-size: 9pt;">Time</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 180px; font-size: 9pt;">Sender Name</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 220px; font-size: 9pt;">Email Address</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 400px; font-size: 9pt;">Message Body</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 150px; font-size: 9pt;">Message ID</th>
+          </tr>
+          ${rowsHtml}
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([excelHtml], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `TEDxGCEM_Contact_Messages_${timestamp}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -931,6 +1528,15 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         </button>
         <button
           type="button"
+          onClick={() => setActiveSubTab("tickets")}
+          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+            activeSubTab === "tickets" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+          }`}
+        >
+          Ticket Tiers ({ticketTiers.length || 4})
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveSubTab("messages")}
           className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "messages" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
@@ -983,17 +1589,69 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         >
           <span>📷</span> Ticket Scanner
         </button>
-        <button
-          type="button"
-          onClick={fetchData}
-          disabled={loading}
-          className="md:ml-auto px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all text-xs font-mono uppercase tracking-widest font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50"
-        >
-          <svg className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89H17.5" />
-          </svg>
-          Reload
-        </button>
+        <div className="md:ml-auto flex flex-wrap items-center gap-2">
+          {activeSubTab === "registrations" && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => exportRegistrationsToExcel("excel")}
+                disabled={registrations.length === 0}
+                title="Download formatted executive Excel spreadsheet (.xls) with full branding, KPI summary cards & color coding"
+                className="px-4 py-2 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500 hover:text-black rounded-full transition-all text-xs font-mono uppercase tracking-wider font-bold flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                <span>Download Excel ({registrations.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => exportRegistrationsToExcel("csv")}
+                disabled={registrations.length === 0}
+                title="Download plain raw CSV (.csv)"
+                className="px-2.5 py-2 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all text-xs font-mono uppercase tracking-widest font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                CSV
+              </button>
+            </div>
+          )}
+          {activeSubTab === "messages" && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => exportMessagesToExcel("excel")}
+                disabled={messages.length === 0}
+                title="Download formatted executive Excel spreadsheet (.xls) of contact messages"
+                className="px-4 py-2 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500 hover:text-black rounded-full transition-all text-xs font-mono uppercase tracking-wider font-bold flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                <span>Download Excel ({messages.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => exportMessagesToExcel("csv")}
+                disabled={messages.length === 0}
+                title="Download plain raw CSV (.csv)"
+                className="px-2.5 py-2 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all text-xs font-mono uppercase tracking-widest font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                CSV
+              </button>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={fetchData}
+            disabled={loading}
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all text-xs font-mono uppercase tracking-widest font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            <svg className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89H17.5" />
+            </svg>
+            Reload
+          </button>
+        </div>
       </div>
 
       {/* Content Container */}
@@ -1062,6 +1720,39 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               </div>
             </div>
 
+            {/* Export & Records Header Banner */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-black/30 border border-white/5 font-mono">
+              <div className="space-y-0.5">
+                <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <span>📊</span> Attendee Database ({registrations.length} Total Records)
+                </div>
+                <p className="text-[10px] text-white/40">
+                  Exports a beautiful, standalone spreadsheet (.xls). Local edits in Excel will never alter your live database.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => exportRegistrationsToExcel("excel")}
+                  disabled={registrations.length === 0}
+                  className="px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-black border border-emerald-500/40 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                  Styled Excel (.xls)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => exportRegistrationsToExcel("csv")}
+                  disabled={registrations.length === 0}
+                  className="px-3 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  CSV
+                </button>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               {registrations.length === 0 ? (
                 <p className="text-center text-white/40 py-16 font-mono text-sm">No registrations recorded yet.</p>
@@ -1072,9 +1763,10 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                       <th className="pb-4 pr-4">Attendee</th>
                       <th className="pb-4 px-4">Contact Info</th>
                       <th className="pb-4 px-4">Organization / Role</th>
-                      <th className="pb-4 px-4">Status & Method</th>
+                      <th className="pb-4 px-4">Ticket Tier</th>
+                      <th className="pb-4 px-4">Status & Paid</th>
+                      <th className="pb-4 px-4">Coupon Used</th>
                       <th className="pb-4 px-4">Razorpay Payment ID / UTR</th>
-                      <th className="pb-4 px-4">Source & LinkedIn</th>
                       <th className="pb-4 pl-4 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -1082,11 +1774,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                     {registrations.map((reg) => {
                       const isConfirmed = reg.ticket_status === "confirmed" || reg.ticket_status === "approved" || !!reg.razorpay_payment_id || !!reg.payment_id;
                       const paymentId = reg.razorpay_payment_id || reg.payment_id;
+                      const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined ? reg.amount_paid : (isConfirmed ? 300 : 0);
                       return (
                         <tr key={reg.id} className="hover:bg-white/[0.02] transition-colors">
                           <td className="py-4 pr-4">
                             <div className="font-bold text-white uppercase tracking-wider">{reg.full_name}</div>
                             <div className="text-[10px] text-white/30 font-mono mt-0.5">{new Date(reg.created_at).toLocaleDateString()}</div>
+                            <div className="text-[9px] text-white/20 font-mono">ID: TEDX-{reg.id.slice(0, 8).toUpperCase()}</div>
                           </td>
                           <td className="py-4 px-4 space-y-1">
                             <div className="text-white/90 font-mono">{reg.email}</div>
@@ -1096,11 +1790,16 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                             <div className="uppercase text-white/80 font-bold">{reg.organization}</div>
                             <div className="text-[10px] text-white/40">{reg.designation || "Student"}</div>
                           </td>
+                          <td className="py-4 px-4 font-mono">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white font-bold text-[10px] uppercase">
+                              {reg.tier_name || "Early Bird"}
+                            </span>
+                          </td>
                           <td className="py-4 px-4 space-y-1">
                             {isConfirmed ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 font-mono text-[10px] uppercase font-bold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                Confirmed / Paid
+                                Paid (₹{paidVal})
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-mono text-[10px] uppercase font-bold">
@@ -1112,6 +1811,20 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                               <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
                                 Method: <span className="text-white">{reg.payment_method}</span>
                               </div>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 font-mono">
+                            {reg.coupon_code ? (
+                              <div className="space-y-0.5">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-ted-red/15 border border-ted-red/30 text-ted-red font-bold text-[10px]">
+                                  🏷️ {reg.coupon_code}
+                                </span>
+                                {reg.discount_amount ? (
+                                  <div className="text-[9px] text-green-400 font-bold">-₹{reg.discount_amount} Discount</div>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <span className="text-white/20 text-[10px]">None</span>
                             )}
                           </td>
                           <td className="py-4 px-4 font-mono space-y-1">
@@ -1126,18 +1839,6 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                               </div>
                             ) : (
                               <span className="text-white/25 italic">No Payment Record</span>
-                            )}
-                          </td>
-                          <td className="py-4 px-4 space-y-1">
-                            {reg.linkedin ? (
-                              <a href={reg.linkedin} target="_blank" rel="noopener noreferrer" className="text-ted-red hover:underline font-mono block text-xs">
-                                LinkedIn Profile →
-                              </a>
-                            ) : (
-                              <span className="text-white/20 font-mono block text-xs">-</span>
-                            )}
-                            {reg.referral && (
-                              <div className="text-[10px] text-white/40 font-sans">Source: {reg.referral}</div>
                             )}
                           </td>
                           <td className="py-4 pl-4 text-right">
@@ -1157,6 +1858,412 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               )}
             </div>
           </div>
+        ) : activeSubTab === "tickets" ? (
+          !selectedCouponTierId ? (
+            /* TICKET TIERS VIEW */
+            <div className="space-y-8">
+            <div className="border border-white/10 p-6 rounded-2xl bg-black/40 space-y-3 font-mono">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">{"// TICKET CAPACITY & AUTO-PHASE CONTROLS"}</span>
+                  <h3 className="text-lg font-black text-white uppercase tracking-wider">Phased Ticketing & Capacity Management</h3>
+                </div>
+                <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-white/60 text-xs font-bold">
+                  Public Frontend: <strong className="text-green-400 font-black">Quota Counters Hidden</strong>
+                </div>
+              </div>
+              <p className="text-xs text-white/50 leading-relaxed">
+                Tickets advance automatically once filled. Early Bird has no coupon discount. For Phase 1–3, admin-generated promo codes apply the previous tier price (e.g. Phase 1 @ ₹400 drops to ₹300).
+              </p>
+            </div>
+
+            {/* Ticket Tier Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {ticketTiers.map((tier) => {
+                const soldCount = tier.sold_count ?? 0;
+                const isSoldOut = soldCount >= tier.total_capacity;
+                const isLive = tier.status === "active";
+                const percentage = Math.min(100, Math.round((soldCount / tier.total_capacity) * 100));
+
+                return (
+                  <div
+                    key={tier.id}
+                    className={`border rounded-2xl p-5 flex flex-col justify-between space-y-5 transition-all ${
+                      isLive
+                        ? "bg-ted-red/5 border-ted-red/40 shadow-[0_0_25px_rgba(235,0,40,0.15)]"
+                        : "bg-black/40 border-white/10"
+                    }`}
+                  >
+                    <div
+                      className={`space-y-3 ${isLive && tier.allow_coupons ? "cursor-pointer group" : ""}`}
+                      onClick={() => {
+                        if (isLive && tier.allow_coupons) {
+                          setSelectedCouponTierId(tier.id);
+                        }
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">{tier.tag}</span>
+                        {isLive ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/40 text-green-400 text-[10px] font-bold uppercase font-mono group-hover:bg-green-500 group-hover:text-black transition-all">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            Live
+                          </span>
+                        ) : isSoldOut ? (
+                          <span className="px-2 py-0.5 rounded-full bg-ted-red/20 border border-ted-red/40 text-ted-red text-[10px] font-bold uppercase font-mono">
+                            Sold Out
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/40 text-[10px] font-bold uppercase font-mono">
+                            {tier.status.toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <h4 className={`text-lg font-black uppercase tracking-tight transition-colors ${
+                          isLive && tier.allow_coupons ? "text-white group-hover:text-emerald-400" : "text-white"
+                        }`}>
+                          {tier.name}
+                        </h4>
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-2xl font-black text-ted-red">₹{tier.price}</span>
+                          {tier.discount_price && (
+                            <span className="text-xs text-white/40 font-mono">
+                              (w/ Coupon: <strong className="text-white">₹{tier.discount_price}</strong>)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Capacity Bar */}
+                      <div className="space-y-1.5 pt-2 border-t border-white/10 font-mono">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-white/50">Sold Capacity</span>
+                          <span className="font-bold text-white">
+                            {soldCount} / {tier.total_capacity} <span className="text-white/40 text-[10px]">({percentage}%)</span>
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-500 rounded-full ${
+                              isLive ? "bg-ted-red" : isSoldOut ? "bg-red-700" : "bg-white/30"
+                            }`}
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <div className="text-[10px] text-white/30 flex justify-between">
+                          <span>Remaining: <strong className="text-white/70">{Math.max(0, tier.total_capacity - soldCount)}</strong></span>
+                          <span>Coupons: <strong className={tier.allow_coupons ? "text-green-400" : "text-white/30"}>{tier.allow_coupons ? "Allowed" : "Disabled"}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Toggle Button */}
+                    <div className="pt-3 border-t border-white/10">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleTierStatus(tier.id, tier.status);
+                        }}
+                        disabled={tierActionLoading === tier.id}
+                        className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold uppercase font-mono tracking-wider transition-all cursor-pointer disabled:opacity-50 ${
+                          isLive
+                            ? "bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                            : "bg-ted-red hover:bg-white hover:text-ted-red text-white"
+                        }`}
+                      >
+                        {tierActionLoading === tier.id
+                          ? "Updating..."
+                          : isLive
+                          ? "Close Phase / Disable"
+                          : "Set Active / Open Phase"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          /* DEDICATED FULL-WINDOW FOR ACTIVE TIER COUPONS & DISCOUNTS */
+          (() => {
+            const activeCouponTier = ticketTiers.find(
+              (t) => t.id === selectedCouponTierId && t.status === "active" && t.allow_coupons
+            );
+            if (!activeCouponTier) return null;
+
+            const discountPercent = Math.round(
+              (((activeCouponTier.price - (activeCouponTier.discount_price ?? 0)) / activeCouponTier.price) * 100)
+            );
+
+            return (
+              <div className="space-y-6">
+                {/* Top Navigation Bar: Back Button */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCouponTierId(null)}
+                    className="group flex items-center gap-2.5 text-xs font-mono font-bold uppercase tracking-widest text-white/70 hover:text-white transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-4 py-2.5 rounded-xl border border-white/10"
+                  >
+                    <svg
+                      className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>← Back to Ticket Tiers</span>
+                  </button>
+
+                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-bold uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Active Portal: {activeCouponTier.name}</span>
+                  </div>
+                </div>
+
+                {/* Main Generator & Rules Header Window */}
+                <div className="border border-white/10 p-6 md:p-8 rounded-2xl bg-black/40 space-y-6">
+                  <div>
+                    <span className="text-[10px] text-emerald-400 uppercase tracking-widest font-black font-mono block">
+                      {"// " + activeCouponTier.name.toUpperCase() + " 10-MINUTE PROMO PASSCODE ENGINE"}
+                    </span>
+                    <h3 className="text-xl font-black text-white uppercase tracking-wider mt-1">
+                      {activeCouponTier.name} Exclusive Passcode Window
+                    </h3>
+                    <p className="text-xs text-white/50 font-mono mt-1 leading-relaxed">
+                      Generated promo codes expire automatically <strong>10 minutes</strong> after creation. Standard price for {activeCouponTier.name} is <strong className="text-white">₹{activeCouponTier.price}</strong>. Applying a code unlocks the direct rate of <strong className="text-emerald-400 font-bold">₹{activeCouponTier.discount_price}</strong> ({discountPercent}% OFF), and deducts directly from {activeCouponTier.name}&apos;s capacity.
+                    </p>
+                  </div>
+
+                  {couponSuccessNotice && (
+                    <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 font-mono text-xs font-bold flex items-center justify-between">
+                      <span>{couponSuccessNotice}</span>
+                      <button
+                        type="button"
+                        onClick={() => setCouponSuccessNotice(null)}
+                        className="text-white/40 hover:text-white cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Generator Form */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end font-mono pt-2 border-t border-white/10">
+                    <div className="md:col-span-1">
+                      <label className="text-[10px] text-white/40 uppercase tracking-widest block mb-2 font-bold">
+                        Custom Passcode (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={couponCodeInput}
+                        onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                        placeholder="Leave empty or enter code..."
+                        className="w-full bg-white/5 border border-white/10 p-3.5 rounded-xl text-white text-xs font-bold uppercase tracking-wider focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 flex flex-col sm:flex-row gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleCreateCoupon(true)}
+                        disabled={isGeneratingCoupon}
+                        className="flex-1 py-3.5 px-6 bg-emerald-500 hover:bg-white hover:text-emerald-700 text-black text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-50 shadow-[0_0_20px_rgba(16,185,129,0.25)] flex items-center justify-center gap-2"
+                      >
+                        <span>⚡</span>
+                        <span>{isGeneratingCoupon ? "Generating..." : `Auto-Generate 10-Min Passcode for ${activeCouponTier.name}`}</span>
+                      </button>
+                      {couponCodeInput.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => handleCreateCoupon(false)}
+                          disabled={isGeneratingCoupon}
+                          className="py-3.5 px-6 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                        >
+                          Create Custom Code
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* UNUSED / ACTIVE COUPONS TABLE */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between font-mono">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider">Active & Unused Promo Codes</h4>
+                    </div>
+                    <span className="text-xs text-white/40">
+                      {couponsList.filter((c) => !c.is_used).length} Available
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs font-mono">
+                      <thead>
+                        <tr className="border-b border-white/10 text-white/40 uppercase tracking-wider">
+                          <th className="pb-3 pr-4">Passcode</th>
+                          <th className="pb-3 px-4">Rate Unlocked</th>
+                          <th className="pb-3 px-4">Created Time</th>
+                          <th className="pb-3 px-4">Live Expiry Countdown</th>
+                          <th className="pb-3 px-4">Status</th>
+                          <th className="pb-3 pl-4 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {couponsList.filter((c) => !c.is_used).length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="py-8 text-center text-white/30 italic">
+                              No active unused promo codes. Click &quot;Auto-Generate 10-Min Passcode&quot; above to create one.
+                            </td>
+                          </tr>
+                        ) : (
+                          couponsList
+                            .filter((c) => !c.is_used)
+                            .map((cpn) => {
+                              const expiryMs = new Date(cpn.expires_at).getTime();
+                              const diffSec = Math.max(0, Math.floor((expiryMs - nowTimestamp) / 1000));
+                              const isExpired = diffSec <= 0;
+                              const mins = Math.floor(diffSec / 60);
+                              const secs = diffSec % 60;
+                              const formattedRemaining = `${String(mins).padStart(2, "0")}m ${String(secs).padStart(2, "0")}s`;
+
+                              return (
+                                <tr key={cpn.id} className="hover:bg-white/[0.02] transition-colors">
+                                  <td className="py-3.5 pr-4">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-white text-sm tracking-wider bg-white/5 border border-white/10 px-3 py-1 rounded-lg">
+                                        {cpn.code}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(cpn.code);
+                                          alert(`Copied "${cpn.code}" to clipboard!`);
+                                        }}
+                                        className="p-1 text-white/40 hover:text-white cursor-pointer text-xs"
+                                        title="Copy Code"
+                                      >
+                                        📋
+                                      </button>
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-4 font-bold text-emerald-400">
+                                    ₹{activeCouponTier.discount_price} ({activeCouponTier.name})
+                                  </td>
+                                  <td className="py-3.5 px-4 text-white/50 text-[11px]">
+                                    {new Date(cpn.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    {!isExpired ? (
+                                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-[11px]">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        {formattedRemaining} remaining
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-[10px] uppercase">
+                                        Expired (10m passed)
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    {!isExpired ? (
+                                      <span className="text-white/80 font-bold">Unused</span>
+                                    ) : (
+                                      <span className="text-white/30">Void</span>
+                                    )}
+                                  </td>
+                                  <td className="py-3.5 pl-4 text-right">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteCoupon(cpn.id)}
+                                      className="px-3 py-1 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white text-white/40 rounded-lg text-xs transition-all cursor-pointer"
+                                    >
+                                      Revoke
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* REDEEMED / USED COUPONS TABLE */}
+                <div className="space-y-4 pt-6 border-t border-white/10">
+                  <div className="flex items-center justify-between font-mono">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider">Redeemed & Used Promo Codes</h4>
+                    </div>
+                    <span className="text-xs text-white/40">
+                      {couponsList.filter((c) => c.is_used).length} Redeemed
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs font-mono">
+                      <thead>
+                        <tr className="border-b border-white/10 text-white/40 uppercase tracking-wider">
+                          <th className="pb-3 pr-4">Code</th>
+                          <th className="pb-3 px-4">Attendee Details</th>
+                          <th className="pb-3 px-4">Contact Info</th>
+                          <th className="pb-3 px-4">Institution</th>
+                          <th className="pb-3 px-4">Amount Paid</th>
+                          <th className="pb-3 pl-4 text-right">Redeemed At</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {couponsList.filter((c) => c.is_used).length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="py-8 text-center text-white/30 italic">
+                              No coupons redeemed yet. When attendees apply a coupon during registration, their record will appear here.
+                            </td>
+                          </tr>
+                        ) : (
+                          couponsList
+                            .filter((c) => c.is_used)
+                            .map((cpn) => (
+                              <tr key={cpn.id} className="hover:bg-white/[0.02] transition-colors">
+                                <td className="py-3.5 pr-4">
+                                  <span className="font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+                                    {cpn.code}
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 font-sans">
+                                  <div className="font-bold text-white uppercase">{cpn.used_by_name || "N/A"}</div>
+                                  <div className="text-[10px] text-white/40 font-mono">{cpn.used_by_email || ""}</div>
+                                </td>
+                                <td className="py-3.5 px-4 font-mono text-emerald-400">
+                                  {cpn.used_by_phone || "N/A"}
+                                </td>
+                                <td className="py-3.5 px-4 text-white/70 uppercase">
+                                  {cpn.used_by_org || "-"}
+                                </td>
+                                <td className="py-3.5 px-4 font-bold text-emerald-400">
+                                  ₹{activeCouponTier.discount_price} ({activeCouponTier.name})
+                                </td>
+                                <td className="py-3.5 pl-4 text-right text-white/40 text-[11px]">
+                                  {cpn.used_at ? new Date(cpn.used_at).toLocaleString("en-IN") : "N/A"}
+                                </td>
+                              </tr>
+                            ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            );
+          })()
+        )
         ) : activeSubTab === "messages" ? (
           /* MESSAGES VIEW */
           <div className="space-y-6">
