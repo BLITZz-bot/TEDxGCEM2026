@@ -18,74 +18,7 @@ export interface Speaker {
 const SPEAKERS_FILE_PATH = path.join(process.cwd(), "src", "lib", "speakers.json");
 
 // Default/Seed Speakers
-const DEFAULT_SPEAKERS: Speaker[] = [
-  {
-    id: "1",
-    name: "Dr. Sarah Chen",
-    designation: "Neuroscientist & Author",
-    image_url: "",
-    email: "sarah.chen@tedxgcem.com",
-    linkedin: "https://linkedin.com",
-    instagram: "https://instagram.com",
-    bio: "Sarah is a research fellow at the Institute for Human-Centered AI, studying algorithmic accountability and ethics in large-scale generative models.",
-    details: "Ph.D. in Computer Science from Stanford. Former lead ethical researcher at DeepMind."
-  },
-  {
-    id: "2",
-    name: "Marcus Thorne",
-    designation: "Founder & CEO, Future Labs",
-    image_url: "",
-    email: "marcus.thorne@tedxgcem.com",
-    linkedin: "https://linkedin.com",
-    instagram: "https://instagram.com",
-    bio: "An environmental architect specializing in integrating bio-diverse ecosystems into skyscrapers and urban infrastructure.",
-    details: "Founder of GreenGrid Studios. TED Senior Fellow and designer of Milan's Vertical Forests."
-  },
-  {
-    id: "3",
-    name: "Aisha Roberts",
-    designation: "Digital Media Theorist",
-    image_url: "",
-    email: "aisha.roberts@tedxgcem.com",
-    linkedin: "https://linkedin.com",
-    instagram: "https://instagram.com",
-    bio: "A media theorist exploring the application of quantum physics concepts to interactive narratives and digital media.",
-    details: "Professor of Digital Media at MIT. Author of 'Schrödinger's Screen'."
-  },
-  {
-    id: "4",
-    name: "Julian Voss",
-    designation: "Sound Designer & Acoustician",
-    image_url: "",
-    email: "julian.voss@tedxgcem.com",
-    linkedin: "https://linkedin.com",
-    instagram: "https://instagram.com",
-    bio: "A sound designer and acoustician researching the neurological effects of absolute silence in high-noise environments.",
-    details: "Acoustic consultant for NASA's quiet spacecraft initiative. Winner of multiple sound engineering awards."
-  },
-  {
-    id: "5",
-    name: "Elena Rodriguez",
-    designation: "Bionic Architecture Pioneer",
-    image_url: "",
-    email: "elena.rodriguez@tedxgcem.com",
-    linkedin: "https://linkedin.com",
-    instagram: "https://instagram.com",
-    bio: "A pioneer in bio-inspired building design, building self-heating and self-cooling living structures using synthetic materials.",
-    details: "Dean of Architecture at Barcelona Tech. Pioneer in biological-material printing."
-  },
-  {
-    id: "6",
-    name: "Kenji Tanaka",
-    designation: "Mathematician & Author",
-    image_url: "",
-    email: "kenji.tanaka@tedxgcem.com",
-    linkedin: "https://linkedin.com",
-    instagram: "https://instagram.com",
-    bio: "A mathematician and author discovering elegance and simple geometry in chaotic topological networks.",
-    details: "Fields Medalist. Research focuses on topological data analysis in social network graphs."
-  }
-];
+const DEFAULT_SPEAKERS: Speaker[] = [];
 
 export async function getSpeakers(): Promise<Speaker[]> {
   // 1. Try from Supabase
