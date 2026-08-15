@@ -6,14 +6,8 @@ import {
   AnimatePresence 
 } from "framer-motion";
 import { 
-  Sparkles, 
-  Globe, 
   Mail, 
-  X, 
-  Cpu, 
-  Compass, 
-  Zap, 
-  Activity
+  X 
 } from "lucide-react";
 import slImg from "../../../public/SLIMG.png";
 
@@ -58,69 +52,6 @@ interface Particle {
   radius: number;
   color: string;
 }
-
-const DEFAULT_SPEAKERS = [
-  { 
-    id: "1", 
-    name: "Dr. Sarah Chen", 
-    designation: "Neuroscientist & Author", 
-    size: "large",
-    bio: "Sarah is a research fellow at the Institute for Human-Centered AI, studying algorithmic accountability and ethics in large-scale generative models.",
-    details: "Ph.D. in Computer Science from Stanford. Former lead ethical researcher at DeepMind.",
-    icon: Cpu,
-    photo: slImg.src
-  },
-  { 
-    id: "2", 
-    name: "Marcus Thorne", 
-    designation: "Founder & CEO, Future Labs", 
-    size: "small",
-    bio: "An environmental architect specializing in integrating bio-diverse ecosystems into skyscrapers and urban infrastructure.",
-    details: "Founder of GreenGrid Studios. TED Senior Fellow and designer of Milan's Vertical Forests.",
-    icon: Globe,
-    photo: slImg.src
-  },
-  { 
-    id: "3", 
-    name: "Aisha Roberts", 
-    designation: "Digital Media Theorist", 
-    size: "medium",
-    bio: "A media theorist exploring the application of quantum physics concepts to interactive narratives and digital media.",
-    details: "Professor of Digital Media at MIT. Author of 'Schrödinger's Screen'.",
-    icon: Sparkles,
-    photo: slImg.src
-  },
-  { 
-    id: "4", 
-    name: "Julian Voss", 
-    designation: "Sound Designer & Acoustician", 
-    size: "small",
-    bio: "A sound designer and acoustician researching the neurological effects of absolute silence in high-noise environments.",
-    details: "Acoustic consultant for NASA's quiet spacecraft initiative. Winner of multiple sound engineering awards.",
-    icon: Compass,
-    photo: slImg.src
-  },
-  { 
-    id: "5", 
-    name: "Elena Rodriguez", 
-    designation: "Bionic Architecture Pioneer", 
-    size: "medium",
-    bio: "A pioneer in bio-inspired building design, building self-heating and self-cooling living structures using synthetic materials.",
-    details: "Dean of Architecture at Barcelona Tech. Pioneer in biological-material printing.",
-    icon: Zap,
-    photo: slImg.src
-  },
-  { 
-    id: "6", 
-    name: "Kenji Tanaka", 
-    designation: "Mathematician & Author", 
-    size: "small",
-    bio: "A mathematician and author discovering elegance and simple geometry in chaotic topological networks.",
-    details: "Fields Medalist. Research focuses on topological data analysis in social network graphs.",
-    icon: Activity,
-    photo: slImg.src
-  },
-];
 
 // --- MANUAL SPEAKER BOX ADJUSTMENTS ---
 // Adjust the width, height, and photo aspect ratio of the speaker cards here.
