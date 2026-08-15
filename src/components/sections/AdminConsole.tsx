@@ -76,16 +76,30 @@ function getClockServerSnapshot() {
   return 0;
 }
 
+// In-Memory Stale-While-Revalidate Admin Data Cache
+interface AdminDataCache {
+  registrations: AdminRegistration[];
+  messages: AdminMessage[];
+  teamMembers: TeamMember[];
+  speakersList: Speaker[];
+  partnersList: Partner[];
+  ticketTiers: TicketTier[];
+  couponsList: PromoCoupon[];
+  lastFetchedAt: number;
+}
+
+let globalAdminCache: AdminDataCache | null = null;
+
 export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsoleProps) {
   const { isAdmin, loading: authLoading } = useAuth();
-  const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
-  const [messages, setMessages] = useState<AdminMessage[]>([]);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [speakersList, setSpeakersList] = useState<Speaker[]>([]);
-  const [partnersList, setPartnersList] = useState<Partner[]>([]);
-  const [ticketTiers, setTicketTiers] = useState<TicketTier[]>([]);
-  const [couponsList, setCouponsList] = useState<PromoCoupon[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [registrations, setRegistrations] = useState<AdminRegistration[]>(() => globalAdminCache?.registrations || []);
+  const [messages, setMessages] = useState<AdminMessage[]>(() => globalAdminCache?.messages || []);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => globalAdminCache?.teamMembers || []);
+  const [speakersList, setSpeakersList] = useState<Speaker[]>(() => globalAdminCache?.speakersList || []);
+  const [partnersList, setPartnersList] = useState<Partner[]>(() => globalAdminCache?.partnersList || []);
+  const [ticketTiers, setTicketTiers] = useState<TicketTier[]>(() => globalAdminCache?.ticketTiers || []);
+  const [couponsList, setCouponsList] = useState<PromoCoupon[]>(() => globalAdminCache?.couponsList || []);
+  const [loading, setLoading] = useState(() => !globalAdminCache);
   const [activeSubTab, setActiveSubTab] = useState<"registrations" | "tickets" | "coupons" | "messages" | "settings" | "team" | "speakers" | "partners" | "scanner">("registrations");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -231,65 +245,103 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     }
   }, [settings]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (isSilent = false) => {
+    if (!isSilent && !globalAdminCache) {
+      setLoading(true);
+    }
     setErrorMsg("");
     try {
-      // Fetch registrations
-      const regRes = await fetch("/api/admin/registrations");
-      const regData = await regRes.json();
-      if (!regRes.ok) throw new Error(regData.error || "Failed to load registrations.");
-      setRegistrations(regData.registrations || []);
+      const [regRes, msgRes, teamRes, speakersRes, partnersRes, tiersRes, couponsRes] = await Promise.allSettled([
+        fetch("/api/admin/registrations"),
+        fetch("/api/admin/messages"),
+        fetch("/api/team"),
+        fetch("/api/speakers"),
+        fetch("/api/partners"),
+        fetch("/api/admin/tickets"),
+        fetch("/api/admin/coupons"),
+      ]);
 
-      // Fetch messages
-      const msgRes = await fetch("/api/admin/messages");
-      const msgData = await msgRes.json();
-      if (!msgRes.ok) throw new Error(msgData.error || "Failed to load inbox messages.");
-      setMessages(msgData.messages || []);
+      let newRegs = globalAdminCache?.registrations || [];
+      let newMsgs = globalAdminCache?.messages || [];
+      let newTeam = globalAdminCache?.teamMembers || [];
+      let newSpeakers = globalAdminCache?.speakersList || [];
+      let newPartners = globalAdminCache?.partnersList || [];
+      let newTiers = globalAdminCache?.ticketTiers || [];
+      let newCoupons = globalAdminCache?.couponsList || [];
 
-      // Fetch team members
-      const teamRes = await fetch("/api/team");
-      const teamData = await teamRes.json();
-      if (!teamRes.ok) throw new Error(teamData.error || "Failed to load team members.");
-      setTeamMembers(teamData.team || []);
-
-      // Fetch speakers
-      const speakersRes = await fetch("/api/speakers");
-      const speakersData = await speakersRes.json();
-      if (!speakersRes.ok) throw new Error(speakersData.error || "Failed to load speakers.");
-      setSpeakersList(speakersData.speakers || []);
-
-      // Fetch partners
-      const partnersRes = await fetch("/api/partners");
-      const partnersData = await partnersRes.json();
-      if (!partnersRes.ok) throw new Error(partnersData.error || "Failed to load partners.");
-      setPartnersList(partnersData.partners || []);
-
-      // Fetch Ticket Tiers
-      try {
-        const tiersRes = await fetch("/api/admin/tickets");
-        const tiersData = await tiersRes.json();
-        if (tiersRes.ok && tiersData.tiers) {
-          setTicketTiers(tiersData.tiers);
+      if (regRes.status === "fulfilled" && regRes.value.ok) {
+        const d = await regRes.value.json();
+        if (d.registrations) {
+          newRegs = d.registrations;
+          setRegistrations(d.registrations);
         }
-      } catch (tierErr) {
-        console.warn("Could not fetch ticket tiers:", tierErr);
       }
 
-      // Fetch Coupons
-      try {
-        const couponsRes = await fetch("/api/admin/coupons");
-        const couponsData = await couponsRes.json();
-        if (couponsRes.ok && couponsData.coupons) {
-          setCouponsList(couponsData.coupons);
+      if (msgRes.status === "fulfilled" && msgRes.value.ok) {
+        const d = await msgRes.value.json();
+        if (d.messages) {
+          newMsgs = d.messages;
+          setMessages(d.messages);
         }
-      } catch (cpnErr) {
-        console.warn("Could not fetch coupons:", cpnErr);
       }
+
+      if (teamRes.status === "fulfilled" && teamRes.value.ok) {
+        const d = await teamRes.value.json();
+        if (d.team) {
+          newTeam = d.team;
+          setTeamMembers(d.team);
+        }
+      }
+
+      if (speakersRes.status === "fulfilled" && speakersRes.value.ok) {
+        const d = await speakersRes.value.json();
+        if (d.speakers) {
+          newSpeakers = d.speakers;
+          setSpeakersList(d.speakers);
+        }
+      }
+
+      if (partnersRes.status === "fulfilled" && partnersRes.value.ok) {
+        const d = await partnersRes.value.json();
+        if (d.partners) {
+          newPartners = d.partners;
+          setPartnersList(d.partners);
+        }
+      }
+
+      if (tiersRes.status === "fulfilled" && tiersRes.value.ok) {
+        const d = await tiersRes.value.json();
+        if (d.tiers) {
+          newTiers = d.tiers;
+          setTicketTiers(d.tiers);
+        }
+      }
+
+      if (couponsRes.status === "fulfilled" && couponsRes.value.ok) {
+        const d = await couponsRes.value.json();
+        if (d.coupons) {
+          newCoupons = d.coupons;
+          setCouponsList(d.coupons);
+        }
+      }
+
+      // Update in-memory cache for instant subsequent tab switches
+      globalAdminCache = {
+        registrations: newRegs,
+        messages: newMsgs,
+        teamMembers: newTeam,
+        speakersList: newSpeakers,
+        partnersList: newPartners,
+        ticketTiers: newTiers,
+        couponsList: newCoupons,
+        lastFetchedAt: Date.now(),
+      };
     } catch (err: unknown) {
       console.error("Error loading admin records:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to load database records. Ensure database setup is correct.";
-      setErrorMsg(errorMessage);
+      if (!isSilent) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to load database records. Ensure database setup is correct.";
+        setErrorMsg(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -956,10 +1008,20 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
   useEffect(() => {
     if (isAdmin) {
+      const isSilent = !!globalAdminCache;
       const timer = setTimeout(() => {
-        fetchData();
+        fetchData(isSilent);
       }, 0);
-      return () => clearTimeout(timer);
+
+      // Auto-revalidate every 30 seconds silently while open
+      const interval = setInterval(() => {
+        fetchData(true);
+      }, 30000);
+
+      return () => {
+        clearTimeout(timer);
+        clearInterval(interval);
+      };
     }
   }, [isAdmin]);
 
@@ -1642,7 +1704,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           )}
           <button
             type="button"
-            onClick={fetchData}
+            onClick={() => fetchData(false)}
             disabled={loading}
             className="px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all text-xs font-mono uppercase tracking-widest font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
