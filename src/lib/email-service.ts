@@ -261,7 +261,7 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
   }
 
   const resendApiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "tickets@tedxgcem.in";
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "team@tedxgcem.in";
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
 
