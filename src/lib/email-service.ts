@@ -196,7 +196,7 @@ function generateTicketEmailHtml(params: {
                 <tr>
                   <td align="center">
                     <a href="${baseUrl}" target="_blank" style="display: inline-block; background-color: #EB0028; color: #ffffff; text-decoration: none; padding: 16px 36px; border-radius: 14px; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 25px rgba(235,0,40,0.45);">
-                      Download Official Pass Badge (.PNG) →
+                      Download Official Delegate Pass →
                     </a>
                   </td>
                 </tr>
@@ -292,7 +292,7 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
       const resend = new Resend(resendApiKey);
 
       // Send master confirmation to the buyer
-      await resend.emails.send({
+      const sendResult = await resend.emails.send({
         from: `TEDxGCEM <${fromEmail}>`,
         to: buyerEmail,
         replyTo: "tedxgcem@gmail.com",
@@ -300,7 +300,11 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
         html: buyerHtml,
       });
 
-      console.log(`[Email Service] Confirmation email sent via Resend to buyer: ${buyerEmail}`);
+      if (sendResult.error) {
+        console.error(`[Email Service] Resend error sending to ${buyerEmail}:`, sendResult.error);
+      } else {
+        console.log(`[Email Service] Confirmation email sent via Resend to buyer: ${buyerEmail}, ID:`, sendResult.data?.id);
+      }
 
       // If multi-ticket order, also send individual ticket emails to other delegates if their emails are distinct
       if (attendees.length > 1) {

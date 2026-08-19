@@ -14,26 +14,32 @@ export function useAuth() {
   const [isAdmin, setIsAdmin] = useState(globalIsAdmin);
 
   const fetchSession = async () => {
+    if (isFetching) return;
+    isFetching = true;
     try {
       const res = await fetch("/api/auth/user");
+      if (!res.ok) {
+        throw new Error(`Session check failed with status: ${res.status}`);
+      }
       const data = await res.json();
-      const currentUser = data.user;
+      const currentUser = data?.user || null;
       globalUser = currentUser;
 
       if (currentUser && currentUser.email) {
         try {
           const resAdmin = await fetch("/api/auth/admin-check");
-          const dataAdmin = await resAdmin.json();
-          globalIsAdmin = !!dataAdmin.isAdmin;
-        } catch (err) {
-          console.error("Failed to check admin status server-side:", err);
+          if (resAdmin.ok) {
+            const dataAdmin = await resAdmin.json();
+            globalIsAdmin = !!dataAdmin.isAdmin;
+          }
+        } catch {
           globalIsAdmin = false;
         }
       } else {
         globalIsAdmin = false;
       }
-    } catch (err) {
-      console.error("Error fetching user session server-side:", err);
+    } catch {
+      // Benign network check when server is restarting or offline
       globalUser = null;
       globalIsAdmin = false;
     } finally {
@@ -53,7 +59,6 @@ export function useAuth() {
 
     // Only run fetchSession once on the first instance mount
     if (globalLoading && !isFetching) {
-      isFetching = true;
       fetchSession();
     }
 
@@ -72,9 +77,12 @@ export function useAuth() {
     const events = ["mousedown", "keydown", "scroll", "touchstart"];
     events.forEach((e) => window.addEventListener(e, updateCookie, { passive: true }));
 
-    // Listen for tab focus/visibility change to re-verify session status immediately
+    // Listen for tab focus/visibility change with a 15-second throttle
+    let lastFocusFetch = 0;
     const handleFocus = () => {
-      if (document.visibilityState === "visible") {
+      const now = Date.now();
+      if (document.visibilityState === "visible" && now - lastFocusFetch > 15000) {
+        lastFocusFetch = now;
         fetchSession();
       }
     };

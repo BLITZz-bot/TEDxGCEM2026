@@ -66,10 +66,9 @@ export async function POST(request: Request) {
         const { Resend } = await import("resend");
         const resendClient = new Resend(resendApiKey);
         
-        // Note: Resend's free tier requires sending "from" a verified domain or "onboarding@resend.dev"
-        const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+        const fromEmail = process.env.RESEND_FROM_EMAIL || "team@tedxgcem.in";
         
-        await resendClient.emails.send({
+        const sendResult = await resendClient.emails.send({
           from: `TEDxGCEM Inbox <${fromEmail}>`,
           to: adminEmail,
           replyTo: user.email,
@@ -77,6 +76,12 @@ export async function POST(request: Request) {
           text: mailText,
           html: mailHtml,
         });
+
+        if (sendResult.error) {
+          console.error("[Contact API] Resend transmission error:", sendResult.error);
+        } else {
+          console.log("[Contact API] Resend email sent successfully, ID:", sendResult.data?.id);
+        }
       } catch (resendErr) {
         console.warn("Resend email transmission failed, but record was saved to database:", resendErr);
       }
