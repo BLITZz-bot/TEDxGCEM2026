@@ -75,14 +75,30 @@ This document details all technical implementations, architectural enhancements,
 
 ---
 
+### 6. Automated Confirmation Email Engine (`tedxgcem.in`)
+* **Responsive HTML Email Template**:
+  * Designed in TEDx dark theme (`#09090b` with `#EB0028` red branding).
+  * Includes attendee name, primary ticket pass ID (`TEDX-XXXXXXXX`), payment amount, payment reference, venue details, check-in instructions, and direct link button to download badge.
+* **Dual-Delivery Architecture ([`src/lib/email-service.ts`](file:///d:/Projects%20Working%20in%20Progress/TEDxGCEM/src/lib/email-service.ts))**:
+  * **Primary Provider**: **Resend** with custom domain `tedxgcem.in` (sending from `tickets@tedxgcem.in`).
+  * **Fallback Provider**: **Nodemailer SMTP** (sending from `tedxgcem@gmail.com`).
+* **Multi-Delegate Routing**:
+  * The purchaser/buyer receives an overall booking receipt with all registered delegates and ticket codes.
+  * Distinct delegate emails (`att.email`) automatically receive their own personalized individual pass confirmation emails.
+* **Trigger Hook**:
+  * Triggered automatically upon HMAC-SHA256 signature verification in [`src/app/api/payment/verify/route.ts`](file:///d:/Projects%20Working%20in%20Progress/TEDxGCEM/src/app/api/payment/verify/route.ts).
+
+---
+
 ## 🛠️ File Modification Summary
 
 | File Path | Role & Changes |
 |---|---|
 | [`supabase_schema.sql`](file:///d:/Projects%20Working%20in%20Progress/TEDxGCEM/supabase_schema.sql) | Master idempotent SQL schema with multi-ticket columns, index migrations, and updated RLS policies. |
+| [`src/lib/email-service.ts`](file:///d:/Projects%20Working%20in%20Progress/TEDxGCEM/src/lib/email-service.ts) | Automated confirmation email delivery engine with responsive TEDx HTML template. |
 | [`src/lib/ticket-service.ts`](file:///d:/Projects%20Working%20in%20Progress/TEDxGCEM/src/lib/ticket-service.ts) | Real-time tier capacity calculation summing `ticket_count` per booking. |
 | [`src/app/api/payment/create-order/route.ts`](file:///d:/Projects%20Working%20in%20Progress/TEDxGCEM/src/app/api/payment/create-order/route.ts) | Order creation with quantity support, capacity verification, and strict single-ticket coupon validation. |
-| [`src/app/api/payment/verify/route.ts`](file:///d:/Projects%20Working%20in%20Progress/TEDxGCEM/src/app/api/payment/verify/route.ts) | Cryptographic signature validation and individual attendee pass insertion into Supabase. |
+| [`src/app/api/payment/verify/route.ts`](file:///d:/Projects%20Working%20in%20Progress/TEDxGCEM/src/app/api/payment/verify/route.ts) | Cryptographic signature validation, registration insertion, and automated email trigger. |
 | [`src/app/api/pass/route.ts`](file:///d:/Projects%20Working%20in%20Progress/TEDxGCEM/src/app/api/pass/route.ts) | Pass retrieval API querying tickets by attendee `email` or `buyer_email`. |
 | [`src/app/api/verify-pass/route.ts`](file:///d:/Projects%20Working%20in%20Progress/TEDxGCEM/src/app/api/verify-pass/route.ts) | Gate QR check-in verification rendering individual attendee credentials. |
 | [`src/components/sections/RegisterNow.tsx`](file:///d:/Projects%20Working%20in%20Progress/TEDxGCEM/src/components/sections/RegisterNow.tsx) | Multi-seat UI, delegate tabs, compulsory field validation, and referral auto-sync. |
@@ -95,4 +111,4 @@ This document details all technical implementations, architectural enhancements,
 
 * **TypeScript Compilation**: `npx tsc --noEmit` &rarr; **0 errors**.
 * **Next.js Production Build**: `npm run build` &rarr; **Compiled successfully in 5.7s**.
-* **Version Control**: Committed (`4b79f03`) and pushed directly to `origin/main` on GitHub repository [`BLITZz-bot/TEDxGCEM2026`](https://github.com/BLITZz-bot/TEDxGCEM2026).
+* **Version Control**: Committed and pushed directly to `origin/main` on GitHub repository [`BLITZz-bot/TEDxGCEM2026`](https://github.com/BLITZz-bot/TEDxGCEM2026).

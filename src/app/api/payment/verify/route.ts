@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { redeemCoupon } from "@/lib/coupon-service";
 import { getAllTicketTiers } from "@/lib/ticket-service";
+import { sendRegistrationConfirmationEmail } from "@/lib/email-service";
 
 export const dynamic = "force-dynamic";
 
@@ -226,6 +227,30 @@ export async function POST(request: Request) {
       } catch (cpnErr) {
         console.warn("Coupon redemption recording error:", cpnErr);
       }
+    }
+
+    // 10. Trigger automated email delivery to buyer and all delegates
+    try {
+      const emailAttendees = attendeeList.map((att, idx) => ({
+        id: (insertedData?.[idx] as { id: string } | undefined)?.id || "TEDX-PASS",
+        fullName: att.fullName,
+        email: att.email || user.email || "attendee@tedxgcem.in",
+        phone: att.phone,
+        organization: att.organization,
+        designation: att.designation || "Student",
+      }));
+
+      await sendRegistrationConfirmationEmail({
+        buyerEmail: user.email,
+        buyerName: attendeeList[0]?.fullName || user.email.split("@")[0],
+        attendees: emailAttendees,
+        tierName,
+        amountPaid,
+        razorpayPaymentId: razorpay_payment_id,
+        razorpayOrderId: razorpay_order_id,
+      });
+    } catch (mailErr) {
+      console.warn("[Verify] Automated confirmation email error:", mailErr);
     }
 
     // Trigger tier status check (updates tiers dynamically if sold out)
