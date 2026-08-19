@@ -107,10 +107,10 @@ export async function getTierSoldCounts(): Promise<Record<string, number>> {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("registrations")
-      .select("id, tier_id, ticket_status, razorpay_payment_id, payment_id");
+      .select("id, tier_id, ticket_status, razorpay_payment_id, payment_id, ticket_count");
 
     if (!error && data) {
-      data.forEach((reg: { tier_id?: string; ticket_status?: string; razorpay_payment_id?: string; payment_id?: string }) => {
+      data.forEach((reg: { tier_id?: string; ticket_status?: string; razorpay_payment_id?: string; payment_id?: string; ticket_count?: number }) => {
         const isPaid =
           reg.ticket_status === "confirmed" ||
           reg.ticket_status === "approved" ||
@@ -119,10 +119,11 @@ export async function getTierSoldCounts(): Promise<Record<string, number>> {
 
         if (isPaid) {
           const tierKey = reg.tier_id || "early_bird";
+          const count = Number(reg.ticket_count) || 1;
           if (counts[tierKey] !== undefined) {
-            counts[tierKey] += 1;
+            counts[tierKey] += count;
           } else {
-            counts.early_bird += 1;
+            counts.early_bird += count;
           }
         }
       });

@@ -8,10 +8,10 @@
     "total_capacity": 20,
     "allow_coupons": false,
     "discount_price": null,
-    "status": "active",
+    "status": "upcoming",
     "sort_order": 1,
     "sold_count": 0,
-    "manual_override": true
+    "manual_override": false
   },
   {
     "id": "phase_1",
@@ -22,10 +22,10 @@
     "total_capacity": 35,
     "allow_coupons": true,
     "discount_price": 300,
-    "status": "upcoming",
+    "status": "active",
     "sort_order": 2,
     "sold_count": 0,
-    "manual_override": false
+    "manual_override": true
   },
   {
     "id": "phase_2",

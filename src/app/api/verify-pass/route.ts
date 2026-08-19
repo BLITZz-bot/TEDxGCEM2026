@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     // Extract short ID part (e.g. TEDX-27197CEA -> 27197cea)
     const rawId = id ? id.replace("TEDX-", "").toLowerCase() : "";
 
-    let query = supabase.from("registrations").select("full_name, organization, designation, ticket_status, payment_id, created_at");
+    let query = supabase.from("registrations").select("id, full_name, email, buyer_email, organization, designation, ticket_status, payment_id, created_at");
     
     if (email) {
       query = query.eq("email", email);

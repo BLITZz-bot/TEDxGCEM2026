@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS public.registrations (
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     full_name TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL,
+    buyer_email TEXT,
     phone TEXT NOT NULL,
     organization TEXT NOT NULL,
     designation TEXT DEFAULT 'Student',
@@ -28,11 +29,18 @@ CREATE TABLE IF NOT EXISTS public.registrations (
     tier_name TEXT DEFAULT 'Early Bird',
     coupon_code TEXT,
     discount_amount NUMERIC DEFAULT 0,
-    amount_paid NUMERIC DEFAULT 300
+    amount_paid NUMERIC DEFAULT 300,
+    ticket_count INTEGER DEFAULT 1 NOT NULL
 );
 
--- Ensure all columns exist if table was created previously
+-- Ensure all columns exist and unique email constraint is dropped if table was created previously
+ALTER TABLE public.registrations DROP CONSTRAINT IF EXISTS registrations_email_key;
+ALTER TABLE public.registrations DROP CONSTRAINT IF EXISTS registrations_email_unique;
+DROP INDEX IF EXISTS registrations_email_key;
+DROP INDEX IF EXISTS registrations_email_idx;
+
 ALTER TABLE public.registrations
+ADD COLUMN IF NOT EXISTS buyer_email TEXT,
 ADD COLUMN IF NOT EXISTS designation TEXT DEFAULT 'Student',
 ADD COLUMN IF NOT EXISTS referral TEXT,
 ADD COLUMN IF NOT EXISTS payment_id TEXT,
@@ -45,7 +53,11 @@ ADD COLUMN IF NOT EXISTS tier_id TEXT DEFAULT 'early_bird',
 ADD COLUMN IF NOT EXISTS tier_name TEXT DEFAULT 'Early Bird',
 ADD COLUMN IF NOT EXISTS coupon_code TEXT,
 ADD COLUMN IF NOT EXISTS discount_amount NUMERIC DEFAULT 0,
-ADD COLUMN IF NOT EXISTS amount_paid NUMERIC DEFAULT 300;
+ADD COLUMN IF NOT EXISTS amount_paid NUMERIC DEFAULT 300,
+ADD COLUMN IF NOT EXISTS ticket_count INTEGER DEFAULT 1 NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_registrations_email ON public.registrations(email);
+CREATE INDEX IF NOT EXISTS idx_registrations_buyer_email ON public.registrations(buyer_email);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 2. MESSAGES TABLE
@@ -221,7 +233,7 @@ ON public.registrations FOR INSERT TO authenticated WITH CHECK (true);
 DROP POLICY IF EXISTS "Allow users to view their own registration" ON public.registrations;
 CREATE POLICY "Allow users to view their own registration" 
 ON public.registrations FOR SELECT TO authenticated 
-USING (auth.uid() = user_id OR auth.jwt() ->> 'email' = email);
+USING (auth.uid() = user_id OR auth.jwt() ->> 'email' = email OR auth.jwt() ->> 'email' = buyer_email);
 
 DROP POLICY IF EXISTS "Allow admin to manage all registrations" ON public.registrations;
 CREATE POLICY "Allow admin to manage all registrations" 

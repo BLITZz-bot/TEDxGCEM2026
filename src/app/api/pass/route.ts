@@ -20,18 +20,22 @@ export async function GET() {
       return NextResponse.json({ error: "Ticket downloads are currently closed." }, { status: 403 });
     }
 
-    // Query registration details based on server session email
+    // Query registration details based on server session email (matches both attendee email and buyer email)
     const { data, error } = await supabase
       .from("registrations")
       .select("*")
-      .eq("email", user.email)
-      .maybeSingle();
+      .or(`email.eq.${user.email},buyer_email.eq.${user.email}`)
+      .order("created_at", { ascending: true });
 
     if (error) {
       throw error;
     }
 
-    return NextResponse.json({ registration: data });
+    const passes = data || [];
+    return NextResponse.json({
+      registration: passes[0] || null,
+      registrations: passes,
+    });
   } catch (error: unknown) {
     console.error("Server Pass fetch error:", error);
     const message = error instanceof Error ? error.message : "Failed to fetch pass.";

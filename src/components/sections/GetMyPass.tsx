@@ -16,9 +16,11 @@ interface Registration {
   id: string;
   full_name: string;
   email: string;
+  buyer_email?: string | null;
   organization: string;
   designation?: string | null;
   ticket_status: string;
+  ticket_count?: number;
   payment_id?: string | null;
   razorpay_payment_id?: string | null;
   utr_number?: string | null;
@@ -29,7 +31,10 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
   const { user, loading, loginWithGoogle } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [registration, setRegistration] = useState<Registration | null>(null);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
+
+  const registration = registrations[selectedIndex] || null;
 
   const checkRegistration = async () => {
     setIsChecking(true);
@@ -37,12 +42,19 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
       const res = await fetch("/api/pass");
       const data = await res.json();
       if (res.ok) {
-        setRegistration(data.registration);
+        if (Array.isArray(data.registrations) && data.registrations.length > 0) {
+          setRegistrations(data.registrations);
+        } else if (data.registration) {
+          setRegistrations([data.registration]);
+        } else {
+          setRegistrations([]);
+        }
       } else {
         throw new Error(data.error || "Failed to retrieve pass.");
       }
     } catch (err) {
       console.error("Error fetching registration:", err);
+      setRegistrations([]);
     } finally {
       setIsChecking(false);
     }
@@ -67,7 +79,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
       return () => clearTimeout(timer);
     } else {
       const timer = setTimeout(() => {
-        setRegistration(null);
+        setRegistrations([]);
         setIsChecking(false);
       }, 0);
       return () => clearTimeout(timer);
@@ -377,11 +389,40 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
                 </motion.div>
               ) : registration ? (
                 <motion.div 
-                  key="pass-details"
+                  key={`pass-${registration.id}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="space-y-8 flex flex-col items-center"
+                  className="space-y-6 flex flex-col items-center w-full"
                 >
+                  {/* Multi-Pass Switcher Tabs */}
+                  {registrations.length > 1 && (
+                    <div className="w-full max-w-md mx-auto space-y-2 pb-2">
+                      <div className="flex items-center justify-between text-xs font-mono text-white/60 px-1">
+                        <span>All Passes ({registrations.length} Total):</span>
+                        <span className="text-ted-red font-bold">Pass {selectedIndex + 1} of {registrations.length}</span>
+                      </div>
+                      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none justify-start sm:justify-center">
+                        {registrations.map((pass, idx) => {
+                          const isSelected = selectedIndex === idx;
+                          return (
+                            <button
+                              key={pass.id}
+                              type="button"
+                              onClick={() => setSelectedIndex(idx)}
+                              className={`px-4 py-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 flex items-center gap-2 ${
+                                isSelected
+                                  ? "bg-ted-red text-white shadow-[0_0_15px_rgba(235,0,40,0.4)]"
+                                  : "bg-white/5 hover:bg-white/10 text-white/60 border border-white/10"
+                              }`}
+                            >
+                              <span>🎟️ {pass.full_name} (Pass #{idx + 1})</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Status Badge */}
                   <div className="flex justify-center">
                     {registration.ticket_status === "confirmed" || registration.ticket_status === "approved" ? (

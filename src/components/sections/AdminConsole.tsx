@@ -13,12 +13,14 @@ interface AdminRegistration {
   id: string;
   full_name: string;
   email: string;
+  buyer_email?: string | null;
   phone: string;
   organization: string;
   designation?: string | null;
   linkedin?: string | null;
   referral?: string | null;
   ticket_status: string;
+  ticket_count?: number | null;
   created_at: string;
   payment_id?: string | null;
   razorpay_order_id?: string | null;
@@ -1846,6 +1848,11 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                           </td>
                           <td className="py-4 px-4 space-y-1">
                             <div className="text-white/90 font-mono">{reg.email}</div>
+                            {reg.buyer_email && reg.buyer_email.toLowerCase() !== reg.email.toLowerCase() && (
+                              <div className="text-[10px] text-blue-400 font-mono">
+                                ↳ Booked by: {reg.buyer_email}
+                              </div>
+                            )}
                             <div className="text-ted-red font-mono text-[11px]">{reg.phone}</div>
                           </td>
                           <td className="py-4 px-4">

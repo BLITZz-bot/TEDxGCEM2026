@@ -29,24 +29,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Prevent duplicate registrations — check if user already has a confirmed registration
-    const { data: existing } = await supabase
-      .from("registrations")
-      .select("id, ticket_status")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (existing) {
-      return NextResponse.json(
-        { error: "You have already registered for TEDxGCEM 2026. Visit 'Get My Pass' to retrieve your pass." },
-        { status: 409 }
-      );
+    // 3. Parse request body for quantity and coupon
+    let body: { couponCode?: string; quantity?: number } = {};
+    try {
+      body = await request.json();
+    } catch {
+      // no body passed
     }
+
+    const quantity = Math.max(1, Math.min(10, Math.floor(Number(body.quantity) || 1)));
 
     // 4. Validate active ticket tier and real-time capacity check
     const activeTier = await getActiveTicketTier();
     const soldCounts = await getTierSoldCounts();
     const currentSold = soldCounts[activeTier.id] || 0;
+    const remainingCapacity = Math.max(0, activeTier.total_capacity - currentSold);
 
     if (activeTier.status === "closed") {
       return NextResponse.json(
@@ -57,25 +54,36 @@ export async function POST(request: Request) {
 
     if (activeTier.status === "sold_out" || currentSold >= activeTier.total_capacity) {
       return NextResponse.json(
-        { error: `The ${activeTier.name} pass has just reached full capacity! Please refresh to view available tickets.` },
+        { error: `The ${activeTier.name} pass has reached full capacity! Please refresh to view available tickets.` },
         { status: 409 }
       );
     }
 
-    // 5. Calculate base price & process coupon if provided
-    let body: { couponCode?: string } = {};
-    try {
-      body = await request.json();
-    } catch {
-      // no body passed
+    if (quantity > remainingCapacity) {
+      return NextResponse.json(
+        {
+          error: `Only ${remainingCapacity} ticket${remainingCapacity === 1 ? "" : "s"} remaining for ${activeTier.name}. Please select ${remainingCapacity} or fewer tickets.`,
+        },
+        { status: 409 }
+      );
     }
 
+    // 5. Calculate base price & process coupon if provided (Promo codes allowed ONLY for single-ticket registrations)
     const rawCoupon = body.couponCode?.trim().toUpperCase();
-    let finalPriceInr = activeTier.price;
+    const baseTotalInr = activeTier.price * quantity;
+    let finalPriceInr = baseTotalInr;
     let appliedCouponCode: string | null = null;
     let discountAmountInr = 0;
 
     if (rawCoupon) {
+      // Strict rule: promo coupons are strictly for individual (1 ticket) registrations
+      if (quantity > 1) {
+        return NextResponse.json(
+          { error: "Promo discount codes are valid only for individual single-ticket registrations (1 ticket)." },
+          { status: 400 }
+        );
+      }
+
       if (!activeTier.allow_coupons) {
         return NextResponse.json(
           { error: "Promo codes cannot be applied to Early Bird passes as they are already pre-discounted." },
@@ -99,7 +107,7 @@ export async function POST(request: Request) {
 
       appliedCouponCode = couponCheck.coupon.code;
       discountAmountInr = couponCheck.discountAmount ?? 100;
-      finalPriceInr = couponCheck.finalAmount ?? Math.max(0, activeTier.price - discountAmountInr);
+      finalPriceInr = couponCheck.finalAmount ?? Math.max(0, baseTotalInr - discountAmountInr);
     }
 
     const priceInPaise = Math.round(finalPriceInr * 100);
@@ -127,7 +135,10 @@ export async function POST(request: Request) {
         user_email: user.email,
         tier_id: activeTier.id,
         tier_name: activeTier.name,
-        original_price: String(activeTier.price),
+        ticket_count: String(quantity),
+        quantity: String(quantity),
+        unit_price: String(activeTier.price),
+        original_price: String(baseTotalInr),
         final_price: String(finalPriceInr),
         coupon_code: appliedCouponCode || "NONE",
         discount_amount: String(discountAmountInr),
@@ -141,8 +152,10 @@ export async function POST(request: Request) {
       key: keyId,
       tierId: activeTier.id,
       tierName: activeTier.name,
+      quantity,
+      unitPrice: activeTier.price,
       finalPrice: finalPriceInr,
-      originalPrice: activeTier.price,
+      originalPrice: baseTotalInr,
       discountAmount: discountAmountInr,
     });
   } catch (error: unknown) {
