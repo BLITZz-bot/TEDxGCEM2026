@@ -293,7 +293,7 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
 
       // Send master confirmation to the buyer
       await resend.emails.send({
-        from: `TEDxGCEM 2026 <${fromEmail}>`,
+        from: `TEDxGCEM <${fromEmail}>`,
         to: buyerEmail,
         replyTo: "tedxgcem@gmail.com",
         subject: emailSubject,
@@ -321,7 +321,7 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
               });
 
               await resend.emails.send({
-                from: `TEDxGCEM 2026 <${fromEmail}>`,
+                from: `TEDxGCEM <${fromEmail}>`,
                 to: att.email,
                 replyTo: "tedxgcem@gmail.com",
                 subject: `Your Delegate Pass: TEDxGCEM 2026 [${delegateTicketId}]`,
@@ -361,7 +361,7 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
       });
 
       await transporter.sendMail({
-        from: `"TEDxGCEM 2026" <${smtpUser}>`,
+        from: `"TEDxGCEM" <${smtpUser}>`,
         to: buyerEmail,
         replyTo: "tedxgcem@gmail.com",
         subject: emailSubject,
@@ -388,7 +388,7 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
               });
 
               await transporter.sendMail({
-                from: `"TEDxGCEM 2026" <${smtpUser}>`,
+                from: `"TEDxGCEM" <${smtpUser}>`,
                 to: att.email,
                 replyTo: "tedxgcem@gmail.com",
                 subject: `Your Delegate Pass: TEDxGCEM 2026 [${delegateTicketId}]`,
