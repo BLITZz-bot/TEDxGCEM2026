@@ -1,98 +1,115 @@
-# TEDxGCEM Portal
+# TEDxGCEM 2026 — Official Digital Platform
 
-A premium, high-performance web platform built for the **TEDxGCEM** conference. Designed with a bold, cyber-brutalist aesthetic, the application integrates dynamic backend content management, real-time database settings, and interactive motion features.
+<div align="center">
+
+![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase_PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Razorpay](https://img.shields.io/badge/Razorpay_Payments-02042B?style=for-the-badge&logo=razorpay&logoColor=3395FF)
+![Resend](https://img.shields.io/badge/Resend_Email_API-000000?style=for-the-badge&logo=resend&logoColor=white)
+![Google OAuth](https://img.shields.io/badge/Google_OAuth_2.0-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel_Hosting-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)
+
+**Official Live Platform:** [https://tedxgcem.in](https://tedxgcem.in)
+
+*An independently organized TED event operated under official license from TED Conferences LLC at Gopalan College of Engineering and Management (GCEM), Bangalore.*
+
+</div>
 
 ---
 
-## 🚀 Tech Stack
+## 🚀 Tech Stack & Architecture
 
-### Frontend & UI
-* **Framework**: Next.js (App Router)
-* **Logic & Rendering**: React & TypeScript
-* **Animations**: Framer Motion (used for 3D card flips, page transitions, and smooth hover effects)
-* **Styling**: Tailwind CSS (custom HSL color palette, dark mode grids, and cyberpunk elements)
-* **Interactive Visuals**: HTML5 Canvas API (custom vector physics simulations for touch-interactive background particle constellations)
-* **Icons**: Lucide React
+### Frontend & Visual Engineering
+* **Framework:** Next.js (App Router Architecture)
+* **Core & Logic:** React & TypeScript
+* **Styling & Theme:** Tailwind CSS (Custom HSL Dark Mode & Cyber-Brutalist Aesthetic)
+* **Animation Engine:** Framer Motion (3D interactive card tilts, smooth tab switches, entrance reveals)
+* **Graphics & Simulation:** HTML5 Canvas API (Real-time physics vector constellation backgrounds)
+* **Icons:** Lucide React
 
-### Backend, Database & Storage
-* **Hosting Platform**: Vercel
-* **Database**: Supabase (PostgreSQL)
-* **Authentication**: Supabase Auth (Google OAuth)
-* **API Architecture**: Next.js Serverless Route Handlers (configured with `force-dynamic` parameters for live updates)
-* **Email Transmission**: Resend Email API client with an automatic fallback to standard Nodemailer SMTP
+### Backend, Database & Infrastructure
+* **Database:** Supabase (PostgreSQL with Row Level Security - RLS)
+* **Authentication:** Supabase Auth with Google OAuth 2.0
+* **Payment Gateway:** Razorpay API (UPI / QR / Cards / NetBanking / HMAC-SHA256 Signature Verification)
+* **Transactional Emails:** Resend Email API (`team@tedxgcem.in` with DNS DKIM/SPF verification)
+* **Hosting & CDN:** Vercel Edge Serverless Infrastructure
 
 ---
 
 ## 💎 Core Features
 
-### 1. Zero Hardcoding & Server-Side Rendering (SSR)
-* **Dynamic Year & Dates**: The event year (e.g., `2026`) is calculated dynamically from the main event date database record, ensuring consistency across all registration forms, passes, countdowns, and footers.
-* **No Dynamic Layout Flashing**: The root homepage uses Server-Side Rendering (SSR) to pre-fetch the custom settings, theme names, and countdown targets from the database *before* sending HTML to the client. This avoids any placeholder or styling flashes during hydration.
+### 1. Multi-Tier Ticketing & Group Bookings
+* **Dynamic Capacity Tracking:** Real-time seat allocation across tiers (Early Bird, Phase 1, Phase 2, Phase 3).
+* **Group Delegations:** Single checkout supporting multiple attendees with individual pass allocations.
+* **Promo Engine:** 10-minute promo passcodes with automated countdown expirations and single-use redemption tracking.
 
-### 2. Interactive Constellation Backgrounds
-* **Full-Viewport (Speakers Section)**: Interactive cursor-fleeing node connection physics simulation on desktop and mobile.
-* **Bottom-Viewport (Team Section)**: A dedicated mobile-only background constellation restricted to the bottom 75% height of the container to align behind the member directories on touch devices.
+### 2. Digital QR Pass Generator ("Get My Pass")
+* **Instant Verification:** Attendees sign in via Google to download their high-resolution 800 × 1200px lanyard badge (.PNG).
+* **Unique Pass ID & QR Code:** Dynamic QR code encodes attendee identity and event day check-in verification URLs.
+* **Multi-Pass Switcher:** Buyers who purchased passes for friends can browse and download all individual passes from a unified portal.
 
-### 3. Dynamic Admin Control Panel
-* **Registrations Panel**: Tracks and lists signed-up attendees, ticket codes, and OAuth IDs.
-* **Inbox System**: Stores and lists customer inquiry forms.
-* **Settings Panel**: Configures event descriptions, custom dates, location names, themes, and countdown clocks in real-time.
-* **Visibility Toggles**: Instantly hides/reveals public sections (such as Speakers or Team tab directories) from the navigation bar. When toggled off, it automatically renders a premium Brutalist "Coming Soon" placeholder block.
-* **Content Managers**: Provides CRUD capabilities for corporate partners, speakers, and team lists with a built-in media compiler for profile photos.
+### 3. Automated Transactional Email Delivery
+* **Resend Integration:** Dispatches from verified domain `team@tedxgcem.in`.
+* **Buyer Summary Email:** Complete transaction receipt, Razorpay payment reference, and attendee list.
+* **Delegate Seat Email:** Individual seat passes delivered directly to each attendee's email inbox.
+* **Contact Us Relay:** Form submissions delivered instantly to `tedxgcem@gmail.com` with one-click attendee reply headers.
 
-### 4. Resend & Nodemailer Mail Dispatch
-* **Session Verification**: The mail endpoint validates the caller's server session tokens to prevent open-relay mail spoofing.
-* **API Delivery**: Forwards submitted contacts to administrators using the Resend API client.
-* **SMTP Failover**: Automatically activates standard SMTP mailing using local mail protocols if the Resend API key is unconfigured. Built with a strict connection timeout limit to prevent serverless function hangs.
-
----
-
-## 🛠️ Offline Reliability & Fallbacks
-To guarantee 100% website uptime, the application handles database downtime gracefully:
-* **Server-side JSON Caching**: When retrieving speakers or organizing committee members, the service code queries Supabase first. If Supabase is offline or rate-limited, it automatically reads fallback JSON arrays stored locally on the server filesystem (`team.json` / `speakers.json`).
-* **Hardcoded Fallbacks**: If both Supabase and the local file system caches fail, the system renders built-in default lists to prevent layout breakage.
+### 4. Real-Time Admin Command Console
+* **Registrations Ledger:** Search, filter, and inspect registrations and check-in statuses.
+* **Security Password Protection:** Deleting any registration record requires server-side `ADMIN_DELETE_PASSWORD` verification.
+* **QR Check-in Scanner:** Camera-enabled scanner to validate attendees at the venue and grant entry.
+* **Dynamic Settings Manager:** Toggle sections (Speakers, Team, Schedule, Tickets), adjust event dates, and update themes on the fly.
+* **Excel & CSV Export:** Formatted multi-column spreadsheet export for on-ground registration desk teams.
 
 ---
 
 ## ⚙️ Environment Configuration
 
-To run this project locally or in production, configure the following environment variables in a `.env.local` file. Do not share these credentials publicly:
+Create a `.env.local` file in your root directory:
 
 ```env
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anonymous-api-key
+# 1. Supabase Database & Auth
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key
 
-# Mail Dispatch (Resend Primary)
-RESEND_API_KEY=re_your_api_key_string
-RESEND_FROM_EMAIL=onboarding@resend.dev
-ADMIN_EMAIL=yourgmail@example.com
+# 2. Administrator Access & Security
+ADMIN_EMAIL=tedxgcem@gmail.com
+ADMIN_DELETE_PASSWORD=your_secure_admin_deletion_password
 
-# Mail Dispatch (SMTP Failover)
-SMTP_HOST=smtp.example.com
-SMTP_PORT=465
-SMTP_USER=smtp-user@example.com
-SMTP_PASS=secure-password-here
-SMTP_SECURE=true
+# 3. Resend Email Delivery (Domain: tedxgcem.in)
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
+RESEND_FROM_EMAIL=team@tedxgcem.in
+NEXT_PUBLIC_SITE_URL=https://tedxgcem.in
+
+# 4. Razorpay Payment Gateway
+RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxxxxxxxxx
+RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxxxxxxxxx
+```
+
+---
 
 ## 💻 Local Development
 
-First, install the package dependencies:
 ```bash
+# 1. Install dependencies
 npm install
-```
 
-Start the local development server:
-```bash
+# 2. Start development server
 npm run dev
-```
 
-Run TypeScript compilation checks:
-```bash
-npx tsc --noEmit
-```
-
-Build the optimized production package:
-```bash
+# 3. Run typecheck & build
 npm run build
 ```
+
+---
+
+<div align="center">
+
+© 2026 TEDxGCEM. This independent TEDx event is operated under license from TED.
+
+</div>
