@@ -425,8 +425,24 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
 
             </div>
 
+            {/* Purpose & Legal Compliance for Google OAuth */}
+            <div className="border-t border-white/10 mt-6 pt-4 flex flex-col md:flex-row items-center justify-between gap-3 text-[9.5px] font-mono text-neutral-400 text-center md:text-left">
+              <span className="max-w-xl leading-relaxed">
+                TEDxGCEM uses Google Sign-In solely for delegate authentication, pass reservation, and ticketing communication.
+              </span>
+              <div className="flex items-center gap-4 text-white uppercase tracking-wider font-semibold">
+                <a href="/privacy" className="hover:text-ted-red transition-colors underline underline-offset-4">
+                  Privacy Policy
+                </a>
+                <span className="text-white/20">•</span>
+                <a href="/terms" className="hover:text-ted-red transition-colors underline underline-offset-4">
+                  Terms of Service
+                </a>
+              </div>
+            </div>
+
             {/* Bottom Compliance & Copyright */}
-            <div className="border-t border-white/10 mt-8 pt-5 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+            <div className="border-t border-white/10 mt-4 pt-4 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
               <span className="text-[9px] uppercase tracking-[0.15em] text-white font-semibold font-mono max-w-lg leading-relaxed">
                 This independent TEDx event is operated under license from TED.
               </span>

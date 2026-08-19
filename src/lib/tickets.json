@@ -22,7 +22,7 @@
     "total_capacity": 35,
     "allow_coupons": true,
     "discount_price": 300,
-    "status": "active",
+    "status": "closed",
     "sort_order": 2,
     "sold_count": 0,
     "manual_override": true

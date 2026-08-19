@@ -10,7 +10,7 @@
   "about_theme_name": "TRANSFORMING PERSPECTIVES",
   "about_theme_desc": "This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.",
   "reveal_about_theme": false,
-  "reveal_team": false,
+  "reveal_team": true,
   "reveal_speakers": false,
   "reveal_partners": false,
   "reveal_register": true,
