@@ -1030,19 +1030,29 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
 
   const deleteRegistration = async (id: string) => {
-    if (!window.confirm("Are you sure you want to permanently delete this registration?")) return;
+    const password = window.prompt("🔒 ADMIN SECURITY CHECK:\nEnter the Admin Deletion Password to permanently delete this registration:");
+    if (password === null) return; // User cancelled prompt
+    if (!password.trim()) {
+      alert("Admin password is required to delete a registration record.");
+      return;
+    }
+
     try {
       const res = await fetch(`/api/admin/registrations?id=${id}`, {
         method: "DELETE",
+        headers: {
+          "x-admin-delete-password": password.trim(),
+        },
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to delete record.");
 
       setRegistrations(prev => prev.filter(r => r.id !== id));
+      alert("✅ Registration successfully deleted.");
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
-      alert("Error deleting registration: " + errorMessage);
+      alert("⛔ Deletion Denied: " + errorMessage);
     }
   };
 

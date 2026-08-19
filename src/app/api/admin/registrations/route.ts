@@ -65,7 +65,25 @@ export async function DELETE(request: Request) {
   try {
     const supabase = await createClient();
     if (!(await checkAdmin(supabase))) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized. Admin access required." }, { status: 401 });
+    }
+
+    // Server-side Admin Deletion Password Verification
+    const configuredDeletePassword = process.env.ADMIN_DELETE_PASSWORD;
+    const clientProvidedPassword = request.headers.get("x-admin-delete-password");
+
+    if (configuredDeletePassword) {
+      if (!clientProvidedPassword || clientProvidedPassword !== configuredDeletePassword) {
+        return NextResponse.json(
+          { error: "Incorrect admin deletion password. Deletion unauthorized." },
+          { status: 403 }
+        );
+      }
+    } else {
+      return NextResponse.json(
+        { error: "Server error: ADMIN_DELETE_PASSWORD is not configured in server environment variables." },
+        { status: 500 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
