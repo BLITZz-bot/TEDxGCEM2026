@@ -152,7 +152,7 @@ const jsonLd = {
         "Lead Web Developer",
         "Software Architect"
       ],
-      "description": "Executive Producer and sole Lead Web Developer of TEDxGCEM, single-handedly designing, architecting, and engineering the entire official TEDxGCEM digital platform.",
+      "description": "Executive Producer and Lead Web Developer of TEDxGCEM, responsible for designing, architecting, and engineering the complete official TEDxGCEM digital platform and ticketing infrastructure.",
       "url": "https://www.linkedin.com/in/bharath-m-m-a9960b309",
       "sameAs": [
         "https://www.linkedin.com/in/bharath-m-m-a9960b309",
