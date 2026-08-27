@@ -98,11 +98,44 @@ const jsonLd = {
     {
       "@type": "Event",
       "@id": `${siteUrl}/#event`,
-      "name": "TEDxGCEM",
-      "description": "An independently organized TEDx event operated under license from TED.",
+      "name": "TEDxGCEM 2026",
+      "description": "An independently organized TEDx event operated under license from TED at Gopalan College of Engineering and Management.",
       "url": siteUrl,
+      "startDate": "2026-09-26T09:00:00+05:30",
+      "endDate": "2026-09-26T17:00:00+05:30",
+      "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+      "eventStatus": "https://schema.org/EventScheduled",
+      "image": [
+        `${siteUrl}/logo-white.png`,
+        `${siteUrl}/bg.jpeg`
+      ],
+      "location": {
+        "@type": "Place",
+        "name": "Main Auditorium, Gopalan College of Engineering & Management",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "181/1, 182/1, Hoodi Village, Sonnenahalli, K.R. Puram, Whitefield",
+          "addressLocality": "Bangalore",
+          "addressRegion": "Karnataka",
+          "postalCode": "560048",
+          "addressCountry": "IN"
+        }
+      },
       "organizer": {
         "@id": `${siteUrl}/#developer`
+      },
+      "performer": {
+        "@type": "Organization",
+        "name": "TEDxGCEM Speakers",
+        "url": siteUrl
+      },
+      "offers": {
+        "@type": "Offer",
+        "url": siteUrl,
+        "price": "0",
+        "priceCurrency": "INR",
+        "availability": "https://schema.org/InStock",
+        "validFrom": "2026-01-01T00:00:00+05:30"
       }
     },
     {
