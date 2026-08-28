@@ -1,0 +1,23 @@
+# Prettier ignore file
+# These paths are excluded from auto-formatting
+
+# Build output
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+
+# Data files — large JSON files with intentional formatting
+data/
+src/lib/*.json
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Generated files
+next-env.d.ts
+tsconfig.tsbuildinfo

@@ -1,12 +1,21 @@
 {
-  "name": "app-scaffold",
-  "version": "0.1.0",
+  "name": "tedxgcem-web",
+  "version": "1.0.0",
+  "description": "Official TEDxGCEM digital platform — event website, ticketing, and admin console.",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BLITZz-bot/TEDxGCEM2026"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
@@ -33,6 +42,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "prettier": "^3.9.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

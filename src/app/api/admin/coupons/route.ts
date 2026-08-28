@@ -1,3 +1,7 @@
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Proprietary and confidential. Unauthorized copying, modification, or
+// distribution of this file is strictly prohibited. See LICENSE for details.
+
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createCoupon, deleteCoupon, generateRandomCouponCode, getAllCoupons } from "@/lib/coupon-service";
@@ -9,8 +13,8 @@ export async function GET() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    const adminEmail = process.env.ADMIN_EMAIL || "tedxgcem@gmail.com";
-    if (!user || user.email !== adminEmail) {
+    const adminEmail = process.env.ADMIN_EMAIL || "";
+    if (!user?.email || user.email.toLowerCase() !== adminEmail.toLowerCase()) {
       return NextResponse.json({ error: "Unauthorized. Admin access required." }, { status: 403 });
     }
 
@@ -27,8 +31,8 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    const adminEmail = process.env.ADMIN_EMAIL || "tedxgcem@gmail.com";
-    if (!user || user.email !== adminEmail) {
+    const adminEmail = process.env.ADMIN_EMAIL || "";
+    if (!user?.email || user.email.toLowerCase() !== adminEmail.toLowerCase()) {
       return NextResponse.json({ error: "Unauthorized. Admin access required." }, { status: 403 });
     }
 
@@ -58,8 +62,8 @@ export async function DELETE(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    const adminEmail = process.env.ADMIN_EMAIL || "tedxgcem@gmail.com";
-    if (!user || user.email !== adminEmail) {
+    const adminEmail = process.env.ADMIN_EMAIL || "";
+    if (!user?.email || user.email.toLowerCase() !== adminEmail.toLowerCase()) {
       return NextResponse.json({ error: "Unauthorized. Admin access required." }, { status: 403 });
     }
 

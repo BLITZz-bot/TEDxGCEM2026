@@ -1,3 +1,6 @@
+﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Proprietary and confidential. Unauthorized copying, modification, or
+// distribution of this file is strictly prohibited. See LICENSE for details.
 import { Resend } from "resend";
 import nodemailer from "nodemailer";
 
@@ -85,7 +88,7 @@ function generateTicketEmailHtml(params: {
                 <tr>
                   <td align="center">
                     <span style="display: inline-block; padding: 6px 18px; border-radius: 50px; background-color: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.35); color: #4ade80; font-size: 11px; font-family: monospace; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px;">
-                      ✓ OFFICIAL REGISTRATION CONFIRMED
+                      âœ“ OFFICIAL REGISTRATION CONFIRMED
                     </span>
                   </td>
                 </tr>
@@ -113,7 +116,7 @@ function generateTicketEmailHtml(params: {
                       ${ticketId}
                     </div>
                     <div style="font-size: 11px; font-family: monospace; color: #4ade80; margin-top: 6px; font-weight: bold; text-transform: uppercase;">
-                      ● STATUS: CONFIRMED & PAID
+                      â— STATUS: CONFIRMED & PAID
                     </div>
                   </td>
                 </tr>
@@ -134,7 +137,7 @@ function generateTicketEmailHtml(params: {
                       </tr>
                       <tr>
                         <td style="padding: 6px 0; font-size: 12px; font-family: monospace; color: rgba(255,255,255,0.4); text-transform: uppercase;">Total Amount Paid:</td>
-                        <td style="padding: 6px 0; font-size: 15px; font-weight: 900; color: #EB0028; text-align: right;">₹${amountPaid}.00</td>
+                        <td style="padding: 6px 0; font-size: 15px; font-weight: 900; color: #EB0028; text-align: right;">â‚¹${amountPaid}.00</td>
                       </tr>
                       ${
                         razorpayPaymentId
@@ -175,7 +178,7 @@ function generateTicketEmailHtml(params: {
                       <td style="padding: 10px 14px; font-size: 12px; font-weight: bold; color: #ffffff;">
                         ${idx + 1}. ${att.fullName}
                         <div style="font-size: 10px; font-family: monospace; font-weight: normal; color: rgba(255,255,255,0.45); margin-top: 2px;">
-                          ${att.organization} • ${att.designation || "Student"}
+                          ${att.organization} â€¢ ${att.designation || "Student"}
                         </div>
                       </td>
                       <td style="padding: 10px 14px; text-align: right; font-family: monospace; font-size: 11px; color: #EB0028; font-weight: bold;">
@@ -196,7 +199,7 @@ function generateTicketEmailHtml(params: {
                 <tr>
                   <td align="center">
                     <a href="${baseUrl}" target="_blank" style="display: inline-block; background-color: #EB0028; color: #ffffff; text-decoration: none; padding: 16px 36px; border-radius: 14px; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 25px rgba(235,0,40,0.45);">
-                      Download Official Delegate Pass →
+                      Download Official Delegate Pass â†’
                     </a>
                   </td>
                 </tr>
@@ -205,7 +208,7 @@ function generateTicketEmailHtml(params: {
               <!-- Important Check-in Instructions -->
               <div style="padding: 18px; background-color: rgba(235,0,40,0.06); border: 1px solid rgba(235,0,40,0.25); border-radius: 14px; margin-bottom: 20px;">
                 <h4 style="margin: 0 0 8px 0; font-size: 12px; font-family: monospace; text-transform: uppercase; color: #EB0028;">
-                  📌 Important Check-In Guidelines:
+                  ðŸ“Œ Important Check-In Guidelines:
                 </h4>
                 <ul style="margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.7);">
                   <li>Please log in with your Google account on the website to download your official high-resolution badge.</li>
@@ -225,7 +228,7 @@ function generateTicketEmailHtml(params: {
           <tr>
             <td style="padding: 20px; background-color: #000000; text-align: center; border-top: 1px solid rgba(255,255,255,0.08);">
               <p style="margin: 0; font-size: 10px; font-family: monospace; color: rgba(255,255,255,0.3); text-transform: uppercase;">
-                © 2026 TEDxGCEM. This independent TEDx event is operated under license from TED.
+                Â© 2026 TEDxGCEM. This independent TEDx event is operated under license from TED.
               </p>
             </td>
           </tr>
@@ -284,9 +287,9 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
     razorpayPaymentId,
   });
 
-  // ─────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // A. ATTEMPT TRANSMISSION VIA RESEND (Custom Domain: tedxgcem.in)
-  // ─────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (resendApiKey) {
     try {
       const resend = new Resend(resendApiKey);
@@ -346,9 +349,9 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // B. ATTEMPT TRANSMISSION VIA NODEMAILER SMTP (Fallback / Gmail)
-  // ─────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (smtpUser && smtpPass) {
     try {
       const transporter = nodemailer.createTransport({

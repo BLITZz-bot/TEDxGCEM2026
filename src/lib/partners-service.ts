@@ -1,26 +1,46 @@
-import fs from "fs";
+﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Proprietary and confidential. Unauthorized copying, modification, or
+// distribution of this file is strictly prohibited. See LICENSE for details.
 import path from "path";
 import { createClient } from "@/lib/supabase/server";
+import { readLocalStore, saveLocalStore } from "@/lib/db/local-store";
+import { isValidUUID } from "@/lib/db/uuid-validator";
+
+// â”€â”€â”€ Domain type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface Partner {
   id: string;
   created_at?: string;
   name: string;
   role: string;
-  level: string; // "Platinum", "Gold", "Silver", etc.
-  logo: string; // Holds base64 data string or URL path
+  /** Sponsorship tier: "Platinum", "Gold", "Silver", etc. */
+  level: string;
+  /** Holds a base64-encoded image data string or a URL path */
+  logo: string;
   description: string;
   email?: string;
   phone?: string;
 }
 
-const PARTNERS_FILE_PATH = path.join(process.cwd(), "src", "lib", "partners.json");
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Default/Seed Partners
+const PARTNERS_FILE_PATH = path.join(process.cwd(), "data", "partners.json");
 const DEFAULT_PARTNERS: Partner[] = [];
 
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+function readLocal(): Partner[] {
+  return readLocalStore<Partner>(PARTNERS_FILE_PATH, DEFAULT_PARTNERS);
+}
+
+async function saveLocal(partners: Partner[]): Promise<void> {
+  saveLocalStore<Partner>(PARTNERS_FILE_PATH, partners);
+}
+
+// â”€â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 export async function getPartners(): Promise<Partner[]> {
-  // 1. Try from Supabase
+  // 1. Try Supabase first
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -32,84 +52,52 @@ export async function getPartners(): Promise<Partner[]> {
       return data;
     }
   } catch (err) {
-    console.warn("Supabase partners fetch error, falling back to local file:", err);
+    console.warn("[partners-service] Supabase fetch error, falling back to local file:", err);
   }
 
-  // 2. Try local file
-  try {
-    if (fs.existsSync(PARTNERS_FILE_PATH)) {
-      const fileData = fs.readFileSync(PARTNERS_FILE_PATH, "utf-8");
-      const parsed = JSON.parse(fileData);
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-    }
-  } catch (err) {
-    console.warn("Local partners file read error, returning defaults:", err);
-  }
-
-  return DEFAULT_PARTNERS;
+  // 2. Fallback to local file
+  return readLocal();
 }
 
+/** @internal â€” write-through to local JSON after every mutation */
 export async function savePartnersLocalFallback(partners: Partner[]): Promise<void> {
-  try {
-    fs.writeFileSync(PARTNERS_FILE_PATH, JSON.stringify(partners, null, 2), "utf-8");
-  } catch (err) {
-    console.error("Failed to write local partners JSON fallback:", err);
-  }
+  await saveLocal(partners);
 }
 
 export async function addPartner(partner: Omit<Partner, "id">): Promise<boolean> {
-  let supabaseSaved = false;
-  let newId = Math.random().toString(36).substring(2, 9); // Fallback ID
+  let newId = Math.random().toString(36).substring(2, 9);
 
-  // 1. Save to Supabase
+  // 1. Persist to Supabase
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("partners")
-      .insert([partner])
-      .select();
+    const { data, error } = await supabase.from("partners").insert([partner]).select();
 
     if (!error && data && data.length > 0) {
-      supabaseSaved = true;
       newId = data[0].id;
     } else {
-      console.warn("Supabase add partner error:", error);
+      console.warn("[partners-service] Supabase insert error:", error);
     }
   } catch (err) {
-    console.warn("Supabase add partner connection error:", err);
+    console.warn("[partners-service] Supabase insert connection error:", err);
   }
 
-  // 2. Read existing local list, append new partner, and save
+  // 2. Write-through to local fallback
   try {
-    let currentPartners: Partner[] = [];
-    if (fs.existsSync(PARTNERS_FILE_PATH)) {
-      currentPartners = JSON.parse(fs.readFileSync(PARTNERS_FILE_PATH, "utf-8"));
-    } else {
-      currentPartners = [...DEFAULT_PARTNERS];
-    }
-    const newPartner: Partner = {
-      id: newId,
-      ...partner
-    };
-    currentPartners.push(newPartner);
-    await savePartnersLocalFallback(currentPartners);
+    const current = readLocal();
+    current.push({ id: newId, ...partner });
+    await saveLocal(current);
     return true;
   } catch (err) {
-    console.error("Local partners file append error:", err);
-    return supabaseSaved;
+    console.error("[partners-service] Local file append error:", err);
+    return false;
   }
 }
 
 export async function updatePartner(partner: Partner): Promise<boolean> {
-  let supabaseSaved = false;
-
-  // 1. Save to Supabase (only if ID is a valid UUID or existing record)
-  try {
-    const supabase = await createClient();
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(partner.id);
-    if (isUUID) {
+  // 1. Update in Supabase (only if record has a real UUID)
+  if (isValidUUID(partner.id)) {
+    try {
+      const supabase = await createClient();
       const { error } = await supabase
         .from("partners")
         .update({
@@ -119,73 +107,51 @@ export async function updatePartner(partner: Partner): Promise<boolean> {
           logo: partner.logo,
           description: partner.description,
           email: partner.email,
-          phone: partner.phone
+          phone: partner.phone,
         })
         .eq("id", partner.id);
 
-      if (!error) {
-        supabaseSaved = true;
-      } else {
-        console.warn("Supabase update partner error:", error);
+      if (error) {
+        console.warn("[partners-service] Supabase update error:", error);
       }
+    } catch (err) {
+      console.warn("[partners-service] Supabase update connection error:", err);
     }
-  } catch (err) {
-    console.warn("Supabase update partner connection error:", err);
   }
 
-  // 2. Update local file
+  // 2. Write-through to local fallback
   try {
-    let currentPartners: Partner[] = [];
-    if (fs.existsSync(PARTNERS_FILE_PATH)) {
-      currentPartners = JSON.parse(fs.readFileSync(PARTNERS_FILE_PATH, "utf-8"));
-    } else {
-      currentPartners = [...DEFAULT_PARTNERS];
-    }
-    currentPartners = currentPartners.map(p => p.id === partner.id ? partner : p);
-    await savePartnersLocalFallback(currentPartners);
+    const current = readLocal().map((p) => (p.id === partner.id ? partner : p));
+    await saveLocal(current);
     return true;
   } catch (err) {
-    console.error("Local partners file update error:", err);
-    return supabaseSaved;
+    console.error("[partners-service] Local file update error:", err);
+    return false;
   }
 }
 
 export async function deletePartner(id: string): Promise<boolean> {
-  let supabaseSaved = false;
+  // 1. Delete from Supabase (only if record has a real UUID)
+  if (isValidUUID(id)) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from("partners").delete().eq("id", id);
 
-  // 1. Delete from Supabase (only if ID is a valid UUID)
-  try {
-    const supabase = await createClient();
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    if (isUUID) {
-      const { error } = await supabase
-        .from("partners")
-        .delete()
-        .eq("id", id);
-
-      if (!error) {
-        supabaseSaved = true;
-      } else {
-        console.warn("Supabase delete partner error:", error);
+      if (error) {
+        console.warn("[partners-service] Supabase delete error:", error);
       }
+    } catch (err) {
+      console.warn("[partners-service] Supabase delete connection error:", err);
     }
-  } catch (err) {
-    console.warn("Supabase delete partner connection error:", err);
   }
 
-  // 2. Update local file
+  // 2. Write-through to local fallback
   try {
-    let currentPartners: Partner[] = [];
-    if (fs.existsSync(PARTNERS_FILE_PATH)) {
-      currentPartners = JSON.parse(fs.readFileSync(PARTNERS_FILE_PATH, "utf-8"));
-    } else {
-      currentPartners = [...DEFAULT_PARTNERS];
-    }
-    currentPartners = currentPartners.filter(p => p.id !== id);
-    await savePartnersLocalFallback(currentPartners);
+    const current = readLocal().filter((p) => p.id !== id);
+    await saveLocal(current);
     return true;
   } catch (err) {
-    console.error("Local partners file delete error:", err);
-    return supabaseSaved;
+    console.error("[partners-service] Local file delete error:", err);
+    return false;
   }
 }

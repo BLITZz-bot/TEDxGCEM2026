@@ -1,3 +1,6 @@
+﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Proprietary and confidential. Unauthorized copying, modification, or
+// distribution of this file is strictly prohibited. See LICENSE for details.
 import fs from "fs";
 import path from "path";
 import { createClient } from "@/lib/supabase/server";
@@ -42,7 +45,7 @@ const DEFAULT_SETTINGS: EventSettings = {
   reveal_schedule: true,
 };
 
-const SETTINGS_FILE_PATH = path.join(process.cwd(), "src", "lib", "settings.json");
+const SETTINGS_FILE_PATH = path.join(process.cwd(), "data", "settings.json");
 
 export async function getSettings(): Promise<EventSettings> {
   // 1. Try fetching from Supabase
