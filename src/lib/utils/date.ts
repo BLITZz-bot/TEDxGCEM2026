@@ -42,7 +42,7 @@ export function getEventYear(eventDate?: string | null): string {
       return match[0];
     }
   } catch {
-    // Ignore parse errors â€” fall through to default
+    // Ignore parse errors — fall through to default
   }
   return "2026";
 }

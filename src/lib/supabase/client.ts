@@ -16,7 +16,7 @@
  */
 
 /**
- * @returns `null` â€” client-side Supabase access is disabled by design.
+ * @returns `null` — client-side Supabase access is disabled by design.
  * @see src/lib/supabase/server.ts for the server-side client.
  */
 export function createClient(): null {

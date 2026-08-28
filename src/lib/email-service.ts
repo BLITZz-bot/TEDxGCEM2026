@@ -178,7 +178,7 @@ function generateTicketEmailHtml(params: {
                       <td style="padding: 10px 14px; font-size: 12px; font-weight: bold; color: #ffffff;">
                         ${idx + 1}. ${att.fullName}
                         <div style="font-size: 10px; font-family: monospace; font-weight: normal; color: rgba(255,255,255,0.45); margin-top: 2px;">
-                          ${att.organization} â€¢ ${att.designation || "Student"}
+                          ${att.organization} &bull; ${att.designation || "Student"}
                         </div>
                       </td>
                       <td style="padding: 10px 14px; text-align: right; font-family: monospace; font-size: 11px; color: #EB0028; font-weight: bold;">

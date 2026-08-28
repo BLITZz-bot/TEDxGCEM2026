@@ -15,7 +15,7 @@ export interface PromoCoupon {
   /** Tier restriction: "phase_1", "all", or null for any tier */
   applies_to_tier?: string | null;
   created_at: string;
-  /** ISO timestamp â€” defaults to created_at + 10 minutes */
+  /** ISO timestamp — defaults to created_at + 10 minutes */
   expires_at: string;
   is_used: boolean;
   used_by_email?: string | null;
@@ -136,7 +136,7 @@ export async function getAllCoupons(): Promise<PromoCoupon[]> {
 
 /**
  * Validate a coupon code server-side.
- * Returns a discriminated result object â€” callers should check `valid` before using other fields.
+ * Returns a discriminated result object — callers should check `valid` before using other fields.
  */
 export async function validateCoupon(
   code: string,
@@ -185,7 +185,7 @@ export async function validateCoupon(
     finalPrice = discountedPrice;
   }
 
-  // Suppress unused variable warning â€” activeTierId is reserved for future tier-restriction logic
+  // Suppress unused variable warning — activeTierId is reserved for future tier-restriction logic
   void activeTierId;
 
   return {

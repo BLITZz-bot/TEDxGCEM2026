@@ -57,7 +57,7 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
   return readLocal();
 }
 
-/** @internal â€” write-through to local JSON after every mutation */
+/** @internal — write-through to local JSON after every mutation */
 export async function saveTeamLocalFallback(members: TeamMember[]): Promise<void> {
   await saveLocal(members);
 }

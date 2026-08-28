@@ -59,7 +59,7 @@ export async function getPartners(): Promise<Partner[]> {
   return readLocal();
 }
 
-/** @internal â€” write-through to local JSON after every mutation */
+/** @internal — write-through to local JSON after every mutation */
 export async function savePartnersLocalFallback(partners: Partner[]): Promise<void> {
   await saveLocal(partners);
 }

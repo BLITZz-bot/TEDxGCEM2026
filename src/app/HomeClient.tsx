@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
 // Proprietary and confidential. Unauthorized copying, modification, or
 // distribution of this file is strictly prohibited. See LICENSE for details.
 "use client";
@@ -188,7 +188,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
 
     if (isDesktop && !isRegisterAndPassTransition) {
       setIsTransitioning(true);
-      // Switch content at 580 ms â€” screen is fully covered by the curtains
+      // Switch content at 580 ms — screen is fully covered by the curtains
       setTimeout(() => setActiveTab(id), 580);
       // Slide curtains off at 640 ms
       setTimeout(() => setIsTransitioning(false), 640);
@@ -539,7 +539,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
                 >
                   Privacy Policy
                 </a>
-                <span className="text-white/20">â€¢</span>
+                <span className="text-white/20">&bull;</span>
                 <a
                   href="/terms"
                   className="hover:text-ted-red transition-colors underline underline-offset-4"
@@ -564,7 +564,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
             </div>
           </div>
 
-          {/* Developer credit â€” visible across all tabs */}
+          {/* Developer credit — visible across all tabs */}
           <DevCredit />
         </footer>
       </div>
