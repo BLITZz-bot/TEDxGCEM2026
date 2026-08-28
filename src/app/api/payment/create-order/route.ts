@@ -128,7 +128,7 @@ export async function POST(request: Request) {
 
     const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
 
-    // 7. Create Razorpay order â€” amount is always server-controlled
+    // 7. Create Razorpay order — amount is always server-controlled
     const order = await razorpay.orders.create({
       amount: priceInPaise,
       currency: "INR",

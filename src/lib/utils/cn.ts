@@ -4,7 +4,7 @@
 /**
  * @module lib/utils/cn
  *
- * Class name utility â€” merges Tailwind CSS class strings with full
+ * Class name utility — merges Tailwind CSS class strings with full
  * conflict-resolution support via `clsx` and `tailwind-merge`.
  *
  * @example

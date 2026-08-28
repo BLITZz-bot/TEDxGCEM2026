@@ -59,7 +59,7 @@ export async function getSpeakers(): Promise<Speaker[]> {
   return readLocal();
 }
 
-/** @internal â€” write-through to local JSON after every mutation */
+/** @internal — write-through to local JSON after every mutation */
 export async function saveSpeakersLocalFallback(speakers: Speaker[]): Promise<void> {
   await saveLocal(speakers);
 }

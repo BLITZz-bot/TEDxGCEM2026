@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
 // Proprietary and confidential. Unauthorized copying, modification, or
 // distribution of this file is strictly prohibited. See LICENSE for details.
 "use client";
@@ -22,6 +22,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TabNav, { type TabId } from "@/components/ui/TabNav";
 import { DevCredit } from "@/components/ui/DevCredit";
+import { ParticleBackground } from "@/components/ui/ParticleBackground";
 import Hero from "@/components/sections/Hero";
 import About from "@/components/sections/About";
 import Speakers from "@/components/sections/Speakers";
@@ -188,7 +189,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
 
     if (isDesktop && !isRegisterAndPassTransition) {
       setIsTransitioning(true);
-      // Switch content at 580 ms â€” screen is fully covered by the curtains
+      // Switch content at 580 ms — screen is fully covered by the curtains
       setTimeout(() => setActiveTab(id), 580);
       // Slide curtains off at 640 ms
       setTimeout(() => setIsTransitioning(false), 640);
@@ -306,6 +307,9 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
 
         {/* Main content with animated transitions */}
         <div className="relative z-20">
+          {/* Interactive Particle Constellation on all pages except Home */}
+          {activeTab !== "home" && <ParticleBackground />}
+
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab === "get-pass" ? "register" : activeTab}
@@ -378,8 +382,10 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
                       onClick={() => handleTabChange(link.id)}
                       className="text-left text-white hover:text-ted-red hover:pl-1 transition-[color,padding-left] duration-150 ease-out cursor-pointer uppercase font-mono text-[10.5px] tracking-wider flex items-center gap-1.5 group py-0.5"
                     >
-                      <span className="text-ted-red opacity-0 group-hover:opacity-100 transition-opacity duration-150 font-bold text-[8px]">
-                        â–¶
+                      <span className="text-ted-red opacity-0 group-hover:opacity-100 transition-opacity duration-150 font-bold text-[8px] flex items-center">
+                        <svg className="w-2 h-2 fill-current" viewBox="0 0 24 24">
+                          <polygon points="5 3 19 12 5 21" />
+                        </svg>
                       </span>
                       <span>{link.label}</span>
                     </button>
@@ -539,7 +545,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
                 >
                   Privacy Policy
                 </a>
-                <span className="text-white/20">â€¢</span>
+                <span className="text-white/20">&bull;</span>
                 <a
                   href="/terms"
                   className="hover:text-ted-red transition-colors underline underline-offset-4"
@@ -564,7 +570,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
             </div>
           </div>
 
-          {/* Developer credit â€” visible across all tabs */}
+          {/* Developer credit — visible across all tabs */}
           <DevCredit />
         </footer>
       </div>

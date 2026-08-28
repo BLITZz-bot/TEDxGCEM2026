@@ -16,7 +16,7 @@
  * instances when state changes, keeping them in sync without a Context Provider
  * or an external state library.
  *
- * This pattern is intentional â€” it avoids prop-drilling and reduces waterfall
+ * This pattern is intentional — it avoids prop-drilling and reduces waterfall
  * network requests when multiple components need the current user.
  *
  * ## Session lifecycle
@@ -39,7 +39,7 @@ const ACTIVITY_THROTTLE_MS = 5 * 60 * 1000;
 /** Throttle focus/visibility refetch to once every 15 seconds */
 const FOCUS_REFETCH_THROTTLE_MS = 15_000;
 
-/** Max-age (in seconds) for the `last_active` cookie â€” 30 days */
+/** Max-age (in seconds) for the `last_active` cookie — 30 days */
 const LAST_ACTIVE_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
 
 /** DOM events that constitute "activity" from the user */

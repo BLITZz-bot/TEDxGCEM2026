@@ -40,7 +40,7 @@ type AdminGuardResult = AdminGuardSuccess | AdminGuardFailure;
  * Verifies the current request is made by the configured admin user.
  *
  * Returns a Supabase client on success, or a pre-built 401 NextResponse on
- * failure â€” so the caller can simply `return error` without extra boilerplate.
+ * failure — so the caller can simply `return error` without extra boilerplate.
  *
  * @returns `{ supabase, error: null }` on success
  * @returns `{ supabase: null, error: NextResponse }` on failure

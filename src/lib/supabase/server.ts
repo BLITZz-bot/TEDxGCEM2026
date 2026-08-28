@@ -10,7 +10,7 @@
  * Uses `@supabase/ssr` to correctly handle cookie-based auth sessions
  * in server contexts.
  *
- * âš ï¸  Do NOT use this in Client Components â€” the server client reads cookies
+ * ⚠️  Do NOT use this in Client Components — the server client reads cookies
  *     from the server-side cookie store, which is only available on the server.
  */
 
@@ -23,7 +23,7 @@ import { cookies } from "next/headers";
  * Must be awaited because the `cookies()` call from `next/headers` is async
  * in Next.js 15+.
  *
- * @throws Will not throw on missing env vars in development â€” Next.js will
+ * @throws Will not throw on missing env vars in development — Next.js will
  *         surface an appropriate error. In production, ensure `SUPABASE_URL`
  *         and `SUPABASE_ANON_KEY` are set in your environment.
  */

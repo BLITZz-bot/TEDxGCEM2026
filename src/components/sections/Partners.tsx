@@ -5,8 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { EventSettings } from "@/lib/settings-service";
 import { Partner } from "@/lib/partners-service";
 import { getEventYear } from "@/lib/utils";
+// Module-level in-memory cache for instant tab switching (0ms delay)
+let globalPartnersCache: Partner[] | null = null;
+
 export default function Partners({ settings }: { settings?: EventSettings | null }) {
-  const [partnersList, setPartnersList] = useState<Partner[]>([]);
+  const [partnersList, setPartnersList] = useState<Partner[]>(globalPartnersCache || []);
   const [activePartner, setActivePartner] = useState<Partner | null>(null);
 
   useEffect(() => {
@@ -15,6 +18,7 @@ export default function Partners({ settings }: { settings?: EventSettings | null
         const res = await fetch("/api/partners");
         const data = await res.json();
         if (res.ok && Array.isArray(data.partners)) {
+          globalPartnersCache = data.partners;
           setPartnersList(data.partners);
         }
       } catch (err) {

@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Metadata } from "next";
+import { ParticleBackground } from "@/components/ui/ParticleBackground";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | TEDxGCEM 2026",
@@ -9,7 +10,8 @@ export const metadata: Metadata = {
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-ted-red selection:text-white font-sans">
+    <div className="min-h-screen bg-black text-white selection:bg-ted-red selection:text-white font-sans relative overflow-hidden">
+      <ParticleBackground />
       {/* Header Bar */}
       <header className="border-b border-white/10 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">

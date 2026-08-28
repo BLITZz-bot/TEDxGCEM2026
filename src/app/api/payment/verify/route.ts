@@ -100,7 +100,7 @@ export async function POST(request: Request) {
       .digest("hex");
 
     if (generatedSignature !== razorpay_signature) {
-      console.error("[Security] Razorpay signature mismatch â€” possible tampered request.");
+      console.error("[Security] Razorpay signature mismatch — possible tampered request.");
       return NextResponse.json(
         { error: "Payment verification failed. Invalid signature." },
         { status: 400 }
