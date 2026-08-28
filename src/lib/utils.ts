@@ -1,28 +1,12 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+/**
+ * @deprecated
+ * This file is a backwards-compatibility shim.
+ * New code should import from `@/lib/utils` (which resolves to `@/lib/utils/index.ts`).
+ *
+ * All exports are re-exported from the canonical locations:
+ *  - `cn`           → `@/lib/utils/cn`
+ *  - `getEventYear` → `@/lib/utils/date`
+ */
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
-export function getEventYear(eventDate?: string | null): string {
-  if (!eventDate) return "2026";
-  try {
-    const date = new Date(eventDate);
-    if (!isNaN(date.getTime())) {
-      return String(date.getFullYear());
-    }
-    const parts = eventDate.trim().split(" ");
-    const lastPart = parts[parts.length - 1];
-    if (/^\d{4}$/.test(lastPart)) {
-      return lastPart;
-    }
-    const match = eventDate.match(/\b\d{4}\b/);
-    if (match) {
-      return match[0];
-    }
-  } catch {
-    // ignore
-  }
-  return "2026";
-}
+export { cn } from "@/lib/utils/cn";
+export { getEventYear } from "@/lib/utils/date";

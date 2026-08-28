@@ -1,3 +1,6 @@
+﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Proprietary and confidential. Unauthorized copying, modification, or
+// distribution of this file is strictly prohibited. See LICENSE for details.
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 

@@ -1,3 +1,6 @@
+﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Proprietary and confidential. Unauthorized copying, modification, or
+// distribution of this file is strictly prohibited. See LICENSE for details.
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { createClient } from "@/lib/supabase/server";
@@ -125,7 +128,7 @@ export async function POST(request: Request) {
 
     const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
 
-    // 7. Create Razorpay order — amount is always server-controlled
+    // 7. Create Razorpay order â€” amount is always server-controlled
     const order = await razorpay.orders.create({
       amount: priceInPaise,
       currency: "INR",

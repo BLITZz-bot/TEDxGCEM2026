@@ -1,3 +1,6 @@
+﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Proprietary and confidential. Unauthorized copying, modification, or
+// distribution of this file is strictly prohibited. See LICENSE for details.
 import fs from "fs";
 import path from "path";
 import { createClient } from "@/lib/supabase/server";
@@ -68,7 +71,7 @@ export const DEFAULT_TICKET_TIERS: TicketTier[] = [
   },
 ];
 
-const TICKETS_FILE_PATH = path.join(process.cwd(), "src", "lib", "tickets.json");
+const TICKETS_FILE_PATH = path.join(process.cwd(), "data", "tickets.json");
 
 // Helper to read local json
 function readLocalTiers(): TicketTier[] {

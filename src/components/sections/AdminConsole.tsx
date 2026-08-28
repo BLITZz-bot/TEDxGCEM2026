@@ -1025,6 +1025,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         clearInterval(interval);
       };
     }
+    return undefined;
   }, [isAdmin]);
 
 

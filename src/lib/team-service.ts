@@ -1,25 +1,44 @@
-import fs from "fs";
+﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Proprietary and confidential. Unauthorized copying, modification, or
+// distribution of this file is strictly prohibited. See LICENSE for details.
 import path from "path";
 import { createClient } from "@/lib/supabase/server";
+import { readLocalStore, saveLocalStore } from "@/lib/db/local-store";
+import { isValidUUID } from "@/lib/db/uuid-validator";
+
+// â”€â”€â”€ Domain type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface TeamMember {
   id: string;
   created_at?: string;
   name: string;
   role: string;
-  image_url: string; // holds base64 data string
+  /** Holds a base64-encoded image data string */
+  image_url: string;
   email?: string;
   linkedin?: string;
   bio: string;
 }
 
-const TEAM_FILE_PATH = path.join(process.cwd(), "src", "lib", "team.json");
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Default/Seed Team Members
+const TEAM_FILE_PATH = path.join(process.cwd(), "data", "team.json");
 const DEFAULT_TEAM: TeamMember[] = [];
 
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+function readLocal(): TeamMember[] {
+  return readLocalStore<TeamMember>(TEAM_FILE_PATH, DEFAULT_TEAM);
+}
+
+async function saveLocal(members: TeamMember[]): Promise<void> {
+  saveLocalStore<TeamMember>(TEAM_FILE_PATH, members);
+}
+
+// â”€â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 export async function getTeamMembers(): Promise<TeamMember[]> {
-  // 1. Try from Supabase
+  // 1. Try Supabase first
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -31,84 +50,52 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
       return data;
     }
   } catch (err) {
-    console.warn("Supabase team_members fetch error, falling back to local file:", err);
+    console.warn("[team-service] Supabase fetch error, falling back to local file:", err);
   }
 
-  // 2. Try local file
-  try {
-    if (fs.existsSync(TEAM_FILE_PATH)) {
-      const fileData = fs.readFileSync(TEAM_FILE_PATH, "utf-8");
-      const parsed = JSON.parse(fileData);
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-    }
-  } catch (err) {
-    console.warn("Local team file read error, returning defaults:", err);
-  }
-
-  return DEFAULT_TEAM;
+  // 2. Fallback to local file
+  return readLocal();
 }
 
+/** @internal â€” write-through to local JSON after every mutation */
 export async function saveTeamLocalFallback(members: TeamMember[]): Promise<void> {
-  try {
-    fs.writeFileSync(TEAM_FILE_PATH, JSON.stringify(members, null, 2), "utf-8");
-  } catch (err) {
-    console.error("Failed to write local team JSON fallback:", err);
-  }
+  await saveLocal(members);
 }
 
 export async function addTeamMember(member: Omit<TeamMember, "id">): Promise<boolean> {
-  let supabaseSaved = false;
-  let newId = Math.random().toString(36).substring(2, 9); // Fallback ID
+  let newId = Math.random().toString(36).substring(2, 9);
 
-  // 1. Save to Supabase
+  // 1. Persist to Supabase
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("team_members")
-      .insert([member])
-      .select();
+    const { data, error } = await supabase.from("team_members").insert([member]).select();
 
     if (!error && data && data.length > 0) {
-      supabaseSaved = true;
       newId = data[0].id;
     } else {
-      console.warn("Supabase add team member error:", error);
+      console.warn("[team-service] Supabase insert error:", error);
     }
   } catch (err) {
-    console.warn("Supabase add team member connection error:", err);
+    console.warn("[team-service] Supabase insert connection error:", err);
   }
 
-  // 2. Read existing local list, append new member, and save
+  // 2. Write-through to local fallback
   try {
-    let currentMembers: TeamMember[] = [];
-    if (fs.existsSync(TEAM_FILE_PATH)) {
-      currentMembers = JSON.parse(fs.readFileSync(TEAM_FILE_PATH, "utf-8"));
-    } else {
-      currentMembers = [...DEFAULT_TEAM];
-    }
-    const newMember: TeamMember = {
-      id: newId,
-      ...member
-    };
-    currentMembers.push(newMember);
-    await saveTeamLocalFallback(currentMembers);
+    const current = readLocal();
+    current.push({ id: newId, ...member });
+    await saveLocal(current);
     return true;
   } catch (err) {
-    console.error("Local team file append error:", err);
-    return supabaseSaved;
+    console.error("[team-service] Local file append error:", err);
+    return false;
   }
 }
 
 export async function updateTeamMember(member: TeamMember): Promise<boolean> {
-  let supabaseSaved = false;
-
-  // 1. Save to Supabase (only if ID is a valid UUID)
-  try {
-    const supabase = await createClient();
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(member.id);
-    if (isUUID) {
+  // 1. Update in Supabase (only if record has a real UUID)
+  if (isValidUUID(member.id)) {
+    try {
+      const supabase = await createClient();
       const { error } = await supabase
         .from("team_members")
         .update({
@@ -117,73 +104,51 @@ export async function updateTeamMember(member: TeamMember): Promise<boolean> {
           image_url: member.image_url,
           email: member.email,
           linkedin: member.linkedin,
-          bio: member.bio
+          bio: member.bio,
         })
         .eq("id", member.id);
 
-      if (!error) {
-        supabaseSaved = true;
-      } else {
-        console.warn("Supabase update team member error:", error);
+      if (error) {
+        console.warn("[team-service] Supabase update error:", error);
       }
+    } catch (err) {
+      console.warn("[team-service] Supabase update connection error:", err);
     }
-  } catch (err) {
-    console.warn("Supabase update team member connection error:", err);
   }
 
-  // 2. Update local file
+  // 2. Write-through to local fallback
   try {
-    let currentMembers: TeamMember[] = [];
-    if (fs.existsSync(TEAM_FILE_PATH)) {
-      currentMembers = JSON.parse(fs.readFileSync(TEAM_FILE_PATH, "utf-8"));
-    } else {
-      currentMembers = [...DEFAULT_TEAM];
-    }
-    currentMembers = currentMembers.map(m => m.id === member.id ? member : m);
-    await saveTeamLocalFallback(currentMembers);
+    const current = readLocal().map((m) => (m.id === member.id ? member : m));
+    await saveLocal(current);
     return true;
   } catch (err) {
-    console.error("Local team file update error:", err);
-    return supabaseSaved;
+    console.error("[team-service] Local file update error:", err);
+    return false;
   }
 }
 
 export async function deleteTeamMember(id: string): Promise<boolean> {
-  let supabaseSaved = false;
+  // 1. Delete from Supabase (only if record has a real UUID)
+  if (isValidUUID(id)) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from("team_members").delete().eq("id", id);
 
-  // 1. Delete from Supabase (only if ID is a valid UUID)
-  try {
-    const supabase = await createClient();
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    if (isUUID) {
-      const { error } = await supabase
-        .from("team_members")
-        .delete()
-        .eq("id", id);
-
-      if (!error) {
-        supabaseSaved = true;
-      } else {
-        console.warn("Supabase delete team member error:", error);
+      if (error) {
+        console.warn("[team-service] Supabase delete error:", error);
       }
+    } catch (err) {
+      console.warn("[team-service] Supabase delete connection error:", err);
     }
-  } catch (err) {
-    console.warn("Supabase delete team member connection error:", err);
   }
 
-  // 2. Update local file
+  // 2. Write-through to local fallback
   try {
-    let currentMembers: TeamMember[] = [];
-    if (fs.existsSync(TEAM_FILE_PATH)) {
-      currentMembers = JSON.parse(fs.readFileSync(TEAM_FILE_PATH, "utf-8"));
-    } else {
-      currentMembers = [...DEFAULT_TEAM];
-    }
-    currentMembers = currentMembers.filter(m => m.id !== id);
-    await saveTeamLocalFallback(currentMembers);
+    const current = readLocal().filter((m) => m.id !== id);
+    await saveLocal(current);
     return true;
   } catch (err) {
-    console.error("Local team file delete error:", err);
-    return supabaseSaved;
+    console.error("[team-service] Local file delete error:", err);
+    return false;
   }
 }

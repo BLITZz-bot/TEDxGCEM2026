@@ -1,3 +1,6 @@
+﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Proprietary and confidential. Unauthorized copying, modification, or
+// distribution of this file is strictly prohibited. See LICENSE for details.
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
@@ -9,7 +12,7 @@ export const dynamic = "force-dynamic";
  * POST /api/payment/webhook
  *
  * Razorpay sends a server-to-server event ping here directly
- * whenever a payment is captured — even if the user's browser crashed.
+ * whenever a payment is captured â€” even if the user's browser crashed.
  *
  * Security: Validates the X-Razorpay-Signature HMAC-SHA256 header
  * using RAZORPAY_WEBHOOK_SECRET to authenticate the request.
@@ -38,7 +41,7 @@ export async function POST(request: Request) {
     .digest("hex");
 
   if (expectedSignature !== razorpaySignature) {
-    console.error("[Webhook] Signature mismatch — unauthorized webhook call.");
+    console.error("[Webhook] Signature mismatch â€” unauthorized webhook call.");
     return NextResponse.json({ error: "Invalid webhook signature." }, { status: 403 });
   }
 
@@ -150,7 +153,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true, processed: false });
     }
 
-    console.log(`[Webhook] ✅ Fallback registration created for ${userEmail} via webhook.`);
+    console.log(`[Webhook] âœ… Fallback registration created for ${userEmail} via webhook.`);
 
     // 8. Send notification email to buyer
     try {
