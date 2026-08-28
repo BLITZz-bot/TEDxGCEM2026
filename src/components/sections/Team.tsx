@@ -19,165 +19,19 @@ interface TeamProps {
   settings: EventSettings | null;
 }
 
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  radius: number;
-  color: string;
-}
+// Module-level in-memory cache for instant tab switching (0ms delay)
+let globalTeamCache: TeamMember[] | null = null;
 
 export default function Team({ settings }: TeamProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [team, setTeam] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Mobile-only touch-interactive background constellation simulation (positioned at bottom 75%)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animationFrameId: number;
-    const particles: Particle[] = [];
-    const particleCount = 28;
-    const connectionDistance = 90;
-    const mouseRadius = 120;
-
-    const mouse = { x: -1000, y: -1000 };
-    let canvasRect = canvas.getBoundingClientRect();
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 0) {
-        mouse.x = e.touches[0].clientX - canvasRect.left;
-        mouse.y = e.touches[0].clientY - canvasRect.top;
-      }
-    };
-
-    const handleMouseLeave = () => {
-      mouse.x = -1000;
-      mouse.y = -1000;
-    };
-
-    const handleResize = () => {
-      if (canvas && canvas.parentElement) {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight * 0.75; // Matches the height offset of bottom-75%
-        canvasRect = canvas.getBoundingClientRect();
-      }
-    };
-
-    const handleScroll = () => {
-      canvasRect = canvas.getBoundingClientRect();
-    };
-
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
-    window.addEventListener("touchend", handleMouseLeave);
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("scroll", handleScroll);
-
-    handleResize();
-
-    // Spawn custom colored particles
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        radius: Math.random() * 1.5 + 0.6,
-        color: Math.random() > 0.3 ? "235, 0, 40" : "255, 255, 255",
-      });
-    }
-
-    const draw = () => {
-      if (!ctx || !canvas) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        if (p.x < 0 || p.x > canvas.width) p.vx = -p.vx;
-        if (p.y < 0 || p.y > canvas.height) p.vy = -p.vy;
-
-        if (mouse.x !== -1000 && mouse.y !== -1000) {
-          const dx = p.x - mouse.x;
-          const dy = p.y - mouse.y;
-          const distSq = dx * dx + dy * dy;
-          const mouseRadiusSq = mouseRadius * mouseRadius;
-          if (distSq < mouseRadiusSq) {
-            const dist = Math.sqrt(distSq);
-            const force = (mouseRadius - dist) / mouseRadius;
-            const angle = Math.atan2(dy, dx);
-            p.x += Math.cos(angle) * force * 1.2;
-            p.y += Math.sin(angle) * force * 1.2;
-          }
-        }
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${p.color}, 0.55)`;
-        ctx.fill();
-      });
-
-      if (mouse.x !== -1000 && mouse.y !== -1000) {
-        ctx.beginPath();
-        ctx.strokeStyle = "rgba(235, 0, 40, 0.18)";
-        ctx.lineWidth = 0.55;
-        const mouseRadiusSq = mouseRadius * mouseRadius;
-        particles.forEach((p) => {
-          const dx = p.x - mouse.x;
-          const dy = p.y - mouse.y;
-          const distSq = dx * dx + dy * dy;
-          if (distSq < mouseRadiusSq) {
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(mouse.x, mouse.y);
-          }
-        });
-        ctx.stroke();
-      }
-
-      ctx.beginPath();
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-      ctx.lineWidth = 0.3;
-      const connDistSq = connectionDistance * connectionDistance;
-      for (let i = 0; i < particles.length; i++) {
-        const p1 = particles[i];
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dx = p1.x - p2.x;
-          const dy = p1.y - p2.y;
-          const distSq = dx * dx + dy * dy;
-          if (distSq < connDistSq) {
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-          }
-        }
-      }
-      ctx.stroke();
-
-      animationFrameId = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleMouseLeave);
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("scroll", handleScroll);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, []);
+  const [team, setTeam] = useState<TeamMember[]>(globalTeamCache || []);
+  const [loading, setLoading] = useState(!globalTeamCache);
 
   useEffect(() => {
     fetch("/api/team")
       .then((res) => res.json())
       .then((data) => {
         if (data && data.team) {
+          globalTeamCache = data.team;
           setTeam(data.team);
         }
       })
@@ -204,11 +58,6 @@ export default function Team({ settings }: TeamProps) {
         <div className="h-full" />
       </div>
 
-      {/* Mobile-Only Interactive Background Constellation (Aligned to bottom 75% of screen viewport) */}
-      <canvas 
-        ref={canvasRef} 
-        className="absolute bottom-0 left-0 w-full h-[75%] pointer-events-none z-0 opacity-60 block md:hidden"
-      />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Organizing Committee Directory Header - Always Visible */}

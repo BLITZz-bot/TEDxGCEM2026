@@ -22,6 +22,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TabNav, { type TabId } from "@/components/ui/TabNav";
 import { DevCredit } from "@/components/ui/DevCredit";
+import { ParticleBackground } from "@/components/ui/ParticleBackground";
 import Hero from "@/components/sections/Hero";
 import About from "@/components/sections/About";
 import Speakers from "@/components/sections/Speakers";
@@ -306,6 +307,9 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
 
         {/* Main content with animated transitions */}
         <div className="relative z-20">
+          {/* Interactive Particle Constellation on all pages except Home */}
+          {activeTab !== "home" && <ParticleBackground />}
+
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab === "get-pass" ? "register" : activeTab}
@@ -378,8 +382,10 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
                       onClick={() => handleTabChange(link.id)}
                       className="text-left text-white hover:text-ted-red hover:pl-1 transition-[color,padding-left] duration-150 ease-out cursor-pointer uppercase font-mono text-[10.5px] tracking-wider flex items-center gap-1.5 group py-0.5"
                     >
-                      <span className="text-ted-red opacity-0 group-hover:opacity-100 transition-opacity duration-150 font-bold text-[8px]">
-                        â–¶
+                      <span className="text-ted-red opacity-0 group-hover:opacity-100 transition-opacity duration-150 font-bold text-[8px] flex items-center">
+                        <svg className="w-2 h-2 fill-current" viewBox="0 0 24 24">
+                          <polygon points="5 3 19 12 5 21" />
+                        </svg>
                       </span>
                       <span>{link.label}</span>
                     </button>

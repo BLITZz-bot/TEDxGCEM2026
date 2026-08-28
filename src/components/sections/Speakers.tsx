@@ -44,14 +44,6 @@ const Instagram = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  radius: number;
-  color: string;
-}
 
 // --- MANUAL SPEAKER BOX ADJUSTMENTS ---
 // Adjust the width, height, and photo aspect ratio of the speaker cards here.
@@ -92,10 +84,12 @@ interface SpeakersProps {
   } | null;
 }
 
+// Module-level in-memory cache for instant tab switching (0ms delay)
+let globalSpeakersCache: Speaker[] | null = null;
+
 export default function Speakers({ settings }: SpeakersProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  const [speakers, setSpeakers] = useState<Speaker[]>([]);
+  const [speakers, setSpeakers] = useState<Speaker[]>(globalSpeakersCache || []);
   const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null);
 
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
@@ -117,6 +111,7 @@ export default function Speakers({ settings }: SpeakersProps) {
             linkedin: s.linkedin,
             instagram: s.instagram
           }));
+          globalSpeakersCache = formatted;
           setSpeakers(formatted);
         }
       })
@@ -165,203 +160,11 @@ export default function Speakers({ settings }: SpeakersProps) {
     selectedSpeakerRef.current = selectedSpeaker;
   }, [selectedSpeaker]);
 
-  const resumeCanvasRef = useRef<(() => void) | null>(null);
-
-  // Disable body scroll and hide mobile hamburger when modal is open
-  useEffect(() => {
-    if (selectedSpeaker) {
-      document.body.style.overflow = "hidden";
-      document.body.classList.add("modal-open");
-    } else {
-      document.body.style.overflow = "";
-      document.body.classList.remove("modal-open");
-    }
-    return () => {
-      document.body.style.overflow = "";
-      document.body.classList.remove("modal-open");
-    };
-  }, [selectedSpeaker]);
-
   // Dynamically calculate the maximum width of the grid based on the card width + gap (32px / 2rem)
   const gridMaxWidth = `calc((${BOX_SETTINGS.width} * 2) + 2rem)`;
 
-  // Particle constellation network simulation (matching About page theme)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animationFrameId: number;
-    const particles: Particle[] = [];
-    const isMobile = window.innerWidth < 768;
-    const particleCount = isMobile ? 35 : 85;
-    const connectionDistance = 110;
-    const mouseRadius = 140;
-
-    const mouse = { x: -1000, y: -1000 };
-
-    let canvasRect = canvas.getBoundingClientRect();
-
-    const handleMouseMove = (e: MouseEvent) => {
-      mouse.x = e.clientX - canvasRect.left;
-      mouse.y = e.clientY - canvasRect.top;
-    };
-
-    const handleMouseLeave = () => {
-      mouse.x = -1000;
-      mouse.y = -1000;
-    };
-
-    const handleResize = () => {
-      if (canvas && canvas.parentElement) {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
-        canvasRect = canvas.getBoundingClientRect();
-      }
-    };
-
-    const handleScroll = () => {
-      canvasRect = canvas.getBoundingClientRect();
-    };
-
-    // Listeners
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseleave", handleMouseLeave);
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("scroll", handleScroll);
-
-    // Initial sizing
-    handleResize();
-
-    // Spawn particles
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.7,
-        vy: (Math.random() - 0.5) * 0.7,
-        radius: Math.random() * 2 + 0.8,
-        // 75% red nodes, 25% white nodes
-        color: Math.random() > 0.25 ? "235, 0, 40" : "255, 255, 255",
-      });
-    }
-
-    const draw = () => {
-      if (!ctx || !canvas) return;
-
-      // Pause canvas drawing and calculations when the speaker bio modal is open.
-      if (selectedSpeakerRef.current) {
-        return;
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw and update particle coordinates
-      particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Bounce or wrap particles
-        if (p.x < 0 || p.x > canvas.width) p.vx = -p.vx;
-        if (p.y < 0 || p.y > canvas.height) p.vy = -p.vy;
-
-        // Flee interaction from cursor (optimized with squared distance)
-        if (mouse.x !== -1000 && mouse.y !== -1000) {
-          const dx = p.x - mouse.x;
-          const dy = p.y - mouse.y;
-          const distSq = dx * dx + dy * dy;
-          const mouseRadiusSq = mouseRadius * mouseRadius;
-          if (distSq < mouseRadiusSq) {
-            const dist = Math.sqrt(distSq);
-            const force = (mouseRadius - dist) / mouseRadius;
-            const angle = Math.atan2(dy, dx);
-            p.x += Math.cos(angle) * force * 1.5;
-            p.y += Math.sin(angle) * force * 1.5;
-          }
-        }
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${p.color}, 0.75)`;
-        ctx.fill();
-      });
-
-      // 1. Draw connections to the cursor coordinate (batched to a single stroke draw call)
-      if (mouse.x !== -1000 && mouse.y !== -1000) {
-        ctx.beginPath();
-        ctx.strokeStyle = "rgba(235, 0, 40, 0.25)";
-        ctx.lineWidth = 0.7;
-        const mouseRadiusSq = mouseRadius * mouseRadius;
-        particles.forEach((p) => {
-          const dx = p.x - mouse.x;
-          const dy = p.y - mouse.y;
-          const distSq = dx * dx + dy * dy;
-          if (distSq < mouseRadiusSq) {
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(mouse.x, mouse.y);
-          }
-        });
-        ctx.stroke();
-      }
-
-      // 2. Draw connections to neighboring particles (batched to a single stroke draw call)
-      ctx.beginPath();
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-      ctx.lineWidth = 0.45;
-      const connDistSq = connectionDistance * connectionDistance;
-      for (let i = 0; i < particles.length; i++) {
-        const p1 = particles[i];
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dx = p1.x - p2.x;
-          const dy = p1.y - p2.y;
-          const distSq = dx * dx + dy * dy;
-
-          if (distSq < connDistSq) {
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-          }
-        }
-      }
-      ctx.stroke();
-
-      animationFrameId = requestAnimationFrame(draw);
-    };
-
-    resumeCanvasRef.current = () => {
-      cancelAnimationFrame(animationFrameId);
-      animationFrameId = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseleave", handleMouseLeave);
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("scroll", handleScroll);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, []);
-
   return (
     <section className="min-h-screen pt-20 md:pt-32 pb-20 px-6 relative overflow-hidden select-none">
-      
-      {/* Fullscreen Particle Constellation Canvas */}
-      <canvas 
-        ref={canvasRef} 
-        className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-55"
-      />
-
-      {/* Radial fade overlay */}
-      <div className="absolute inset-0 bg-radial-gradient from-transparent via-black/30 to-black pointer-events-none z-0" />
-
-      {/* Background ambient blurring light */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute top-1/4 left-10 w-[450px] h-[450px] bg-ted-red/5 rounded-full blur-[130px]" />
-        <div className="absolute bottom-1/4 right-10 w-[450px] h-[450px] bg-ted-red/5 rounded-full blur-[130px]" />
-      </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
         
@@ -497,11 +300,7 @@ export default function Speakers({ settings }: SpeakersProps) {
       </div>
 
       {/* Cinematic Left & Right Split-Screen Overlay */}
-      <AnimatePresence onExitComplete={() => {
-        if (resumeCanvasRef.current) {
-          resumeCanvasRef.current();
-        }
-      }}>
+      <AnimatePresence>
         {selectedSpeaker && (
           <motion.div
             initial={{ opacity: 0 }}
