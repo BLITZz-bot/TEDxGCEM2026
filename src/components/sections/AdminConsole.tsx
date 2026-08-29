@@ -1315,8 +1315,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               <div class="kpi-value" style="color: #FACC15;">₹${totalRevenue.toLocaleString("en-IN")} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">INR</span></div>
             </td>
             <td colspan="8" style="background-color: #0F172A; padding: 8px 12px;">
-              <div class="kpi-title">PAYMENT SECURITY</div>
-              <div class="kpi-value" style="color: #38BDF8; font-size: 9pt;">Razorpay Gateway Verified (HMAC-SHA256)</div>
+              <div class="kpi-title">PAYMENT VERIFICATION</div>
+              <div class="kpi-value" style="color: #38BDF8; font-size: 9pt;">Direct UPI &amp; Bank UTR Protocol (NPCI)</div>
             </td>
           </tr>
 
@@ -1336,16 +1336,16 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
             <th style="border: 1px solid #B91C1C; text-align: left; width: 140px; font-size: 9pt;">Designation</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 130px; font-size: 9pt;">Ticket Tier</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 130px; font-size: 9pt;">Ticket Status</th>
-            <th style="border: 1px solid #B91C1C; text-align: right; width: 110px; font-size: 9pt;">Amount</th>
-            <th style="border: 1px solid #B91C1C; text-align: center; width: 120px; font-size: 9pt;">Coupon</th>
-            <th style="border: 1px solid #B91C1C; text-align: right; width: 110px; font-size: 9pt;">Discount</th>
+            <th style="border: 1px solid #B91C1C; text-align: right; width: 110px; font-size: 9pt;">Amount Paid</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 120px; font-size: 9pt;">Coupon Code</th>
+            <th style="border: 1px solid #B91C1C; text-align: right; width: 110px; font-size: 9pt;">Discount Amount</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 110px; font-size: 9pt;">Method</th>
-            <th style="border: 1px solid #B91C1C; text-align: center; width: 170px; font-size: 9pt;">Razorpay Payment ID</th>
-            <th style="border: 1px solid #B91C1C; text-align: center; width: 170px; font-size: 9pt;">Razorpay Order ID</th>
-            <th style="border: 1px solid #B91C1C; text-align: center; width: 140px; font-size: 9pt;">Bank UTR / Ref</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 170px; font-size: 9pt;">Payment ID / Ref</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 170px; font-size: 9pt;">Order / Session ID</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 140px; font-size: 9pt;">Bank UTR Number</th>
             <th style="border: 1px solid #B91C1C; text-align: left; width: 180px; font-size: 9pt;">LinkedIn Profile</th>
             <th style="border: 1px solid #B91C1C; text-align: left; width: 140px; font-size: 9pt;">Referral Source</th>
-            <th style="border: 1px solid #B91C1C; text-align: left; width: 150px; font-size: 9pt;">Supabase UUID</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 150px; font-size: 9pt;">Database UUID</th>
           </tr>
 
           <!-- DATA ROWS -->
