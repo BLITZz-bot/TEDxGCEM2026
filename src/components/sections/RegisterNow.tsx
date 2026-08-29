@@ -101,7 +101,9 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
   const [activeDraftId, setActiveDraftId] = useState("");
   const [activeAuthToken, setActiveAuthToken] = useState("");
 
-  // Check for cross-device mobile handoff draft_id in URL params on load
+  const [restoredNotification, setRestoredNotification] = useState(false);
+
+  // Check for cross-device mobile handoff draft_id in URL params OR restore local draft on mount
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -146,8 +148,47 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
           }
         })
         .catch((err) => console.warn("Handoff verification error:", err));
+    } else {
+      // Restore local in-progress draft if exists within 24h
+      try {
+        const saved = localStorage.getItem("tedx_local_draft_v1");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const isFresh = Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000;
+          if (isFresh && Array.isArray(parsed.attendees) && parsed.attendees.length > 0 && parsed.attendees[0]?.fullName) {
+            setTimeout(() => {
+              setAttendees(parsed.attendees);
+              if (parsed.ticketQuantity) setTicketQuantity(parsed.ticketQuantity);
+              if (parsed.appliedCoupon) setAppliedCoupon(parsed.appliedCoupon);
+              setRestoredNotification(true);
+            }, 0);
+          }
+        }
+      } catch {
+        // ignore localStorage error
+      }
     }
   }, []);
+
+  // Auto-save form draft changes to localStorage
+  useEffect(() => {
+    if (typeof window === "undefined" || isSuccess) return;
+    try {
+      if (attendees.some((a) => a.fullName || a.phone || a.organization)) {
+        localStorage.setItem(
+          "tedx_local_draft_v1",
+          JSON.stringify({
+            attendees,
+            ticketQuantity,
+            appliedCoupon,
+            timestamp: Date.now(),
+          })
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }, [attendees, ticketQuantity, appliedCoupon, isSuccess]);
 
   // Fetch active ticket tier on load
   useEffect(() => {
@@ -913,6 +954,29 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                     </span>
                   </div>
 
+                  {/* Auto-Restored Session Banner */}
+                  {restoredNotification && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs font-mono text-emerald-400"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-base">👋</span>
+                        <span>
+                          <strong>Welcome back!</strong> We restored your in-progress delegate details.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setRestoredNotification(false)}
+                        className="text-[10px] text-white/50 hover:text-white underline cursor-pointer shrink-0 ml-3"
+                      >
+                        Dismiss
+                      </button>
+                    </motion.div>
+                  )}
+
                   {/* Tier Banner Box & Quantity Selector */}
                   <div className="p-5 rounded-2xl bg-black/40 border border-ted-red/30 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -1343,6 +1407,9 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
         buyerEmail={user?.email || attendees[0]?.email || ""}
         ticketQuantity={ticketQuantity}
         onPaymentConfirmed={() => {
+          try {
+            localStorage.removeItem("tedx_local_draft_v1");
+          } catch {}
           setLaptopModalOpen(false);
           setVerifiedPaymentId(`UPI-${activeDraftId.slice(-8)}`);
           setConfirmedCount(ticketQuantity);
@@ -1364,6 +1431,9 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
         couponCode={appliedCoupon?.code}
         discountAmount={appliedCoupon?.discountAmount}
         onSuccess={(res) => {
+          try {
+            localStorage.removeItem("tedx_local_draft_v1");
+          } catch {}
           setMobileModalOpen(false);
           setVerifiedPaymentId(`UPI-${res.utrNumber}`);
           setConfirmedCount(res.confirmedCount || ticketQuantity);

@@ -20,7 +20,7 @@ interface UpiLaptopModalProps {
   totalAmount: number;
   tierName: string;
   buyerName: string;
-  buyerEmail: string;
+  buyerEmail?: string;
   ticketQuantity: number;
   onPaymentConfirmed: () => void;
 }
@@ -33,7 +33,6 @@ export default function UpiLaptopModal({
   totalAmount,
   tierName,
   buyerName,
-  buyerEmail,
   ticketQuantity,
   onPaymentConfirmed,
 }: UpiLaptopModalProps) {
@@ -136,8 +135,8 @@ export default function UpiLaptopModal({
           </button>
 
           {/* LEFT COLUMN: Instructions & Details (7 Cols) */}
-          <div className="md:col-span-7 p-6 md:p-10 flex flex-col justify-between space-y-6 border-b md:border-b-0 md:border-r border-white/10 overflow-y-auto">
-            <div className="space-y-5">
+          <div className="md:col-span-7 p-6 md:p-8 flex flex-col justify-between space-y-4 border-b md:border-b-0 md:border-r border-white/10 overflow-y-auto">
+            <div className="space-y-3.5">
               {/* Header badge */}
               <div className="flex items-center space-x-2">
                 <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-ted-red/15 border border-ted-red/30 text-ted-red text-[11px] font-mono font-bold uppercase tracking-wider">
@@ -154,13 +153,13 @@ export default function UpiLaptopModal({
                 <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white font-sans">
                   Complete &amp; Pay on Phone
                 </h3>
-                <p className="text-xs text-white/60 font-sans mt-1">
+                <p className="text-xs text-white/60 font-sans mt-0.5">
                   UPI apps (Google Pay, PhonePe, Paytm) live on your smartphone. We saved your draft so you don&apos;t have to retype anything!
                 </p>
               </div>
 
               {/* Order summary card */}
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2">
+              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-1.5">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-white/60 font-sans">Delegate Tier</span>
                   <span className="font-bold text-white font-mono">{ticketQuantity} × {tierName}</span>
@@ -169,61 +168,61 @@ export default function UpiLaptopModal({
                   <span className="text-white/60 font-sans">Primary Attendee</span>
                   <span className="text-white/90 font-mono truncate max-w-[200px]">{buyerName}</span>
                 </div>
-                <div className="pt-2 border-t border-white/10 flex justify-between items-center">
+                <div className="pt-1.5 border-t border-white/10 flex justify-between items-center">
                   <span className="text-xs font-bold text-white font-sans">Total Payable</span>
                   <span className="text-lg font-black text-emerald-400 font-mono">₹{totalAmount.toFixed(2)}</span>
                 </div>
               </div>
 
               {/* The 4-Step Instructions */}
-              <div className="space-y-3.5 pt-1">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-white/50 font-mono">
+              <div className="space-y-2 pt-0.5">
+                <h4 className="text-[11px] font-bold uppercase tracking-widest text-white/50 font-mono">
                   Quick 30-Second Guide:
                 </h4>
 
-                <div className="flex items-start space-x-3 text-xs text-white/80">
-                  <div className="w-5 h-5 rounded-full bg-white/10 text-white font-mono font-bold flex items-center justify-center shrink-0 mt-0.5 text-[10px]">
+                <div className="flex items-start space-x-2.5 text-xs text-white/80">
+                  <div className="w-4 h-4 rounded-full bg-white/10 text-white font-mono font-bold flex items-center justify-center shrink-0 mt-0.5 text-[9px]">
                     1
                   </div>
                   <div>
-                    <strong className="text-white block font-sans">Scan with your regular Phone Camera</strong>
-                    <span className="text-white/60 text-[11px] leading-relaxed">
+                    <strong className="text-white block font-sans text-xs">Scan with your regular Phone Camera</strong>
+                    <span className="text-white/60 text-[11px] leading-snug">
                       Point your iPhone camera or Android Camera / Google Lens at the QR code on the right. Tap the link.
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-3 text-xs text-white/80">
-                  <div className="w-5 h-5 rounded-full bg-white/10 text-white font-mono font-bold flex items-center justify-center shrink-0 mt-0.5 text-[10px]">
+                <div className="flex items-start space-x-2.5 text-xs text-white/80">
+                  <div className="w-4 h-4 rounded-full bg-white/10 text-white font-mono font-bold flex items-center justify-center shrink-0 mt-0.5 text-[9px]">
                     2
                   </div>
                   <div>
-                    <strong className="text-white block font-sans">Your Details &amp; Login Are Already Saved!</strong>
-                    <span className="text-white/60 text-[11px] leading-relaxed">
-                      Your phone opens with your verified Google account ({buyerEmail}) and all attendee details pre-loaded.
+                    <strong className="text-white block font-sans text-xs">Your Details &amp; Login Are Already Saved!</strong>
+                    <span className="text-white/60 text-[11px] leading-snug">
+                      Your phone opens with your verified account and all attendee details pre-loaded.
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-3 text-xs text-white/80">
-                  <div className="w-5 h-5 rounded-full bg-white/10 text-white font-mono font-bold flex items-center justify-center shrink-0 mt-0.5 text-[10px]">
+                <div className="flex items-start space-x-2.5 text-xs text-white/80">
+                  <div className="w-4 h-4 rounded-full bg-white/10 text-white font-mono font-bold flex items-center justify-center shrink-0 mt-0.5 text-[9px]">
                     3
                   </div>
                   <div>
-                    <strong className="text-white block font-sans">Pay via UPI &amp; Take Screenshot</strong>
-                    <span className="text-white/60 text-[11px] leading-relaxed">
-                      Tap &quot;Pay via UPI App&quot; to launch Google Pay or PhonePe. Pay ₹{totalAmount.toFixed(2)} and take a quick screenshot.
+                    <strong className="text-white block font-sans text-xs">Pay via UPI &amp; Take Screenshot</strong>
+                    <span className="text-white/60 text-[11px] leading-snug">
+                      Tap &quot;Pay via UPI App&quot; to launch Google Pay or PhonePe. Pay the amount displayed on the screen and capture a clear screenshot showing the UTR number.
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-3 text-xs text-white/80">
-                  <div className="w-5 h-5 rounded-full bg-white/10 text-white font-mono font-bold flex items-center justify-center shrink-0 mt-0.5 text-[10px]">
+                <div className="flex items-start space-x-2.5 text-xs text-white/80">
+                  <div className="w-4 h-4 rounded-full bg-white/10 text-white font-mono font-bold flex items-center justify-center shrink-0 mt-0.5 text-[9px]">
                     4
                   </div>
                   <div>
-                    <strong className="text-white block font-sans">Upload Proof &amp; Auto-Sync</strong>
-                    <span className="text-white/60 text-[11px] leading-relaxed">
+                    <strong className="text-white block font-sans text-xs">Upload Proof &amp; Auto-Sync</strong>
+                    <span className="text-white/60 text-[11px] leading-snug">
                       Upload the screenshot from your phone gallery. ✨ This laptop screen will automatically refresh and display your official pass!
                     </span>
                   </div>
@@ -232,7 +231,7 @@ export default function UpiLaptopModal({
             </div>
 
             {/* Bottom notification indicator */}
-            <div className="flex items-center space-x-2 text-[11px] text-emerald-400/90 font-mono bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-2.5 rounded-xl">
+            <div className="flex items-center space-x-2 text-[11px] text-emerald-400/90 font-mono bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-2 rounded-xl mt-2">
               <Sparkles className="w-4 h-4 shrink-0" />
               <span>Real-time sync active — no page refresh needed.</span>
             </div>
