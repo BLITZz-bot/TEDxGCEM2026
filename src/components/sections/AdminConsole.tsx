@@ -108,6 +108,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
   // Ticket Tiers State
   const [tierActionLoading, setTierActionLoading] = useState<string | null>(null);
+  const [editingTier, setEditingTier] = useState<TicketTier | null>(null);
+  const [editTierPrice, setEditTierPrice] = useState<string>("");
+  const [editTierDiscountPrice, setEditTierDiscountPrice] = useState<string>("");
+  const [editTierCapacity, setEditTierCapacity] = useState<string>("");
+  const [editTierAllowCoupons, setEditTierAllowCoupons] = useState<boolean>(false);
+  const [isSavingTierPrice, setIsSavingTierPrice] = useState<boolean>(false);
+  const [tierPriceSuccessMsg, setTierPriceSuccessMsg] = useState<string | null>(null);
 
   // Coupon Generator States
   const [couponCodeInput, setCouponCodeInput] = useState("");
@@ -370,6 +377,80 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       alert("Error updating tier.");
     } finally {
       setTierActionLoading(null);
+    }
+  };
+
+  // Open Edit Tier Pricing Modal
+  const handleOpenEditTier = (tier: TicketTier) => {
+    setEditingTier(tier);
+    setEditTierPrice(String(tier.price));
+    setEditTierDiscountPrice(tier.discount_price !== null && tier.discount_price !== undefined ? String(tier.discount_price) : "");
+    setEditTierCapacity(String(tier.total_capacity));
+    setEditTierAllowCoupons(Boolean(tier.allow_coupons));
+    setTierPriceSuccessMsg(null);
+  };
+
+  // Save Tier Pricing, Discount & Capacity to Supabase
+  const handleSaveTierPrice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTier) return;
+
+    const numPrice = Number(editTierPrice);
+    if (isNaN(numPrice) || numPrice < 0) {
+      alert("Please enter a valid price (₹0 or greater).");
+      return;
+    }
+
+    let numDiscountPrice: number | null = null;
+    if (editTierAllowCoupons && editTierDiscountPrice.trim()) {
+      numDiscountPrice = Number(editTierDiscountPrice);
+      if (isNaN(numDiscountPrice) || numDiscountPrice < 0) {
+        alert("Please enter a valid discount price.");
+        return;
+      }
+      if (numDiscountPrice >= numPrice) {
+        alert("Discounted promo price must be less than the regular price.");
+        return;
+      }
+    }
+
+    const numCapacity = Number(editTierCapacity);
+    if (isNaN(numCapacity) || numCapacity < 1) {
+      alert("Please enter a valid seat capacity (1 or greater).");
+      return;
+    }
+
+    setIsSavingTierPrice(true);
+    setTierPriceSuccessMsg(null);
+    try {
+      const res = await fetch("/api/admin/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tierId: editingTier.id,
+          action: "update_price",
+          price: numPrice,
+          discountPrice: editTierAllowCoupons ? numDiscountPrice : null,
+          allowCoupons: editTierAllowCoupons,
+          capacity: numCapacity,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.tiers) {
+        setTicketTiers(data.tiers);
+        setTierPriceSuccessMsg(`✅ ${editingTier.name} pricing & capacity updated successfully!`);
+        setTimeout(() => {
+          setEditingTier(null);
+          setTierPriceSuccessMsg(null);
+        }, 1200);
+      } else {
+        alert(data.error || "Failed to update tier pricing.");
+      }
+    } catch {
+      alert("Error updating tier pricing.");
+    } finally {
+      setIsSavingTierPrice(false);
     }
   };
 
@@ -2041,8 +2122,20 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                       </div>
                     </div>
 
-                    {/* Action Toggle Button */}
-                    <div className="pt-3 border-t border-white/10">
+                    {/* Action & Edit Buttons */}
+                    <div className="pt-3 border-t border-white/10 space-y-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditTier(tier);
+                        }}
+                        className="w-full py-2 px-3 rounded-xl text-[11px] font-bold uppercase font-mono tracking-wider transition-all cursor-pointer bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 flex items-center justify-center gap-1.5"
+                      >
+                        <span>✏️</span>
+                        <span>Edit Price &amp; Seats</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={(e) => {
@@ -2067,6 +2160,155 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                 );
               })}
             </div>
+
+            {/* EDIT TIER PRICING & SEATS MODAL */}
+            {editingTier && (
+              <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+                <div className="w-full max-w-lg bg-[#0F0F12] border border-white/15 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
+                  {/* Header */}
+                  <div className="flex items-start justify-between border-b border-white/10 pb-4">
+                    <div>
+                      <span className="text-[10px] font-mono font-bold text-ted-red uppercase tracking-widest block">
+                        {"// LIVE TIER PRICING & CAPACITY"}
+                      </span>
+                      <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight mt-0.5">
+                        Edit {editingTier.name}
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingTier(null)}
+                      className="p-2 rounded-full bg-white/5 hover:bg-white/15 text-white/60 hover:text-white transition-colors cursor-pointer border border-white/10 text-xs font-mono"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Form */}
+                  <form onSubmit={handleSaveTierPrice} className="space-y-4">
+                    {/* Regular Base Price */}
+                    <div className="space-y-1.5 font-mono">
+                      <label className="text-xs font-bold text-white/70 uppercase tracking-wider block">
+                        Base Price (₹) <span className="text-ted-red">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 font-bold text-sm">₹</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          required
+                          value={editTierPrice}
+                          onChange={(e) => setEditTierPrice(e.target.value)}
+                          placeholder="e.g. 500"
+                          className="w-full pl-8 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-mono font-bold text-sm focus:outline-none focus:border-ted-red transition-all"
+                        />
+                      </div>
+                      <p className="text-[11px] text-white/40 leading-snug">
+                        Regular price charged when attendee buys without promo code.
+                      </p>
+                    </div>
+
+                    {/* Total Capacity Seats */}
+                    <div className="space-y-1.5 font-mono">
+                      <label className="text-xs font-bold text-white/70 uppercase tracking-wider block">
+                        Total Seat Capacity <span className="text-ted-red">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        required
+                        value={editTierCapacity}
+                        onChange={(e) => setEditTierCapacity(e.target.value)}
+                        placeholder="e.g. 50"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-mono font-bold text-sm focus:outline-none focus:border-ted-red transition-all"
+                      />
+                      <p className="text-[11px] text-white/40 leading-snug">
+                        Tier automatically marks as Sold Out once sold seats reach this limit.
+                      </p>
+                    </div>
+
+                    {/* Allow Coupons Toggle */}
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3 font-mono">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={editTierAllowCoupons}
+                          onChange={(e) => setEditTierAllowCoupons(e.target.checked)}
+                          className="w-4 h-4 rounded border-white/20 text-ted-red focus:ring-ted-red bg-black/50 cursor-pointer"
+                        />
+                        <div>
+                          <span className="text-xs font-bold text-white block uppercase">Allow Promo Passcodes / Coupons</span>
+                          <span className="text-[10px] text-white/40 block">
+                            When enabled, attendees can enter 10-minute promo codes generated by the committee.
+                          </span>
+                        </div>
+                      </label>
+
+                      {/* Discount Price Input (If coupons allowed) */}
+                      {editTierAllowCoupons && (
+                        <div className="pt-2 border-t border-white/10 space-y-1.5 animate-in fade-in duration-150">
+                          <label className="text-xs font-bold text-emerald-400 uppercase tracking-wider block">
+                            Discounted Price With Promo Code (₹)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 font-bold text-sm">₹</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={editTierDiscountPrice}
+                              onChange={(e) => setEditTierDiscountPrice(e.target.value)}
+                              placeholder="e.g. 400"
+                              className="w-full pl-8 pr-4 py-2.5 bg-white/5 border border-emerald-500/30 rounded-xl text-emerald-400 font-mono font-bold text-sm focus:outline-none focus:border-emerald-500 transition-all"
+                            />
+                          </div>
+                          <p className="text-[10px] text-white/40 leading-snug">
+                            The special discounted price applied when a promo passcode is used (e.g. ₹{editTierPrice || "500"} → ₹{editTierDiscountPrice || "400"}).
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Success notification banner */}
+                    {tierPriceSuccessMsg && (
+                      <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold text-center">
+                        {tierPriceSuccessMsg}
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10 font-mono">
+                      <button
+                        type="button"
+                        onClick={() => setEditingTier(null)}
+                        className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border border-white/10"
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        type="submit"
+                        disabled={isSavingTierPrice}
+                        className="px-6 py-2.5 rounded-xl bg-ted-red hover:bg-white hover:text-ted-red text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {isSavingTierPrice ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>Saving in Supabase...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>💾 Save Tier Changes</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* DEDICATED FULL-WINDOW FOR ACTIVE TIER COUPONS & DISCOUNTS */
