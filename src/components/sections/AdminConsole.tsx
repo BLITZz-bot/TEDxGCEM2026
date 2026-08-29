@@ -34,6 +34,7 @@ interface AdminRegistration {
   coupon_code?: string | null;
   discount_amount?: number | null;
   amount_paid?: number | null;
+  amount?: number | null;
 }
 
 interface AdminMessage {
