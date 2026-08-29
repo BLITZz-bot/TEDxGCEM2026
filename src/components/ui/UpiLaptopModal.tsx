@@ -20,7 +20,7 @@ interface UpiLaptopModalProps {
   totalAmount: number;
   tierName: string;
   buyerName: string;
-  buyerEmail: string;
+  buyerEmail?: string;
   ticketQuantity: number;
   onPaymentConfirmed: () => void;
 }
@@ -33,7 +33,6 @@ export default function UpiLaptopModal({
   totalAmount,
   tierName,
   buyerName,
-  buyerEmail,
   ticketQuantity,
   onPaymentConfirmed,
 }: UpiLaptopModalProps) {
@@ -200,7 +199,7 @@ export default function UpiLaptopModal({
                   <div>
                     <strong className="text-white block font-sans text-xs">Your Details &amp; Login Are Already Saved!</strong>
                     <span className="text-white/60 text-[11px] leading-snug">
-                      Your phone opens with your verified Google account ({buyerEmail}) and all attendee details pre-loaded.
+                      Your phone opens with your verified account and all attendee details pre-loaded.
                     </span>
                   </div>
                 </div>
