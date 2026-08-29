@@ -212,7 +212,7 @@ export default function UpiLaptopModal({
                   <div>
                     <strong className="text-white block font-sans">Pay via UPI &amp; Take Screenshot</strong>
                     <span className="text-white/60 text-[11px] leading-relaxed">
-                      Tap &quot;Pay via UPI App&quot; to launch Google Pay or PhonePe. Pay ₹{totalAmount.toFixed(2)} and take a quick screenshot.
+                      Tap &quot;Pay via UPI App&quot; to launch Google Pay or PhonePe. Pay the amount displayed on the screen and capture a clear screenshot showing the UTR number.
                     </span>
                   </div>
                 </div>

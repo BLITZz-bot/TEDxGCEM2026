@@ -382,11 +382,11 @@ export default function UpiMobilePaymentModal({
                   </div>
                   <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
                     <span className="font-mono text-ted-red font-bold text-[11px]">2.</span>
-                    <span><strong>Locked Amount:</strong> Pay the exact amount (₹{totalAmount.toFixed(2)}). Do not alter or modify the amount.</span>
+                    <span><strong>Pay the Amount:</strong> Pay the amount that has been displayed on the screen. Do not alter or modify the amount.</span>
                   </div>
                   <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
                     <span className="font-mono text-ted-red font-bold text-[11px]">3.</span>
-                    <span><strong>Take Screenshot:</strong> Capture a clear screenshot of the green <em>Payment Successful</em> screen immediately.</span>
+                    <span><strong>Take Screenshot:</strong> Capture a clear screenshot of the payment showing the UTR number on the screen.</span>
                   </div>
                   <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
                     <span className="font-mono text-ted-red font-bold text-[11px]">4.</span>
