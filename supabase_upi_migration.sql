@@ -1,14 +1,64 @@
 -- =============================================================================
--- TEDxGCEM 2026: Direct UPI Payment & Cross-Device Handoff Migration
--- Run this script in your Supabase SQL Editor
+-- TEDxGCEM 2026: Complete Direct UPI, Handoff & Dynamic Tier Pricing Migration
+-- Master idempotent script (Safe to run in Supabase SQL Editor anytime)
 -- =============================================================================
 
--- 1. Create registration_drafts table for cross-device mobile handoff & auto-login
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 1. TICKET TIERS TABLE (With Live Admin Pricing & Seat Capacity Controls)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.ticket_tiers (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    tag TEXT NOT NULL,
+    description TEXT NOT NULL,
+    price NUMERIC NOT NULL,
+    total_capacity INTEGER NOT NULL,
+    allow_coupons BOOLEAN DEFAULT false NOT NULL,
+    discount_price NUMERIC,
+    status TEXT DEFAULT 'upcoming' NOT NULL,
+    sort_order INTEGER NOT NULL,
+    manual_override BOOLEAN DEFAULT false NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+-- Seed initial 4 ticket tiers (only if not already present)
+INSERT INTO public.ticket_tiers (id, name, tag, description, price, total_capacity, allow_coupons, discount_price, status, sort_order)
+VALUES 
+  ('early_bird', 'Early Bird', 'Priority Pass', 'Exclusive early bird access pass with curated kit and all speaker sessions.', 300, 20, false, null, 'active', 1),
+  ('phase_1', 'Phase 1', 'Phase 1 Pass', 'Official Phase 1 delegate pass including keynote talks, delegate kit, and networking.', 400, 35, true, 300, 'upcoming', 2),
+  ('phase_2', 'Phase 2', 'Phase 2 Pass', 'Phase 2 standard admission with access to all speaker presentations and event goodies.', 500, 35, true, 400, 'upcoming', 3),
+  ('phase_3', 'Phase 3', 'Final Release', 'Final release general delegate pass with elite networking opportunities.', 1000, 10, true, 500, 'upcoming', 4)
+ON CONFLICT (id) DO NOTHING;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 2. 10-MINUTE PROMO PASSCODES (COUPONS) TABLE
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.coupons (
+    id TEXT PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    discount_amount NUMERIC NOT NULL,
+    applies_to_tier TEXT,
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    is_used BOOLEAN DEFAULT false NOT NULL,
+    used_by_email TEXT,
+    used_by_name TEXT,
+    used_by_phone TEXT,
+    used_by_org TEXT,
+    used_at TIMESTAMPTZ,
+    registration_id UUID,
+    tier_id TEXT,
+    amount_paid NUMERIC
+);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 3. REGISTRATION DRAFTS TABLE (Cross-Device Mobile QR Handoff & Auto-Sync)
+-- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.registration_drafts (
-    id TEXT PRIMARY KEY,                                      -- e.g. "draft_8f9e2a3b"
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE, -- Authenticated Google user
-    auth_handoff_token TEXT UNIQUE,                           -- One-time secure token (10m TTL)
-    auth_token_expires_at TIMESTAMPTZ,                        -- Expiry timestamp for handoff token
+    id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    auth_handoff_token TEXT UNIQUE,
+    auth_token_expires_at TIMESTAMPTZ,
     full_name TEXT NOT NULL,
     email TEXT NOT NULL,
     buyer_email TEXT,
@@ -24,16 +74,15 @@ CREATE TABLE IF NOT EXISTS public.registration_drafts (
     coupon_code TEXT,
     discount_amount NUMERIC(10, 2) DEFAULT 0.00,
     attendees_json JSONB DEFAULT '[]'::jsonb,
-    status TEXT DEFAULT 'pending',                            -- 'pending', 'confirmed', 'expired'
+    status TEXT DEFAULT 'pending',
     created_at TIMESTAMPTZ DEFAULT now(),
     expires_at TIMESTAMPTZ DEFAULT (now() + INTERVAL '24 hours')
 );
 
--- Index for fast lookup by handoff token & user
 CREATE INDEX IF NOT EXISTS idx_registration_drafts_token ON public.registration_drafts(auth_handoff_token);
 CREATE INDEX IF NOT EXISTS idx_registration_drafts_user ON public.registration_drafts(user_id);
 
--- Enable Supabase Realtime on registration_drafts for instant laptop auto-sync
+-- Enable Supabase Realtime for instant laptop auto-sync
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -44,16 +93,19 @@ BEGIN
   END IF;
 END $$;
 
--- 2. Update public.registrations table for Direct UPI proof & screenshot
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 4. REGISTRATIONS TABLE COLUMN UPDATES & ANTI-FRAUD UTR PROTECTION
+-- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE public.registrations
     ADD COLUMN IF NOT EXISTS payment_screenshot_url TEXT;
 
--- Prevent duplicate registrations using the exact same UTR number
 CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_utr_number 
     ON public.registrations(utr_number) 
     WHERE utr_number IS NOT NULL AND utr_number != '';
 
--- 3. Supabase Storage Bucket Setup for Payment Proofs
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 5. PAYMENT PROOFS STORAGE BUCKET (2MB Limit)
+-- ─────────────────────────────────────────────────────────────────────────────
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
     'payment-proofs',
@@ -67,7 +119,7 @@ ON CONFLICT (id) DO UPDATE SET
     file_size_limit = 2097152,
     allowed_mime_types = ARRAY['image/png', 'image/jpeg', 'image/webp'];
 
--- Storage Policies (Safe to run multiple times)
+-- Storage Access Policies (Drop and recreate safely in storage schema)
 DROP POLICY IF EXISTS "Public Upload Payment Proofs" ON storage.objects;
 CREATE POLICY "Public Upload Payment Proofs"
 ON storage.objects FOR INSERT
@@ -77,3 +129,33 @@ DROP POLICY IF EXISTS "Public View Payment Proofs" ON storage.objects;
 CREATE POLICY "Public View Payment Proofs"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'payment-proofs');
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 6. ROW LEVEL SECURITY (RLS) POLICIES
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE public.ticket_tiers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.registration_drafts ENABLE ROW LEVEL SECURITY;
+
+-- Ticket Tiers: Public can view, Admin can update
+DROP POLICY IF EXISTS "Allow public read access to ticket tiers" ON public.ticket_tiers;
+CREATE POLICY "Allow public read access to ticket tiers"
+ON public.ticket_tiers FOR SELECT TO public USING (true);
+
+DROP POLICY IF EXISTS "Allow admin to manage ticket tiers" ON public.ticket_tiers;
+CREATE POLICY "Allow admin to manage ticket tiers"
+ON public.ticket_tiers FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Coupons: Public can validate, Admin can manage
+DROP POLICY IF EXISTS "Allow public read access to coupons" ON public.coupons;
+CREATE POLICY "Allow public read access to coupons"
+ON public.coupons FOR SELECT TO public USING (true);
+
+DROP POLICY IF EXISTS "Allow admin to manage coupons" ON public.coupons;
+CREATE POLICY "Allow admin to manage coupons"
+ON public.coupons FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Registration Drafts: Public access for handoff session creation and verification
+DROP POLICY IF EXISTS "Allow public read and write access to registration drafts" ON public.registration_drafts;
+CREATE POLICY "Allow public read and write access to registration drafts"
+ON public.registration_drafts FOR ALL TO public USING (true) WITH CHECK (true);
