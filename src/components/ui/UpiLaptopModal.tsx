@@ -63,8 +63,9 @@ export default function UpiLaptopModal({
       }
     };
 
-    // Initial check + poll every 3.5 seconds
-    const interval = setInterval(pollStatus, 3500);
+    // Immediate initial check + poll every 3.0 seconds
+    pollStatus();
+    const interval = setInterval(pollStatus, 3000);
 
     return () => {
       isMounted = false;
