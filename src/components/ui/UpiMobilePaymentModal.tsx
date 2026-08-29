@@ -83,6 +83,8 @@ export default function UpiMobilePaymentModal({
   // Discount display
   const originalAmount = discountAmount && discountAmount > 0 ? totalAmount + discountAmount : null;
 
+  const [hasClickedPay, setHasClickedPay] = useState(false);
+
   // Reset ALL state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
@@ -90,6 +92,7 @@ export default function UpiMobilePaymentModal({
       const timer = setTimeout(() => {
         setModalStep("instructions");
         setHasAgreed(false);
+        setHasClickedPay(false);
         setTurnstileToken("");
         setTurnstileExpired(false);
         setUtrNumber("");
@@ -105,16 +108,16 @@ export default function UpiMobilePaymentModal({
     return () => document.body.classList.remove("modal-open");
   }, [isOpen]);
 
-  // Visibility change detection: When user returns from UPI app, switch to proof step
+  // Visibility change detection: When user actually returns from the external UPI app, switch to proof step
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && modalStep === "instructions" && hasAgreed) {
+      if (document.visibilityState === "visible" && modalStep === "instructions" && hasClickedPay) {
         setModalStep("proof");
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [modalStep, hasAgreed]);
+  }, [modalStep, hasClickedPay]);
 
   // Clean up object URLs on unmount
   useEffect(() => {
@@ -225,12 +228,9 @@ export default function UpiMobilePaymentModal({
   };
 
   const handleLaunchUpi = () => {
-    // Use window.open so it does NOT navigate away from the page (handles desktop gracefully)
-    window.open(upiUri, "_blank");
-    // Advance modal to proof step when user returns from UPI app
-    setTimeout(() => {
-      setModalStep("proof");
-    }, 1200);
+    setHasClickedPay(true);
+    // Open UPI deep link
+    window.location.href = upiUri;
   };
 
   const handleSubmitProof = async (e: React.FormEvent) => {
