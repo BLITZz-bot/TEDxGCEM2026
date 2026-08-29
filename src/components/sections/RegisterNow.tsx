@@ -134,6 +134,14 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
               ]);
               setTicketQuantity(d.quantity || 1);
             }
+            if (d.tierId && d.tierName) {
+              setActiveTier((prev) => ({
+                ...prev,
+                id: d.tierId,
+                name: d.tierName,
+                price: d.amount ? (d.amount + (d.discountAmount || 0)) / (d.quantity || 1) : prev.price,
+              }));
+            }
             if (d.couponCode) {
               setAppliedCoupon({
                 code: d.couponCode,

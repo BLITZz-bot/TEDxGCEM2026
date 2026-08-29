@@ -32,7 +32,7 @@
     "name": "Phase 2",
     "tag": "Phase 2 Pass",
     "description": "Phase 2 standard admission with access to all speaker presentations and event goodies.",
-    "price": 500,
+    "price": 600,
     "total_capacity": 35,
     "allow_coupons": true,
     "discount_price": 400,

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
 // Proprietary and confidential. Unauthorized copying, modification, or
 // distribution of this file is strictly prohibited. See LICENSE for details.
 import fs from "fs";
@@ -330,6 +330,62 @@ export async function updateTierCapacity(tierId: string, newCapacity: number): P
       .eq("id", tierId);
   } catch (err) {
     console.warn("Supabase ticket_tiers capacity update error:", err);
+  }
+
+  return true;
+}
+
+/**
+ * Update a tier's price, discount price, coupon eligibility, and capacity (Admin only)
+ */
+export async function updateTierPrice(
+  tierId: string,
+  newPrice: number,
+  newDiscountPrice?: number | null,
+  allowCoupons?: boolean,
+  newCapacity?: number
+): Promise<boolean> {
+  if (newPrice < 0) return false;
+
+  const tiers = readLocalTiers();
+  const index = tiers.findIndex((t) => t.id === tierId);
+  if (index === -1) return false;
+
+  tiers[index].price = newPrice;
+  if (newDiscountPrice !== undefined) {
+    tiers[index].discount_price = newDiscountPrice;
+  }
+  if (allowCoupons !== undefined) {
+    tiers[index].allow_coupons = allowCoupons;
+  }
+  if (newCapacity !== undefined && newCapacity > 0) {
+    tiers[index].total_capacity = newCapacity;
+  }
+
+  saveLocalTiers(tiers);
+
+  try {
+    const supabase = await createClient();
+    const updatePayload: Record<string, unknown> = {
+      price: newPrice,
+      updated_at: new Date().toISOString(),
+    };
+    if (newDiscountPrice !== undefined) {
+      updatePayload.discount_price = newDiscountPrice;
+    }
+    if (allowCoupons !== undefined) {
+      updatePayload.allow_coupons = allowCoupons;
+    }
+    if (newCapacity !== undefined && newCapacity > 0) {
+      updatePayload.total_capacity = newCapacity;
+    }
+
+    await supabase
+      .from("ticket_tiers")
+      .update(updatePayload)
+      .eq("id", tierId);
+  } catch (err) {
+    console.warn("Supabase ticket_tiers price update error:", err);
   }
 
   return true;

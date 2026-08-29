@@ -76,7 +76,7 @@ export default function UpiMobilePaymentModal({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const upiId = process.env.NEXT_PUBLIC_UPI_ID || "tedxgcem@okhdfcbank";
+  const upiId = process.env.NEXT_PUBLIC_UPI_ID || "";
   const upiName = process.env.NEXT_PUBLIC_UPI_NAME || "TEDxGCEM 2026";
   const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${totalAmount.toFixed(2)}&mam=${totalAmount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(`TEDxGCEM ${tierName} Pass`)}`;
 
