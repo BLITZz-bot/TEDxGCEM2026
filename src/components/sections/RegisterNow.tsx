@@ -7,6 +7,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { EventSettings } from "@/lib/settings-service";
 import { getEventYear } from "@/lib/utils";
 
+import UpiLaptopModal from "@/components/ui/UpiLaptopModal";
+import UpiMobilePaymentModal from "@/components/ui/UpiMobilePaymentModal";
+
 interface RegisterNowProps {
   onTabChange: (id: TabId) => void;
   settings?: EventSettings | null;
@@ -29,13 +32,6 @@ interface AppliedCouponInfo {
   discountAmount: number;
   finalAmount: number;
   discountPercentage: number;
-}
-
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Razorpay: any;
-  }
 }
 
 interface AttendeeData {
@@ -98,6 +94,60 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
   const [isSuccess, setIsSuccess] = useState(false);
   const [verifiedPaymentId, setVerifiedPaymentId] = useState<string | null>(null);
   const [confirmedCount, setConfirmedCount] = useState<number>(1);
+
+  // Direct UPI & Cross-Device Handoff Modals State
+  const [laptopModalOpen, setLaptopModalOpen] = useState(false);
+  const [mobileModalOpen, setMobileModalOpen] = useState(false);
+  const [activeDraftId, setActiveDraftId] = useState("");
+  const [activeAuthToken, setActiveAuthToken] = useState("");
+
+  // Check for cross-device mobile handoff draft_id in URL params on load
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const draftIdParam = params.get("draft_id");
+    const tokenParam = params.get("token");
+
+    if (draftIdParam) {
+      fetch(`/api/register/verify-handoff?draft_id=${draftIdParam}${tokenParam ? `&token=${tokenParam}` : ""}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((res) => {
+          if (res?.success && res.data) {
+            const d = res.data;
+            setActiveDraftId(draftIdParam);
+            if (d.attendees && Array.isArray(d.attendees) && d.attendees.length > 0) {
+              setAttendees(d.attendees);
+              setTicketQuantity(d.quantity || d.attendees.length);
+            } else {
+              setAttendees([
+                {
+                  fullName: d.fullName || "",
+                  email: d.email || "",
+                  phone: d.phone || "",
+                  organization: d.organization || "",
+                  designation: d.designation || "Student",
+                  linkedin: d.linkedin || "",
+                  referral: d.referral || "",
+                },
+              ]);
+              setTicketQuantity(d.quantity || 1);
+            }
+            if (d.couponCode) {
+              setAppliedCoupon({
+                code: d.couponCode,
+                originalPrice: d.amount + (d.discountAmount || 0),
+                discountAmount: d.discountAmount || 0,
+                finalAmount: d.amount,
+                discountPercentage: 0,
+              });
+            }
+            setStep("form");
+            setMobileModalOpen(true);
+          }
+        })
+        .catch((err) => console.warn("Handoff verification error:", err));
+    }
+  }, []);
 
   // Fetch active ticket tier on load
   useEffect(() => {
@@ -338,20 +388,6 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
     return Object.keys(newErrors).length === 0;
   };
 
-  const loadRazorpayScript = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (window.Razorpay) {
-        resolve(true);
-        return;
-      }
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
   const handleSubmitAndPay = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -373,92 +409,43 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
     try {
       const activeAttendees = attendees.slice(0, ticketQuantity);
 
-      // 1. Create Razorpay order on server (price & coupon verified server-side)
-      const orderRes = await fetch("/api/payment/create-order", {
+      // 1. Create server-side registration draft
+      const draftRes = await fetch("/api/register/create-draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          fullName: activeAttendees[0].fullName,
+          email: activeAttendees[0].email || user.email,
+          phone: activeAttendees[0].phone,
+          organization: activeAttendees[0].organization,
+          designation: activeAttendees[0].designation,
+          linkedin: activeAttendees[0].linkedin,
+          referral: activeAttendees[0].referral,
+          tierId: activeTier.id,
+          tierName: activeTier.name,
           quantity: ticketQuantity,
-          couponCode: (ticketQuantity === 1 && appliedCoupon) ? appliedCoupon.code : undefined,
+          amount: payablePrice,
+          couponCode: (ticketQuantity === 1 && appliedCoupon) ? appliedCoupon.code : null,
+          discountAmount: (ticketQuantity === 1 && appliedCoupon) ? appliedCoupon.discountAmount : 0,
+          attendees: activeAttendees,
         }),
       });
 
-      const orderData = await orderRes.json();
-      if (!orderRes.ok) {
-        throw new Error(orderData.error || "Failed to create payment order.");
+      const draftData = await draftRes.json();
+      if (!draftRes.ok) {
+        throw new Error(draftData.error || "Failed to create payment session draft.");
       }
 
-      // 2. Load Checkout script
-      const isLoaded = await loadRazorpayScript();
-      if (!isLoaded) {
-        throw new Error("Failed to load Razorpay payment SDK. Please check your network connection.");
+      setActiveDraftId(draftData.draftId);
+      setActiveAuthToken(draftData.authToken || "");
+
+      // 2. Open Laptop Split Modal or Mobile Payment Modal based on device viewport
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      if (isMobile) {
+        setMobileModalOpen(true);
+      } else {
+        setLaptopModalOpen(true);
       }
-
-      // 3. Configure Razorpay Popup options
-      const primaryAttendee = activeAttendees[0];
-      const options = {
-        key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: "TEDxGCEM 2026",
-        description: `${ticketQuantity} × ${activeTier.name} Delegate Pass${ticketQuantity > 1 ? "es" : ""}`,
-        image: "/favicon.ico",
-        order_id: orderData.orderId,
-        prefill: {
-          name: primaryAttendee.fullName,
-          email: primaryAttendee.email || user.email,
-          contact: primaryAttendee.phone,
-        },
-        theme: {
-          color: "#EB0028", // TED Red
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        handler: async (response: any) => {
-          try {
-            // 4. Verify Payment Server-Side & Save each attendee pass
-            const verifyRes = await fetch("/api/payment/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                attendees: activeAttendees,
-              }),
-            });
-
-            const verifyData = await verifyRes.json();
-            if (!verifyRes.ok) {
-              throw new Error(verifyData.error || "Payment verification failed.");
-            }
-
-            setVerifiedPaymentId(response.razorpay_payment_id);
-            setConfirmedCount(ticketQuantity);
-            setIsSuccess(true);
-          } catch (verifyError: unknown) {
-            console.error("Verification error:", verifyError);
-            const msg = verifyError instanceof Error ? verifyError.message : "Payment verification failed.";
-            setErrors((prev) => ({ ...prev, submit: msg }));
-          } finally {
-            setIsSubmitting(false);
-          }
-        },
-        modal: {
-          ondismiss: () => {
-            setIsSubmitting(false);
-          },
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function (response: { error?: { description?: string } }) {
-        setIsSubmitting(false);
-        setErrors((prev) => ({
-          ...prev,
-          submit: response.error?.description || "Payment failed or cancelled. Please try again.",
-        }));
-      });
-      rzp.open();
     } catch (err: unknown) {
       console.error("Error initiating payment:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to initiate payment. Please try again.";
@@ -466,6 +453,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
         ...prev,
         submit: errorMessage,
       }));
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -1333,7 +1321,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                       )}
                     </button>
                     <p className="text-[10px] text-white/40 text-center font-mono mt-3">
-                      🔒 256-Bit Encrypted Razorpay Gateway • HMAC-SHA256 Cryptographic Verification
+                      🔒 Direct UPI Deep Linking • Cloudflare Turnstile Verification • NPCI Protocol
                     </p>
                   </div>
                 </motion.form>
@@ -1342,6 +1330,46 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
           )}
         </div>
       )}
+
+      {/* Laptop 2-Column Split Modal */}
+      <UpiLaptopModal
+        isOpen={laptopModalOpen}
+        onClose={() => setLaptopModalOpen(false)}
+        draftId={activeDraftId}
+        authToken={activeAuthToken}
+        totalAmount={payablePrice}
+        tierName={activeTier.name}
+        buyerName={attendees[0]?.fullName || user?.user_metadata?.full_name || "Delegate"}
+        buyerEmail={user?.email || attendees[0]?.email || ""}
+        ticketQuantity={ticketQuantity}
+        onPaymentConfirmed={() => {
+          setLaptopModalOpen(false);
+          setVerifiedPaymentId(`UPI-${activeDraftId.slice(-8)}`);
+          setConfirmedCount(ticketQuantity);
+          setIsSuccess(true);
+        }}
+      />
+
+      {/* Mobile Direct Payment & Proof Modal */}
+      <UpiMobilePaymentModal
+        isOpen={mobileModalOpen}
+        onClose={() => setMobileModalOpen(false)}
+        draftId={activeDraftId}
+        totalAmount={payablePrice}
+        tierName={activeTier.name}
+        buyerName={attendees[0]?.fullName || user?.user_metadata?.full_name || "Delegate"}
+        buyerEmail={user?.email || attendees[0]?.email || ""}
+        attendees={attendees.slice(0, ticketQuantity)}
+        tierId={activeTier.id}
+        couponCode={appliedCoupon?.code}
+        discountAmount={appliedCoupon?.discountAmount}
+        onSuccess={(res) => {
+          setMobileModalOpen(false);
+          setVerifiedPaymentId(`UPI-${res.utrNumber}`);
+          setConfirmedCount(res.confirmedCount || ticketQuantity);
+          setIsSuccess(true);
+        }}
+      />
     </section>
   );
 }

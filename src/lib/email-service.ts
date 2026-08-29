@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
 // Proprietary and confidential. Unauthorized copying, modification, or
 // distribution of this file is strictly prohibited. See LICENSE for details.
 import { Resend } from "resend";
@@ -253,7 +253,6 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
     tierName,
     amountPaid,
     razorpayPaymentId,
-    razorpayOrderId,
     eventDate = "October 15, 2026",
     eventVenue = "GCEM Auditorium, Bengaluru",
   } = params;

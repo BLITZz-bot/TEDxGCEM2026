@@ -69,11 +69,14 @@ body {
   scrollbar-width: none;
 }
 
-/* Hide mobile hamburger and logo when modal is open */
+/* Hide entire navbar (desktop + mobile) when a payment modal is open */
+body.modal-open nav,
 body.modal-open .mobile-nav-hamburger,
-body.modal-open .mobile-nav-logo {
-  opacity: 0;
-  pointer-events: none;
+body.modal-open .mobile-nav-logo,
+body.modal-open .desktop-nav-icons {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 
 /* Dedicated Print Styles for Pass Download */
