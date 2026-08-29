@@ -28,6 +28,7 @@ interface AdminRegistration {
   razorpay_signature?: string | null;
   utr_number?: string | null;
   payment_method?: string | null;
+  payment_screenshot_url?: string | null;
   tier_id?: string | null;
   tier_name?: string | null;
   coupon_code?: string | null;

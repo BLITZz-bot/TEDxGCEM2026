@@ -118,7 +118,7 @@ export default function TabNav({ activeTab, onTabChange, settings }: TabNavProps
       </nav>
 
       {/* Desktop Auth Widget (Top Right Corner) */}
-      <div className="fixed top-7 right-6 z-50 hidden md:flex items-center pointer-events-auto">
+      <div className="fixed top-7 right-6 z-50 hidden md:flex items-center pointer-events-auto desktop-nav-icons">
         {user ? (
           <div className="relative">
             <button

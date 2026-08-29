@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import demoImg from "../../../public/DEMO.png";
 import type { EventSettings } from "@/lib/settings-service";

@@ -85,6 +85,27 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
     fetchSettings();
   }, [fetchSettings]);
 
+  // Sync active tab with URL query parameters (?tab=register or ?draft_id=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab") as TabId | null;
+    const draftParam = params.get("draft_id");
+
+    const timer = setTimeout(() => {
+      if (draftParam || tabParam === "register") {
+        setActiveTab("register");
+      } else if (
+        tabParam &&
+        ["home", "about", "speakers", "team", "schedule", "partners", "get-pass", "contact", "admin"].includes(tabParam)
+      ) {
+        setActiveTab(tabParam);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   // â”€â”€â”€ Responsive layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   useEffect(() => {
