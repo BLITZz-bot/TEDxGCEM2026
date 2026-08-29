@@ -1188,7 +1188,10 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     const totalRevenue = registrations.reduce((sum, reg) => {
       const isConfirmed = reg.ticket_status === "confirmed" || reg.ticket_status === "approved" || !!reg.razorpay_payment_id || !!reg.payment_id;
       if (!isConfirmed) return sum;
-      return sum + (reg.amount_paid !== null && reg.amount_paid !== undefined ? reg.amount_paid : 300);
+      const val = reg.amount_paid !== null && reg.amount_paid !== undefined
+        ? Number(reg.amount_paid)
+        : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : 300);
+      return sum + val;
     }, 0);
 
     if (format === "csv") {
@@ -1241,7 +1244,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const orderId = reg.razorpay_order_id || "N/A";
         const utr = reg.utr_number || "N/A";
         const method = reg.payment_method ? reg.payment_method.toUpperCase() : (isConfirmed ? "ONLINE" : "N/A");
-        const amount = reg.amount_paid !== null && reg.amount_paid !== undefined ? String(reg.amount_paid) : (isConfirmed ? "300" : "0");
+        const amount = reg.amount_paid !== null && reg.amount_paid !== undefined
+          ? String(reg.amount_paid)
+          : (reg.amount !== null && reg.amount !== undefined ? String(reg.amount) : (isConfirmed ? "300" : "0"));
         const tierName = reg.tier_name || "Early Bird";
         const couponCode = reg.coupon_code || "None";
         const hasValidCoupon = Boolean(reg.coupon_code && Number(reg.discount_amount) > 0);
@@ -1306,8 +1311,10 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const orderId = reg.razorpay_order_id || "N/A";
         const utr = reg.utr_number || "N/A";
         const method = reg.payment_method ? reg.payment_method.toUpperCase() : (isConfirmed ? "ONLINE" : "N/A");
-        const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined ? reg.amount_paid : (isConfirmed ? 300 : 0);
-        const amount = `₹${paidVal}.00`;
+        const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined
+          ? Number(reg.amount_paid)
+          : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : (isConfirmed ? 300 : 0));
+        const amount = `₹${paidVal.toFixed(2)}`;
         const tierName = reg.tier_name || "Early Bird";
         const couponCode = reg.coupon_code || "-";
         const discountStr = (reg.coupon_code && Number(reg.discount_amount) > 0) ? `₹${reg.discount_amount}.00` : "-";
