@@ -1163,7 +1163,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const amount = reg.amount_paid !== null && reg.amount_paid !== undefined ? String(reg.amount_paid) : (isConfirmed ? "300" : "0");
         const tierName = reg.tier_name || "Early Bird";
         const couponCode = reg.coupon_code || "None";
-        const discountAmount = reg.discount_amount ? String(reg.discount_amount) : "0";
+        const hasValidCoupon = Boolean(reg.coupon_code && Number(reg.discount_amount) > 0);
+        const discountAmount = hasValidCoupon ? String(reg.discount_amount) : "0";
 
         return [
           escapeCSV(idx + 1),
@@ -1228,7 +1229,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const amount = `₹${paidVal}.00`;
         const tierName = reg.tier_name || "Early Bird";
         const couponCode = reg.coupon_code || "-";
-        const discountStr = reg.discount_amount ? `₹${reg.discount_amount}.00` : "-";
+        const discountStr = (reg.coupon_code && Number(reg.discount_amount) > 0) ? `₹${reg.discount_amount}.00` : "-";
         const rowBg = idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
         const statusBg = isConfirmed ? "#DCFCE7" : "#FEF08A";
         const statusColor = isConfirmed ? "#15803D" : "#854D0E";
