@@ -582,7 +582,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
                 This independent TEDx event is operated under license from TED.
               </span>
               <span className="text-[9px] text-white tracking-[0.15em] font-mono uppercase">
-                Â© {new Date().getFullYear()}{" "}
+                &copy; {new Date().getFullYear()}{" "}
                 <span className="text-ted-red font-black">
                   TED<span className="lowercase">x</span>
                 </span>
