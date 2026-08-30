@@ -1,7 +1,8 @@
-﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
 // Proprietary and confidential. Unauthorized copying, modification, or
 // distribution of this file is strictly prohibited. See LICENSE for details.
 import path from "path";
+import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { readLocalStore, saveLocalStore } from "@/lib/db/local-store";
 
@@ -54,10 +55,14 @@ function saveLocal(coupons: PromoCoupon[]): void {
  * Generate a high-entropy random promo code (e.g. `TEDX-7K9Q2`).
  * Uses a carefully chosen alphabet that avoids visually ambiguous characters.
  */
+/**
+ * Generates a high-entropy random promo code using crypto.randomInt() — NOT Math.random().
+ * Math.random() is predictable and could allow an attacker to guess future codes.
+ */
 export function generateRandomCouponCode(prefix = "TEDX"): string {
   let randomPart = "";
   for (let i = 0; i < 5; i++) {
-    randomPart += COUPON_ALPHABET.charAt(Math.floor(Math.random() * COUPON_ALPHABET.length));
+    randomPart += COUPON_ALPHABET.charAt(crypto.randomInt(0, COUPON_ALPHABET.length));
   }
   return `${prefix}-${randomPart}`;
 }

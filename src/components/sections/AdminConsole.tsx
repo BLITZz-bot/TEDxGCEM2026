@@ -131,6 +131,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [isScanningCamera, setIsScanningCamera] = useState(false);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
 
+  // Payment Proof Screenshot Modal State
+  const [previewScreenshotUrl, setPreviewScreenshotUrl] = useState<{ url: string; title: string; utr?: string } | null>(null);
+
   // Initialize camera scanner when toggled
   useEffect(() => {
     if (!isScanningCamera) return;
@@ -1215,6 +1218,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         "Razorpay Payment ID",
         "Razorpay Order ID",
         "Bank UTR / Ref",
+        "Payment Proof Screenshot",
         "LinkedIn",
         "Referral",
         "UUID",
@@ -1272,6 +1276,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           escapeCSV(paymentId),
           escapeCSV(orderId),
           escapeCSV(utr),
+          escapeCSV(reg.payment_screenshot_url || "N/A"),
           escapeCSV(reg.linkedin || ""),
           escapeCSV(reg.referral || ""),
           escapeCSV(reg.id),
@@ -1323,6 +1328,10 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const statusBg = isConfirmed ? "#DCFCE7" : "#FEF08A";
         const statusColor = isConfirmed ? "#15803D" : "#854D0E";
 
+        const screenshotCell = reg.payment_screenshot_url
+          ? `<a href="${reg.payment_screenshot_url}" target="_blank" style="color: #2563EB; font-weight: bold; text-decoration: underline;">View Receipt Proof</a>`
+          : `<span style="color: #94A3B8;">N/A</span>`;
+
         return `
         <tr style="background-color: ${rowBg}; height: 28px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', 'Palatino Linotype', Georgia, serif; font-size: 9pt;">
           <td style="text-align: center; border: 1px solid #E2E8F0; color: #64748B; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${idx + 1}</td>
@@ -1343,6 +1352,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           <td style="text-align: center; border: 1px solid #E2E8F0; color: #0F172A; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${paymentId}</td>
           <td style="text-align: center; border: 1px solid #E2E8F0; color: #64748B; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${orderId}</td>
           <td style="text-align: center; border: 1px solid #E2E8F0; color: #0F172A; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${utr}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${screenshotCell}</td>
           <td style="border: 1px solid #E2E8F0; color: #0284C7; font-size: 9pt; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">${reg.linkedin ? `<a href="${reg.linkedin}" style="color: #0284C7;">${reg.linkedin}</a>` : "-"}</td>
           <td style="border: 1px solid #E2E8F0; color: #475569; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${reg.referral || "-"}</td>
           <td style="border: 1px solid #E2E8F0; color: #94A3B8; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${reg.id}</td>
@@ -1382,7 +1392,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         <table>
           <!-- BRAND BANNER HEADER -->
           <tr style="background-color: #000000; height: 45px;">
-            <td colspan="21" style="background-color: #000000; border-top: 4px solid #EB0028; padding: 12px 16px;">
+            <td colspan="22" style="background-color: #000000; border-top: 4px solid #EB0028; padding: 12px 16px;">
               <div class="banner-title"><span style="color: #EB0028;">TEDx</span>GCEM 2026 — OFFICIAL ATTENDEE DELEGATE & TRANSACTION REGISTRY</div>
               <div style="color: #94A3B8; font-size: 9pt; margin-top: 3px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
                 Gopalan College of Engineering & Management &nbsp;|&nbsp; Exported on: <strong>${formattedExportDate} at ${formattedExportTime}</strong> &nbsp;|&nbsp; Confidential Organizing Committee Document
@@ -1404,14 +1414,14 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               <div class="kpi-title">TOTAL REVENUE COLLECTED</div>
               <div class="kpi-value" style="color: #FACC15;">₹${totalRevenue.toLocaleString("en-IN")} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">INR</span></div>
             </td>
-            <td colspan="8" style="background-color: #0F172A; padding: 8px 12px;">
+            <td colspan="9" style="background-color: #0F172A; padding: 8px 12px;">
               <div class="kpi-title">PAYMENT VERIFICATION</div>
               <div class="kpi-value" style="color: #38BDF8; font-size: 9pt;">Direct UPI &amp; Bank UTR Protocol (NPCI)</div>
             </td>
           </tr>
 
           <!-- EMPTY SPACING ROW -->
-          <tr style="height: 10px;"><td colspan="21" style="border: none;"></td></tr>
+          <tr style="height: 10px;"><td colspan="22" style="border: none;"></td></tr>
 
           <!-- TABLE COLUMN HEADERS -->
           <tr style="background-color: #EB0028; height: 34px; color: #FFFFFF; font-weight: bold; text-transform: uppercase; font-size: 9pt; letter-spacing: 0.5px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
@@ -1433,6 +1443,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
             <th style="border: 1px solid #B91C1C; text-align: center; width: 170px; font-size: 9pt;">Payment ID / Ref</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 170px; font-size: 9pt;">Order / Session ID</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 140px; font-size: 9pt;">Bank UTR Number</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 150px; font-size: 9pt;">Payment Proof</th>
             <th style="border: 1px solid #B91C1C; text-align: left; width: 180px; font-size: 9pt;">LinkedIn Profile</th>
             <th style="border: 1px solid #B91C1C; text-align: left; width: 140px; font-size: 9pt;">Referral Source</th>
             <th style="border: 1px solid #B91C1C; text-align: left; width: 150px; font-size: 9pt;">Database UUID</th>
@@ -1449,7 +1460,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
             <td style="text-align: right; border: 1px solid #334155; color: #4ADE80; font-size: 10pt; font-weight: 900; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
               ₹${totalRevenue.toLocaleString("en-IN")}.00
             </td>
-            <td colspan="9" style="border: 1px solid #334155; color: #94A3B8; font-size: 9pt; text-align: right; padding-right: 14px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
+            <td colspan="10" style="border: 1px solid #334155; color: #94A3B8; font-size: 9pt; text-align: right; padding-right: 14px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
               Generated from TEDxGCEM Admin Portal &nbsp;|&nbsp; All Rights Reserved
             </td>
           </tr>
@@ -2003,10 +2014,23 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                               <div>
                                 <div className="text-ted-red font-bold">{paymentId}</div>
                                 {reg.utr_number ? (
-                                  <div className="text-[10px] text-white/60">UTR: <span className="text-white font-bold">{reg.utr_number}</span></div>
+                                  <div className="text-[10px] text-white/60">UTR: <span className="text-white font-bold tracking-wider">{reg.utr_number}</span></div>
                                 ) : (
                                   <div className="text-[10px] text-white/30">UTR: N/A</div>
                                 )}
+                                {reg.payment_screenshot_url ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setPreviewScreenshotUrl({
+                                      url: reg.payment_screenshot_url!,
+                                      title: `Payment Receipt: ${reg.full_name} (${reg.tier_name || "Delegate"})`,
+                                      utr: reg.utr_number || undefined,
+                                    })}
+                                    className="inline-flex items-center gap-1 mt-1 text-[10px] text-emerald-400 hover:text-emerald-300 font-bold underline cursor-pointer bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20"
+                                  >
+                                    <span>📸</span> View Receipt Proof
+                                  </button>
+                                ) : null}
                               </div>
                             ) : (
                               <span className="text-white/25 italic">No Payment Record</span>
@@ -3886,6 +3910,53 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
             </div>
           </div>
         ) : null}
+
+        {/* Payment Proof Screenshot Preview Modal */}
+        {previewScreenshotUrl && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-[#121212] border border-white/15 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+              <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">{previewScreenshotUrl.title}</h4>
+                  {previewScreenshotUrl.utr && (
+                    <p className="text-xs font-mono text-emerald-400 mt-0.5 font-bold">UTR: {previewScreenshotUrl.utr}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewScreenshotUrl(null)}
+                  className="p-1.5 text-white/50 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer text-lg leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-4 overflow-y-auto flex-1 flex items-center justify-center bg-black/50">
+                <img
+                  src={previewScreenshotUrl.url}
+                  alt="Payment Receipt Screenshot"
+                  className="max-h-[65vh] w-auto object-contain rounded-xl border border-white/10 shadow-lg"
+                />
+              </div>
+              <div className="p-3 border-t border-white/10 bg-black/30 flex items-center justify-between text-xs font-mono">
+                <a
+                  href={previewScreenshotUrl.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-400 hover:text-white font-bold flex items-center gap-1.5 underline"
+                >
+                  <span>↗</span> Open Full Resolution Image
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewScreenshotUrl(null)}
+                  className="px-4 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

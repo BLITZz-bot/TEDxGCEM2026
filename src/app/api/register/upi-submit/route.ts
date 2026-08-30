@@ -25,6 +25,14 @@ export async function POST(request: Request) {
     const turnstileToken = (formData.get("turnstileToken") as string)?.trim();
     const screenshotFile = formData.get("screenshot") as File | null;
 
+    // draftId is required — prevents client-controlled attendee/amount manipulation
+    if (!draftId) {
+      return NextResponse.json(
+        { error: "Missing registration session. Please restart the payment flow." },
+        { status: 400 }
+      );
+    }
+
     if (!utrNumber || !/^\d{12}$/.test(utrNumber)) {
       return NextResponse.json(
         { error: "Invalid UTR number. Must be exactly 12 numeric digits." },
@@ -55,9 +63,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cloudflare Turnstile Verification (if configured)
+    // Cloudflare Turnstile Verification — always verify when key is present
     const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
-    if (turnstileSecret && !turnstileSecret.includes("0x4AAAAAA") && turnstileSecret.trim() !== "") {
+    if (turnstileSecret && turnstileSecret.trim() !== "") {
       try {
         const verifyRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
           method: "POST",
@@ -81,7 +89,7 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // Idempotency check 1: Has this UTR already been submitted in registrations?
+    // Idempotency check: Has this UTR already been submitted?
     const { data: existingUtr } = await supabase
       .from("registrations")
       .select("id, full_name, tier_name, utr_number")
@@ -97,22 +105,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch the draft details to re-verify price and attendees
-    let draftData = null;
-    if (draftId) {
-      const draft = await getDraft(draftId);
+    // Fetch the draft — required, source of truth for price and attendees
+    const draft = await getDraft(draftId);
 
-      if (draft) {
-        if (draft.status === "confirmed") {
-          return NextResponse.json({
-            success: true,
-            message: "Registration already confirmed.",
-            draftId: draft.id,
-            alreadyConfirmed: true,
-          });
-        }
-        draftData = draft;
-      }
+    if (!draft) {
+      return NextResponse.json(
+        { error: "Registration session not found or expired. Please restart the payment flow." },
+        { status: 404 }
+      );
+    }
+
+    if (draft.status === "confirmed") {
+      return NextResponse.json({
+        success: true,
+        message: "Registration already confirmed.",
+        draftId: draft.id,
+        alreadyConfirmed: true,
+      });
     }
 
     // Current user context (fallback to draft user if available)
@@ -121,16 +130,16 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     const buyerEmail =
-      draftData?.buyer_email ||
+      draft.buyer_email ||
       sessionUser?.email ||
-      (formData.get("email") as string)?.trim().toLowerCase() ||
+      draft.email ||
       "attendee@tedxgcem.in";
 
-    const userId = sessionUser?.id || draftData?.user_id || null;
+    const userId = sessionUser?.id || draft.user_id || null;
 
     // Upload screenshot to Supabase Storage
     const fileExt = screenshotFile.name.split(".").pop()?.toLowerCase() || "webp";
-    const storagePath = `${draftId || "direct"}_${Date.now()}_${utrNumber}.${fileExt}`;
+    const storagePath = `${draftId}_${Date.now()}_${utrNumber}.${fileExt}`;
 
     const arrayBuffer = await screenshotFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -153,7 +162,7 @@ export async function POST(request: Request) {
       screenshotUrl = `storage://payment-proofs/${storagePath}`;
     }
 
-    // Prepare attendee records
+    // Prepare attendee records — always sourced from server-side draft, never from client
     interface AttendeeRecord {
       fullName: string;
       email?: string;
@@ -164,40 +173,28 @@ export async function POST(request: Request) {
       referral?: string;
     }
 
-    let attendeeList: AttendeeRecord[] = [];
-    if (draftData?.attendees_json && Array.isArray(draftData.attendees_json) && draftData.attendees_json.length > 0) {
-      attendeeList = draftData.attendees_json;
-    } else {
-      const rawAttendees = formData.get("attendees") as string;
-      if (rawAttendees) {
-        try {
-          attendeeList = JSON.parse(rawAttendees);
-        } catch {
-          // ignore parse error
-        }
-      }
-    }
+    const attendeeList: AttendeeRecord[] =
+      draft.attendees_json && Array.isArray(draft.attendees_json) && draft.attendees_json.length > 0
+        ? draft.attendees_json
+        : [
+            {
+              fullName: draft.full_name || "TEDx Delegate",
+              email: draft.email || buyerEmail,
+              phone: draft.phone || "0000000000",
+              organization: draft.organization || "GCEM",
+              designation: draft.designation || "Student",
+              linkedin: draft.linkedin || "",
+              referral: draft.referral || "",
+            },
+          ];
 
-    if (attendeeList.length === 0) {
-      attendeeList = [
-        {
-          fullName: draftData?.full_name || (formData.get("fullName") as string)?.trim() || "TEDx Delegate",
-          email: draftData?.email || buyerEmail,
-          phone: draftData?.phone || (formData.get("phone") as string)?.trim() || "0000000000",
-          organization: draftData?.organization || (formData.get("organization") as string)?.trim() || "GCEM",
-          designation: draftData?.designation || (formData.get("designation") as string)?.trim() || "Student",
-          linkedin: draftData?.linkedin || "",
-          referral: draftData?.referral || "",
-        },
-      ];
-    }
-
+    // All pricing from draft — never from client
     const activeTierFallback = await getActiveTicketTier();
-    const tierId = draftData?.tier_id || activeTierFallback.id;
-    const tierName = draftData?.tier_name || activeTierFallback.name;
-    const totalAmount = draftData?.amount !== undefined ? Number(draftData.amount) : (activeTierFallback.price * attendeeList.length);
-    const couponCode = draftData?.coupon_code || null;
-    const discountAmount = draftData?.discount_amount !== undefined ? Number(draftData.discount_amount) : 0;
+    const tierId = draft.tier_id || activeTierFallback.id;
+    const tierName = draft.tier_name || activeTierFallback.name;
+    const totalAmount = draft.amount !== undefined ? Number(draft.amount) : activeTierFallback.price * attendeeList.length;
+    const couponCode = draft.coupon_code || null;
+    const discountAmount = draft.discount_amount !== undefined ? Number(draft.discount_amount) : 0;
     const perTicketPrice = Number((totalAmount / attendeeList.length).toFixed(2));
 
     const registrationRecords = attendeeList.map((att, idx) => ({
@@ -236,10 +233,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Mark draft as confirmed if present
-    if (draftId) {
-      await updateDraftStatus(draftId, "confirmed");
-    }
+    // Mark draft as confirmed
+    await updateDraftStatus(draftId, "confirmed");
 
     // Redeem coupon if applicable
     if (couponCode && attendeeList.length === 1) {
