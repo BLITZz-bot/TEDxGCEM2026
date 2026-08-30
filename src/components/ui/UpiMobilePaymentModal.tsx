@@ -84,6 +84,10 @@ export default function UpiMobilePaymentModal({
   const originalAmount = discountAmount && discountAmount > 0 ? totalAmount + discountAmount : null;
 
   const [hasClickedPay, setHasClickedPay] = useState(false);
+  // Detect mobile to show appropriate UPI button behaviour
+  const isMobileDevice =
+    typeof navigator !== "undefined" &&
+    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
   // Reset ALL state when modal opens/closes
   useEffect(() => {
@@ -229,7 +233,12 @@ export default function UpiMobilePaymentModal({
 
   const handleLaunchUpi = () => {
     setHasClickedPay(true);
-    // Open UPI deep link
+    if (!isMobileDevice) {
+      // Desktop — UPI deep links only work on mobile UPI apps
+      setModalStep("proof");
+      return;
+    }
+    // Open UPI deep link on mobile
     window.location.href = upiUri;
   };
 
@@ -412,25 +421,18 @@ export default function UpiMobilePaymentModal({
                 </span>
               </label>
 
-              {/* Turnstile Bot Check — with token-expired reset callback */}
-              <TurnstileWidget
-                onSuccess={(token) => {
-                  setTurnstileToken(token);
-                  setTurnstileExpired(false);
-                }}
-                onExpire={() => {
-                  setTurnstileToken("");
-                  setTurnstileExpired(true);
-                }}
-              />
-              {turnstileExpired && (
-                <p className="text-[11px] text-amber-400 font-mono text-center">
-                  ⚠ Security check expired. It will auto-refresh shortly.
-                </p>
-              )}
-
               {/* Launch Payment CTA */}
               <div className="space-y-2 pt-1">
+                {!isMobileDevice && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs flex items-start space-x-2">
+                    <Smartphone className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Mobile required:</strong> UPI deep links open Google Pay, PhonePe, or
+                      Paytm on your phone. If you&apos;ve already paid on mobile, tap the button below to
+                      go directly to proof upload.
+                    </span>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={handleLaunchUpi}
@@ -441,7 +443,11 @@ export default function UpiMobilePaymentModal({
                       : "bg-white/10 text-white/30 cursor-not-allowed"
                   }`}
                 >
-                  <span>Proceed to Pay ₹{totalAmount.toFixed(2)} via UPI App</span>
+                  <span>
+                    {isMobileDevice
+                      ? `Proceed to Pay ₹${totalAmount.toFixed(2)} via UPI App`
+                      : `Already Paid on Mobile? Upload Proof ₹${totalAmount.toFixed(2)}`}
+                  </span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
@@ -540,7 +546,7 @@ export default function UpiMobilePaymentModal({
                       {isCompressing ? "Optimizing image..." : isDraggingOver ? "Drop here to upload" : "Tap to choose screenshot from gallery"}
                     </span>
                     <span className="text-[10px] font-mono text-white/40">
-                      PNG, JPG, or WebP (Max 2MB) • Drag & drop supported
+                      PNG, JPG, or WebP • Auto-compressed if &gt;1.5MB • Drag &amp; drop supported
                     </span>
                   </div>
                 ) : (
@@ -571,13 +577,31 @@ export default function UpiMobilePaymentModal({
                 )}
               </div>
 
+              {/* Security verification — on proof step so it's always solved before submit */}
+              <TurnstileWidget
+                onSuccess={(token) => {
+                  setTurnstileToken(token);
+                  setTurnstileExpired(false);
+                  setErrorMsg(null);
+                }}
+                onExpire={() => {
+                  setTurnstileToken("");
+                  setTurnstileExpired(true);
+                }}
+              />
+              {turnstileExpired && (
+                <p className="text-[11px] text-amber-400 font-mono text-center">
+                  ⚠ Security check expired. Please wait for it to auto-refresh.
+                </p>
+              )}
+
               {/* Submit CTA */}
               <div className="space-y-2 pt-2">
                 <button
                   type="submit"
-                  disabled={isSubmitting || utrNumber.length !== 12 || !screenshotFile}
+                  disabled={isSubmitting || utrNumber.length !== 12 || !screenshotFile || !turnstileToken}
                   className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center space-x-2 font-mono ${
-                    !isSubmitting && utrNumber.length === 12 && screenshotFile
+                    !isSubmitting && utrNumber.length === 12 && screenshotFile && turnstileToken
                       ? "bg-emerald-500 hover:bg-white text-black hover:text-black cursor-pointer shadow-[0_0_25px_rgba(16,185,129,0.4)]"
                       : "bg-white/10 text-white/30 cursor-not-allowed"
                   }`}

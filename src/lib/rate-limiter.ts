@@ -1,6 +1,10 @@
 /**
- * In-memory sliding-window rate limiter for sensitive endpoints
+ * In-memory sliding-window rate limiter for sensitive endpoints.
  * Protects against brute-force UTR submission and spam draft generation.
+ *
+ * ⚠️  SERVERLESS NOTE: This map resets on every cold start (Vercel, Netlify, etc.).
+ *     For production, replace with a persistent store (Upstash Redis, Supabase table).
+ *     As a mitigation, Cloudflare Turnstile provides bot-level protection on top of this.
  */
 
 interface RateLimitRecord {
@@ -56,18 +60,32 @@ export function checkRateLimit(
   };
 }
 
+/**
+ * Extract the real client IP from incoming request headers.
+ *
+ * Priority order (most trusted → least trusted):
+ *  1. cf-connecting-ip  — Set by Cloudflare; cannot be spoofed by clients
+ *  2. x-real-ip         — Set by some reverse proxies (nginx, etc.)
+ *  3. x-forwarded-for   — First IP; LAST resort — easily spoofed without a trusted proxy
+ */
 export function getClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
+  // Highest trust: Cloudflare's authenticated real-IP header
   const cfIp = request.headers.get("cf-connecting-ip");
   if (cfIp) {
     return cfIp.trim();
   }
+
+  // Nginx / other reverse proxies
   const realIp = request.headers.get("x-real-ip");
   if (realIp) {
     return realIp.trim();
   }
+
+  // Last resort — take the first entry (the original client before any proxies)
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+
   return "127.0.0.1";
 }
