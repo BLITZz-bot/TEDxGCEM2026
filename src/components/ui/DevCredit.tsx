@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
 // Proprietary and confidential. Unauthorized copying, modification, or
 // distribution of this file is strictly prohibited. See LICENSE for details.
 "use client";
@@ -35,7 +35,7 @@ export function DevCredit() {
       ref={devCreditRef}
       className="mt-6 flex flex-col items-center justify-center gap-2 text-center z-10 relative"
     >
-      <span className="text-[10px] uppercase tracking-[0.2em] text-white font-mono flex items-center justify-center gap-1.5 flex-wrap">
+      <span className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-mono flex items-center justify-center gap-1.5 flex-wrap">
         designed &amp; developed by{" "}
         <span className="relative inline-block">
           <button
