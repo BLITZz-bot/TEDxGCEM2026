@@ -20,6 +20,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Allow local network mobile devices to access dev resources & HMR
+  allowedDevOrigins: ["192.168.1.8", "192.168.1.8:3000", "localhost:3000"],
+
   // Remove the "X-Powered-By: Next.js" header (security best practice)
   poweredByHeader: false,
 

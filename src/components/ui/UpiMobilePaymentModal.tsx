@@ -387,11 +387,11 @@ export default function UpiMobilePaymentModal({
                 <div className="space-y-2 text-xs text-white/80">
                   <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
                     <span className="font-mono text-ted-red font-bold text-[11px]">1.</span>
-                    <span><strong>Direct UPI App:</strong> Tapping the button launches Google Pay, PhonePe, or Paytm automatically.</span>
+                    <span><strong>Direct UPI App:</strong> Tapping the button shows your installed UPI apps — simply select the one you want to use (Google Pay, PhonePe, Paytm, etc.).</span>
                   </div>
                   <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
                     <span className="font-mono text-ted-red font-bold text-[11px]">2.</span>
-                    <span><strong>Pay the Amount:</strong> Pay the amount that has been displayed on the screen. Do not alter or modify the amount.</span>
+                    <span><strong>Pay the Amount:</strong> The exact amount is automatically loaded into your UPI app for instant verification.</span>
                   </div>
                   <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
                     <span className="font-mono text-ted-red font-bold text-[11px]">3.</span>
