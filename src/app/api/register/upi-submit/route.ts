@@ -173,7 +173,7 @@ export async function POST(request: Request) {
       referral?: string;
     }
 
-    const attendeeList: AttendeeRecord[] =
+    const rawAttendeeList: AttendeeRecord[] =
       draft.attendees_json && Array.isArray(draft.attendees_json) && draft.attendees_json.length > 0
         ? draft.attendees_json
         : [
@@ -187,6 +187,15 @@ export async function POST(request: Request) {
               referral: draft.referral || "",
             },
           ];
+
+    const attendeeList = rawAttendeeList.map((att) => ({
+      ...att,
+      fullName: (att.fullName || "").trim(),
+      email: (att.email || "").trim().toLowerCase(),
+      phone: (att.phone || "").trim(),
+      organization: (att.organization || "").trim() || "GCEM",
+      designation: (att.designation || "").trim() || "Student",
+    }));
 
     // All pricing from draft — never from client
     const activeTierFallback = await getActiveTicketTier();
