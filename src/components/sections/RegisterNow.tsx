@@ -169,6 +169,19 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
               if (parsed.ticketQuantity) setTicketQuantity(parsed.ticketQuantity);
               if (parsed.appliedCoupon) setAppliedCoupon(parsed.appliedCoupon);
               setRestoredNotification(true);
+
+              // Check if user was in the middle of active UPI checkout (e.g. app switch reload)
+              try {
+                const activeUpi = sessionStorage.getItem("tedx_active_upi_session");
+                if (activeUpi) {
+                  const parsedUpi = JSON.parse(activeUpi);
+                  if (Date.now() - parsedUpi.timestamp < 30 * 60 * 1000) {
+                    setStep("form");
+                    if (parsedUpi.draftId) setActiveDraftId(parsedUpi.draftId);
+                    setMobileModalOpen(true);
+                  }
+                }
+              } catch {}
             }, 0);
           }
         }
