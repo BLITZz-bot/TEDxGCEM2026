@@ -38,6 +38,8 @@ interface UpiMobilePaymentModalProps {
   tierId: string;
   couponCode?: string | null;
   discountAmount?: number;
+  /** True only when the page reloaded mid-payment (app-switch). Forces restore to proof step. */
+  restoreSession?: boolean;
   onSuccess: (result: {
     confirmedCount: number;
     primaryRegistrationId: string;
@@ -58,6 +60,7 @@ export default function UpiMobilePaymentModal({
   tierId,
   couponCode,
   discountAmount,
+  restoreSession = false,
   onSuccess,
 }: UpiMobilePaymentModalProps) {
   // Step in modal: "instructions" | "proof"
@@ -102,22 +105,33 @@ export default function UpiMobilePaymentModal({
     /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
   // Check if returning to an in-progress payment, otherwise reset state
+  // ONLY restore from sessionStorage when the parent explicitly sets restoreSession=true
+  // (i.e., page reloaded after app-switching to Google Pay/PhonePe).
+  // A normal modal open always starts fresh so re-opening for a new attempt works correctly.
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add("modal-open");
-      try {
-        const saved = sessionStorage.getItem("tedx_active_upi_session");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Date.now() - parsed.timestamp < 30 * 60 * 1000) {
-            setModalStep("proof");
-            setHasAgreed(true);
-            setHasClickedPay(true);
-            return;
-          }
-        }
-      } catch {}
 
+      // Only auto-jump to proof if the parent explicitly flagged this as a session restore
+      // (happens when the page reloaded during an app-switch to GPay/PhonePe).
+      // For all other opens, always start fresh.
+      if (restoreSession) {
+        try {
+          const saved = sessionStorage.getItem("tedx_active_upi_session");
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Date.now() - parsed.timestamp < 30 * 60 * 1000) {
+              setModalStep("proof");
+              setHasAgreed(true);
+              setHasClickedPay(true);
+              return;
+            }
+          }
+        } catch {}
+      }
+
+      // Fresh open: clear any stale session and reset all state
+      try { sessionStorage.removeItem("tedx_active_upi_session"); } catch {}
       const timer = setTimeout(() => {
         setModalStep("instructions");
         setHasAgreed(false);
@@ -135,7 +149,7 @@ export default function UpiMobilePaymentModal({
       document.body.classList.remove("modal-open");
     }
     return () => document.body.classList.remove("modal-open");
-  }, [isOpen]);
+  }, [isOpen, restoreSession]);
 
   // Visibility change detection: When user actually returns from the external UPI app, switch to proof step
   useEffect(() => {

@@ -100,6 +100,8 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
   const [mobileModalOpen, setMobileModalOpen] = useState(false);
   const [activeDraftId, setActiveDraftId] = useState("");
   const [activeAuthToken, setActiveAuthToken] = useState("");
+  // True only when the modal is opened via session-restore (page reload after GPay/PhonePe app-switch)
+  const [restoreUpiSession, setRestoreUpiSession] = useState(false);
 
   const [restoredNotification, setRestoredNotification] = useState(false);
 
@@ -178,6 +180,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                   if (Date.now() - parsedUpi.timestamp < 30 * 60 * 1000) {
                     setStep("form");
                     if (parsedUpi.draftId) setActiveDraftId(parsedUpi.draftId);
+                    setRestoreUpiSession(true);
                     setMobileModalOpen(true);
                   }
                 }
@@ -1441,8 +1444,9 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
       {/* Mobile Direct Payment & Proof Modal */}
       <UpiMobilePaymentModal
         isOpen={mobileModalOpen}
-        onClose={() => setMobileModalOpen(false)}
+        onClose={() => { setMobileModalOpen(false); setRestoreUpiSession(false); }}
         draftId={activeDraftId}
+        restoreSession={restoreUpiSession}
         totalAmount={payablePrice}
         tierName={activeTier.name}
         buyerName={attendees[0]?.fullName || user?.user_metadata?.full_name || "Delegate"}
@@ -1454,8 +1458,10 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
         onSuccess={(res) => {
           try {
             localStorage.removeItem("tedx_local_draft_v1");
+            sessionStorage.removeItem("tedx_active_upi_session");
           } catch {}
           setMobileModalOpen(false);
+          setRestoreUpiSession(false);
           setVerifiedPaymentId(`UPI-${res.utrNumber}`);
           setConfirmedCount(res.confirmedCount || ticketQuantity);
           setIsSuccess(true);
