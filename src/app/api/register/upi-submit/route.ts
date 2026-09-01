@@ -19,11 +19,43 @@ export async function POST(request: Request) {
       );
     }
 
-    const formData = await request.formData();
-    const draftId = (formData.get("draftId") as string)?.trim();
-    const utrNumber = (formData.get("utrNumber") as string)?.trim();
-    const turnstileToken = (formData.get("turnstileToken") as string)?.trim();
-    const screenshotFile = formData.get("screenshot") as File | null;
+    let draftId = "";
+    let utrNumber = "";
+    let turnstileToken = "";
+    let screenshotBuffer: Buffer | null = null;
+    let screenshotMime = "image/jpeg";
+    let screenshotExt = "jpg";
+
+    const contentType = request.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      const body = await request.json();
+      draftId = (body.draftId as string)?.trim() || "";
+      utrNumber = (body.utrNumber as string)?.trim() || "";
+      turnstileToken = (body.turnstileToken as string)?.trim() || "";
+      const base64Data = (body.screenshotBase64 as string) || "";
+      if (base64Data) {
+        const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches) {
+          screenshotMime = matches[1];
+          screenshotBuffer = Buffer.from(matches[2], "base64");
+        } else {
+          screenshotBuffer = Buffer.from(base64Data, "base64");
+        }
+        screenshotExt = screenshotMime.includes("png") ? "png" : screenshotMime.includes("webp") ? "webp" : "jpg";
+      }
+    } else {
+      const formData = await request.formData();
+      draftId = (formData.get("draftId") as string)?.trim() || "";
+      utrNumber = (formData.get("utrNumber") as string)?.trim() || "";
+      turnstileToken = (formData.get("turnstileToken") as string)?.trim() || "";
+      const file = formData.get("screenshot") as File | null;
+      if (file) {
+        screenshotMime = file.type;
+        screenshotExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        screenshotBuffer = Buffer.from(await file.arrayBuffer());
+      }
+    }
 
     // draftId is required — prevents client-controlled attendee/amount manipulation
     if (!draftId) {
@@ -40,7 +72,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!screenshotFile) {
+    if (!screenshotBuffer || screenshotBuffer.length === 0) {
       return NextResponse.json(
         { error: "Payment screenshot is required as proof." },
         { status: 400 }
@@ -48,15 +80,15 @@ export async function POST(request: Request) {
     }
 
     // Validate screenshot size & MIME type (must match Supabase bucket file_size_limit = 2MB)
-    if (screenshotFile.size > 2 * 1024 * 1024) {
+    if (screenshotBuffer.length > 2.5 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "Screenshot file exceeds 2MB. Please compress or choose a smaller image." },
+        { error: "Screenshot file exceeds size limit. Please choose a smaller image." },
         { status: 400 }
       );
     }
 
     const allowedMimes = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowedMimes.includes(screenshotFile.type)) {
+    if (!allowedMimes.includes(screenshotMime)) {
       return NextResponse.json(
         { error: "Invalid file type. Only PNG, JPG, and WebP images are accepted." },
         { status: 400 }
@@ -157,16 +189,12 @@ export async function POST(request: Request) {
     const userId = sessionUser?.id || draft.user_id || null;
 
     // Upload screenshot to Supabase Storage
-    const fileExt = screenshotFile.name.split(".").pop()?.toLowerCase() || "webp";
-    const storagePath = `${draftId}_${Date.now()}_${utrNumber}.${fileExt}`;
-
-    const arrayBuffer = await screenshotFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const storagePath = `${draftId}_${Date.now()}_${utrNumber}.${screenshotExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from("payment-proofs")
-      .upload(storagePath, buffer, {
-        contentType: screenshotFile.type,
+      .upload(storagePath, screenshotBuffer!, {
+        contentType: screenshotMime,
         upsert: true,
       });
 

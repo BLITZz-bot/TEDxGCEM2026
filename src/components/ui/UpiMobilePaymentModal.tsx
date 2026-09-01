@@ -72,6 +72,7 @@ export default function UpiMobilePaymentModal({
   // Proof state
   const [utrNumber, setUtrNumber] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotBase64, setScreenshotBase64] = useState<string | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -171,8 +172,8 @@ export default function UpiMobilePaymentModal({
     };
   }, [screenshotPreview]);
 
-  // Canvas image compression for photos > 1.5 MB
-  const compressImage = (file: File): Promise<Blob> => {
+  // Efficient image compressor: scales down screenshots to max 1280px and outputs high-quality JPEG DataURL
+  const compressImage = (file: File): Promise<{ dataUrl: string; blob: Blob }> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -181,7 +182,7 @@ export default function UpiMobilePaymentModal({
           const canvas = document.createElement("canvas");
           let width = img.width;
           let height = img.height;
-          const maxDimension = 1600;
+          const maxDimension = 1280;
 
           if (width > height && width > maxDimension) {
             height = Math.round((height * maxDimension) / width);
@@ -200,13 +201,14 @@ export default function UpiMobilePaymentModal({
           }
           ctx.drawImage(img, 0, 0, width, height);
 
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
           canvas.toBlob(
             (blob) => {
-              if (blob) resolve(blob);
-              else reject(new Error("Compression failed"));
+              if (blob) resolve({ dataUrl, blob });
+              else resolve({ dataUrl, blob: file });
             },
-            "image/webp",
-            0.82
+            "image/jpeg",
+            0.8
           );
         };
         img.onerror = () => reject(new Error("Image load error"));
@@ -222,30 +224,30 @@ export default function UpiMobilePaymentModal({
 
     // Validate type
     const validMimes = ["image/jpeg", "image/png", "image/webp"];
-    if (!validMimes.includes(file.type)) {
+    if (!validMimes.includes(file.type) && !file.type.startsWith("image/")) {
       setErrorMsg("Please upload a valid image file (PNG, JPG, or WebP).");
       return;
     }
 
-    if (file.size <= 1.5 * 1024 * 1024) {
-      setScreenshotFile(file);
-      setScreenshotPreview(URL.createObjectURL(file));
-      return;
-    }
-
-    // Compress large phone screenshots
     setIsCompressing(true);
     try {
-      const compressedBlob = await compressImage(file);
-      const compressedFile = new File([compressedBlob], file.name, {
-        type: "image/webp",
+      const { dataUrl, blob } = await compressImage(file);
+      const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+        type: "image/jpeg",
       });
-      setScreenshotFile(compressedFile);
-      setScreenshotPreview(URL.createObjectURL(compressedBlob));
+      setScreenshotFile(optimizedFile);
+      setScreenshotBase64(dataUrl);
+      setScreenshotPreview(dataUrl);
     } catch {
-      // Fallback to original file
-      setScreenshotFile(file);
-      setScreenshotPreview(URL.createObjectURL(file));
+      // Fallback: direct FileReader to DataURL
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setScreenshotFile(file);
+        setScreenshotBase64(dataUrl);
+        setScreenshotPreview(dataUrl);
+      };
+      reader.readAsDataURL(file);
     } finally {
       setIsCompressing(false);
     }
@@ -332,25 +334,54 @@ export default function UpiMobilePaymentModal({
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      formData.append("utrNumber", cleanUtr);
-      formData.append("screenshot", screenshotFile);
-      formData.append("turnstileToken", turnstileToken);
-      if (draftId) formData.append("draftId", draftId);
-      formData.append("tierId", tierId);
-      formData.append("tierName", tierName);
-      formData.append("amount", totalAmount.toString());
-      formData.append("buyerEmail", buyerEmail);
-      formData.append("attendees", JSON.stringify(attendees));
-      if (couponCode) formData.append("couponCode", couponCode);
-      if (discountAmount) formData.append("discountAmount", discountAmount.toString());
+      let res: Response;
 
-      const res = await fetch("/api/register/upi-submit", {
-        method: "POST",
-        body: formData,
-      });
+      if (screenshotBase64) {
+        res = await fetch("/api/register/upi-submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            draftId,
+            utrNumber: cleanUtr,
+            turnstileToken,
+            screenshotBase64,
+            tierId,
+            tierName,
+            amount: totalAmount.toString(),
+            buyerEmail,
+            attendees,
+            couponCode,
+            discountAmount: discountAmount ? discountAmount.toString() : undefined,
+          }),
+        });
+      } else {
+        const formData = new FormData();
+        formData.append("utrNumber", cleanUtr);
+        formData.append("screenshot", screenshotFile);
+        formData.append("turnstileToken", turnstileToken);
+        if (draftId) formData.append("draftId", draftId);
+        formData.append("tierId", tierId);
+        formData.append("tierName", tierName);
+        formData.append("amount", totalAmount.toString());
+        formData.append("buyerEmail", buyerEmail);
+        formData.append("attendees", JSON.stringify(attendees));
+        if (couponCode) formData.append("couponCode", couponCode);
+        if (discountAmount) formData.append("discountAmount", discountAmount.toString());
 
-      const data = await res.json();
+        res = await fetch("/api/register/upi-submit", {
+          method: "POST",
+          body: formData,
+        });
+      }
+
+      const contentType = res.headers.get("content-type") || "";
+      let data: { error?: string; confirmedCount?: number; primaryRegistrationId?: string } = {};
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Server returned status ${res.status}`);
+      }
 
       if (!res.ok) {
         throw new Error(data.error || "Submission failed. Please check details and retry.");
