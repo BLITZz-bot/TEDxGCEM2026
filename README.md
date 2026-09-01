@@ -28,7 +28,7 @@ This repository maintains **two distinct payment architectures** distributed acr
 | Architecture | Branch | Fee / Commission | Payment Channels | Verification Method | Best For |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Direct UPI QR & Mobile Handoff** *(Current)* | `v2-upi-payments` | **0% (Zero Fee)** | Google Pay, PhonePe, Paytm, CRED, BHIM, Bank UPI | 12-Digit Bank UTR + Receipt Screenshot Proof (Supabase Storage) | Direct college bank collection without gateway charges or KYC delays |
-| **Razorpay Payment Gateway** | `main` | ~2% + GST | Credit/Debit Cards, NetBanking, UPI, Wallets | Automated Server-Side HMAC-SHA256 Signature Verification | Fully automated commercial gateway checkout |
+| **Razorpay Payment Gateway** | `dev` | ~2% + GST | Credit/Debit Cards, NetBanking, UPI, Wallets | Automated Server-Side HMAC-SHA256 Signature Verification | Fully automated commercial gateway checkout |
 
 ---
 
