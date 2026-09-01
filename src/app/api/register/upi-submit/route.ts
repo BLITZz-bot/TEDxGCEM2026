@@ -63,9 +63,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cloudflare Turnstile Verification — always verify when key is present
+    // Cloudflare Turnstile Verification — verify when real secret key is configured
     const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
-    if (turnstileSecret && turnstileSecret.trim() !== "") {
+    const isPlaceholderSecret =
+      !turnstileSecret ||
+      turnstileSecret.trim() === "" ||
+      turnstileSecret.includes("...") ||
+      turnstileSecret.toLowerCase().includes("placeholder");
+
+    const isMockToken = turnstileToken === "mock_dev_verified_turnstile_token";
+
+    if (isMockToken && isPlaceholderSecret && process.env.NODE_ENV !== "production") {
+      console.log("[Turnstile] Accepted dev mock token (no real secret configured).");
+    } else if (turnstileSecret && !isPlaceholderSecret) {
+      if (!turnstileToken) {
+        return NextResponse.json(
+          { error: "Security check is required. Please verify the captcha." },
+          { status: 400 }
+        );
+      }
+
       try {
         const verifyRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
           method: "POST",
@@ -73,12 +90,14 @@ export async function POST(request: Request) {
           body: JSON.stringify({
             secret: turnstileSecret,
             response: turnstileToken,
+            remoteip: ip || undefined,
           }),
         });
         const verifyData = await verifyRes.json();
         if (!verifyData.success) {
+          console.error("[Turnstile] Verification failed:", verifyData["error-codes"] || verifyData);
           return NextResponse.json(
-            { error: "Security check failed. Please refresh and try again." },
+            { error: "Security check failed. Please refresh the captcha and try again." },
             { status: 400 }
           );
         }
