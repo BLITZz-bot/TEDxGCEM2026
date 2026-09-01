@@ -83,11 +83,7 @@ export default function TurnstileWidget({
         }
       };
 
-      if (typeof window.turnstile.ready === "function") {
-        window.turnstile.ready(executeRender);
-      } else {
-        executeRender();
-      }
+      executeRender();
     };
 
     if (window.turnstile) {
