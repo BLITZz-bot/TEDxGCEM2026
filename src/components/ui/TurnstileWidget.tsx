@@ -39,12 +39,20 @@ export default function TurnstileWidget({
 
   const [isSimulatedVerified, setIsSimulatedVerified] = useState(false);
 
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  const onExpireRef = useRef(onExpire);
+
+  onSuccessRef.current = onSuccess;
+  onErrorRef.current = onError;
+  onExpireRef.current = onExpire;
+
   useEffect(() => {
     // If no real production/test key is configured yet, safely auto-verify in dev mode
     if (isPlaceholderKey) {
       const timer = setTimeout(() => {
         setIsSimulatedVerified(true);
-        onSuccess("mock_dev_verified_turnstile_token");
+        onSuccessRef.current("mock_dev_verified_turnstile_token");
       }, 500);
       return () => clearTimeout(timer);
     }
@@ -69,14 +77,14 @@ export default function TurnstileWidget({
             size: "normal",
             callback: (token: string) => {
               console.log("[Turnstile] Verified successfully! Security token generated.");
-              if (isMounted) onSuccess(token);
+              if (isMounted) onSuccessRef.current?.(token);
             },
             "error-callback": (err: string) => {
               console.warn("[Turnstile] Widget error callback:", err);
-              if (isMounted && onError) onError(err);
+              if (isMounted && onErrorRef.current) onErrorRef.current(err);
             },
             "expired-callback": () => {
-              if (isMounted && onExpire) onExpire();
+              if (isMounted && onExpireRef.current) onExpireRef.current();
             },
           });
         } catch (err) {
@@ -125,7 +133,7 @@ export default function TurnstileWidget({
         }
       }
     };
-  }, [effectiveSiteKey, isPlaceholderKey, onSuccess, onError, onExpire]);
+  }, [effectiveSiteKey, isPlaceholderKey]);
 
   if (isPlaceholderKey) {
     return (
