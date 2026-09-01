@@ -292,10 +292,21 @@ export default function UpiMobilePaymentModal({
       return;
     }
 
-    // Launch UPI intent via temporary anchor tag click.
-    // NEVER use window.location.href = upiUri because on Android Chrome / mobile Safari,
-    // setting window.location to a non-HTTP scheme mutates browser history, leading to
-    // "This page could not load" / ERR_UNKNOWN_URL_SCHEME when returning to the tab.
+    // ── Android Chrome / Mobile Safari UPI intent launch ─────────────────────
+    // Strategy: push the current page URL into browser history BEFORE navigating
+    // to upi://.  When the user presses "Back" inside Google Pay / PhonePe, the
+    // browser pops to this history entry (tedxgcem.in) instead of trying to
+    // render upi:// which cannot be displayed and shows "page couldn't load".
+    //
+    // history.pushState does NOT trigger a navigation / page reload — it only
+    // inserts a new history entry with the current URL so Back lands here safely.
+    try {
+      window.history.pushState({ upiHandoff: true }, "", window.location.href);
+    } catch {}
+
+    // Now navigate to the UPI deep link via a temporary anchor element.
+    // Using a.click() instead of window.location.href so the intent is dispatched
+    // as a link-click (handled by the OS intent system), not a tab navigation.
     try {
       const a = document.createElement("a");
       a.href = upiUri;
@@ -308,8 +319,9 @@ export default function UpiMobilePaymentModal({
         }
       }, 500);
     } catch {
-      // Intentionally no fallback to window.location.assign(upiUri) —
-      // doing so would navigate the tab to upi:// and break the page on return.
+      // Last-resort: navigate directly. The pushState above means Back still
+      // returns to the correct page even in this case.
+      window.location.href = upiUri;
     }
   };
 
