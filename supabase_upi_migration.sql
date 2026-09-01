@@ -97,7 +97,9 @@ END $$;
 -- 4. REGISTRATIONS TABLE COLUMN UPDATES & ANTI-FRAUD UTR PROTECTION
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE public.registrations
-    ADD COLUMN IF NOT EXISTS payment_screenshot_url TEXT;
+    ADD COLUMN IF NOT EXISTS payment_screenshot_url TEXT,
+    ADD COLUMN IF NOT EXISTS attendees_json JSONB DEFAULT '[]'::jsonb,
+    ADD COLUMN IF NOT EXISTS unit_price NUMERIC;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_utr_number 
     ON public.registrations(utr_number) 

@@ -195,17 +195,18 @@ export async function POST(request: Request) {
     const totalAmount = draft.amount !== undefined ? Number(draft.amount) : activeTierFallback.price * attendeeList.length;
     const couponCode = draft.coupon_code || null;
     const discountAmount = draft.discount_amount !== undefined ? Number(draft.discount_amount) : 0;
-    const perTicketPrice = Number((totalAmount / attendeeList.length).toFixed(2));
+    const primaryAttendee = attendeeList[0];
+    const unitPrice = activeTierFallback.price;
 
-    const registrationRecords = attendeeList.map((att, idx) => ({
-      full_name: att.fullName.trim(),
-      email: att.email?.trim() || buyerEmail,
+    const registrationRecord: Record<string, unknown> = {
+      full_name: primaryAttendee.fullName.trim(),
+      email: primaryAttendee.email?.trim() || buyerEmail,
       buyer_email: buyerEmail,
-      phone: att.phone.trim(),
-      organization: att.organization?.trim() || "GCEM",
-      designation: att.designation?.trim() || "Student",
-      linkedin: att.linkedin?.trim() || null,
-      referral: att.referral?.trim() || null,
+      phone: primaryAttendee.phone.trim(),
+      organization: primaryAttendee.organization?.trim() || "GCEM",
+      designation: primaryAttendee.designation?.trim() || "Student",
+      linkedin: primaryAttendee.linkedin?.trim() || null,
+      referral: primaryAttendee.referral?.trim() || null,
       user_id: userId,
       ticket_status: "confirmed",
       payment_id: `UPI-${utrNumber}`,
@@ -214,18 +215,33 @@ export async function POST(request: Request) {
       payment_screenshot_url: screenshotUrl,
       tier_id: tierId,
       tier_name: tierName,
-      coupon_code: idx === 0 ? couponCode : null,
-      discount_amount: idx === 0 ? discountAmount : 0,
-      amount_paid: perTicketPrice,
-      ticket_count: 1,
-    }));
+      coupon_code: couponCode,
+      discount_amount: discountAmount,
+      amount_paid: totalAmount,
+      unit_price: unitPrice,
+      ticket_count: attendeeList.length,
+      attendees_json: attendeeList,
+    };
 
-    const { data: insertedData, error: insertError } = await supabase
+    let { data: insertedData, error: insertError } = await supabase
       .from("registrations")
-      .insert(registrationRecords)
+      .insert([registrationRecord])
       .select("id");
 
-    if (insertError) {
+    // Resilient fallback in case database table does not yet have attendees_json or unit_price columns
+    if (insertError && (insertError.message?.includes("attendees_json") || insertError.message?.includes("unit_price"))) {
+      const fallbackRecord = { ...registrationRecord };
+      delete fallbackRecord.attendees_json;
+      delete fallbackRecord.unit_price;
+      const retry = await supabase
+        .from("registrations")
+        .insert([fallbackRecord])
+        .select("id");
+      insertedData = retry.data;
+      insertError = retry.error;
+    }
+
+    if (insertError || !insertedData || insertedData.length === 0) {
       console.error("[Supabase] UPI Registration insert error:", insertError);
       return NextResponse.json(
         { error: "Failed to store registration pass. Please contact support with UTR: " + utrNumber },
@@ -244,7 +260,7 @@ export async function POST(request: Request) {
           fullName: attendeeList[0].fullName,
           phone: attendeeList[0].phone,
           organization: attendeeList[0].organization || "GCEM",
-          registrationId: insertedData?.[0]?.id,
+          registrationId: insertedData[0]?.id,
           tierId,
           amountPaid: totalAmount,
         });
@@ -255,8 +271,9 @@ export async function POST(request: Request) {
 
     // Trigger automated confirmation email
     try {
+      const primaryRegId = insertedData[0]?.id || `TEDX-${utrNumber}`;
       const emailAttendees = attendeeList.map((att, idx) => ({
-        id: (insertedData?.[idx] as { id: string } | undefined)?.id || `TEDX-${utrNumber}`,
+        id: idx === 0 ? primaryRegId : `${primaryRegId}-${idx + 1}`,
         fullName: att.fullName,
         email: att.email || buyerEmail,
         phone: att.phone,
@@ -278,7 +295,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      confirmedCount: insertedData.length,
+      confirmedCount: attendeeList.length,
       primaryRegistrationId: insertedData[0]?.id,
       utrNumber,
       tierName,

@@ -35,6 +35,16 @@ interface AdminRegistration {
   discount_amount?: number | null;
   amount_paid?: number | null;
   amount?: number | null;
+  unit_price?: number | null;
+  attendees_json?: Array<{
+    fullName: string;
+    email?: string;
+    phone: string;
+    organization?: string;
+    designation?: string;
+    linkedin?: string;
+    referral?: string;
+  }> | null;
 }
 
 interface AdminMessage {
@@ -107,6 +117,68 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [activeSubTab, setActiveSubTab] = useState<"registrations" | "tickets" | "coupons" | "messages" | "settings" | "team" | "speakers" | "partners" | "scanner">("registrations");
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Expandable Co-Participants viewer state in registrations table
+  const [expandedCoParticipantsId, setExpandedCoParticipantsId] = useState<string | null>(null);
+
+  // Grouping helper: Consolidates multi-ticket registrations into 1 clean row per transaction
+  const consolidatedRegistrations = React.useMemo(() => {
+    const grouped = new Map<string, AdminRegistration>();
+    const singles: AdminRegistration[] = [];
+
+    for (const reg of registrations) {
+      const key = reg.utr_number && reg.utr_number.trim() !== "" ? reg.utr_number.trim() : null;
+      if (key) {
+        if (!grouped.has(key)) {
+          const baseAttendees =
+            reg.attendees_json && Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0
+              ? [...reg.attendees_json]
+              : [
+                  {
+                    fullName: reg.full_name,
+                    email: reg.email,
+                    phone: reg.phone,
+                    organization: reg.organization,
+                    designation: reg.designation || "Student",
+                    linkedin: reg.linkedin || undefined,
+                    referral: reg.referral || undefined,
+                  },
+                ];
+
+          grouped.set(key, {
+            ...reg,
+            attendees_json: baseAttendees,
+            ticket_count: Math.max(reg.ticket_count || 1, baseAttendees.length),
+            amount_paid: Number(reg.amount_paid) || 300,
+          });
+        } else {
+          const existing = grouped.get(key)!;
+          const currentAttendees = Array.isArray(existing.attendees_json) ? [...existing.attendees_json] : [];
+          const alreadyPresent = currentAttendees.some(
+            (a) => a.fullName.toLowerCase() === reg.full_name.toLowerCase() && a.phone === reg.phone
+          );
+          if (!alreadyPresent) {
+            currentAttendees.push({
+              fullName: reg.full_name,
+              email: reg.email,
+              phone: reg.phone,
+              organization: reg.organization,
+              designation: reg.designation || "Student",
+              linkedin: reg.linkedin || undefined,
+              referral: reg.referral || undefined,
+            });
+            existing.attendees_json = currentAttendees;
+            existing.ticket_count = currentAttendees.length;
+            existing.amount_paid = (Number(existing.amount_paid) || 0) + (Number(reg.amount_paid) || 0);
+          }
+        }
+      } else {
+        singles.push(reg);
+      }
+    }
+
+    return [...Array.from(grouped.values()), ...singles];
+  }, [registrations]);
+
   // Ticket Tiers State
   const [tierActionLoading, setTierActionLoading] = useState<string | null>(null);
   const [editingTier, setEditingTier] = useState<TicketTier | null>(null);
@@ -151,13 +223,25 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         scannerInstance.render(
           (decodedText: string) => {
             const query = decodedText.toLowerCase();
-            const found = registrations.find(
-              (r) =>
+            const found = consolidatedRegistrations.find((r) => {
+              const matchesPrimary =
                 r.id.toLowerCase().includes(query.replace("tedx-", "")) ||
                 r.email.toLowerCase().includes(query) ||
                 r.full_name.toLowerCase().includes(query) ||
-                (query.includes("id=") && query.includes(r.id.slice(0, 8).toLowerCase()))
-            );
+                (query.includes("id=") && query.includes(r.id.slice(0, 8).toLowerCase()));
+              if (matchesPrimary) return true;
+
+              if (Array.isArray(r.attendees_json)) {
+                return r.attendees_json.some(
+                  (att) =>
+                    att.fullName.toLowerCase().includes(query) ||
+                    (att.email && att.email.toLowerCase().includes(query)) ||
+                    (att.phone && att.phone.includes(query))
+                );
+              }
+              return false;
+            });
+
             if (found) {
               setScanMatchedReg(found);
               setScanMessage(null);
@@ -180,7 +264,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         } catch {}
       }
     };
-  }, [isScanningCamera, registrations]);
+  }, [isScanningCamera, consolidatedRegistrations]);
 
   // Event settings states
   const [themeName, setThemeName] = useState(settings?.theme_name || "");
@@ -1166,7 +1250,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   // directly in Microsoft Excel, Google Sheets, Numbers, and LibreOffice.
   // ─────────────────────────────────────────────────────────────────────────────
   const exportRegistrationsToExcel = (format: "excel" | "csv" = "excel") => {
-    if (registrations.length === 0) {
+    if (consolidatedRegistrations.length === 0) {
       alert("No registrations recorded to export.");
       return;
     }
@@ -1186,11 +1270,22 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       hour12: true,
     });
 
-    const confirmedCount = registrations.filter(
-      (r) => r.ticket_status === "confirmed" || r.ticket_status === "approved" || !!r.razorpay_payment_id || !!r.payment_id
-    ).length;
-    const totalRevenue = registrations.reduce((sum, reg) => {
-      const isConfirmed = reg.ticket_status === "confirmed" || reg.ticket_status === "approved" || !!reg.razorpay_payment_id || !!reg.payment_id;
+    const confirmedPassesCount = consolidatedRegistrations.reduce((sum, reg) => {
+      const isConfirmed =
+        reg.ticket_status === "confirmed" ||
+        reg.ticket_status === "approved" ||
+        !!reg.razorpay_payment_id ||
+        !!reg.payment_id;
+      if (!isConfirmed) return sum;
+      return sum + (Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
+    }, 0);
+
+    const totalRevenue = consolidatedRegistrations.reduce((sum, reg) => {
+      const isConfirmed =
+        reg.ticket_status === "confirmed" ||
+        reg.ticket_status === "approved" ||
+        !!reg.razorpay_payment_id ||
+        !!reg.payment_id;
       if (!isConfirmed) return sum;
       const val = reg.amount_paid !== null && reg.amount_paid !== undefined
         ? Number(reg.amount_paid)
@@ -1204,24 +1299,27 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         "Ticket ID",
         "Date",
         "Time",
-        "Attendee Name",
-        "Email",
-        "Phone",
-        "Organization",
+        "Primary Delegate / Buyer",
+        "Email Address",
+        "Phone Number",
+        "Institution / Org",
         "Designation",
         "Ticket Tier",
-        "Ticket Status",
-        "Amount Paid (INR)",
+        "Price / Ticket (INR)",
+        "Pass Quantity",
+        "Total Amount Paid (INR)",
         "Coupon Code",
         "Discount (INR)",
+        "Co-Participants / Other Delegates",
+        "Ticket Status",
         "Payment Method",
-        "Razorpay Payment ID",
-        "Razorpay Order ID",
+        "Payment ID / Ref",
+        "Order / Session ID",
         "Bank UTR / Ref",
         "Payment Proof Screenshot",
-        "LinkedIn",
-        "Referral",
-        "UUID",
+        "LinkedIn Profile",
+        "Referral Source",
+        "Database UUID",
       ];
 
       const escapeCSV = (value: unknown): string => {
@@ -1230,7 +1328,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         return `"${str}"`;
       };
 
-      const rows = registrations.map((reg, idx) => {
+      const rows = consolidatedRegistrations.map((reg, idx) => {
         const ticketId = reg.id ? `TEDX-${reg.id.slice(0, 8).toUpperCase()}` : "TEDX-PASS";
         const dateObj = reg.created_at ? new Date(reg.created_at) : null;
         const formattedDate = dateObj
@@ -1249,13 +1347,29 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const orderId = reg.razorpay_order_id || "N/A";
         const utr = reg.utr_number || "N/A";
         const method = reg.payment_method ? reg.payment_method.toUpperCase() : (isConfirmed ? "ONLINE" : "N/A");
-        const amount = reg.amount_paid !== null && reg.amount_paid !== undefined
-          ? String(reg.amount_paid)
-          : (reg.amount !== null && reg.amount !== undefined ? String(reg.amount) : (isConfirmed ? "300" : "0"));
+        
+        const qty = Math.max(1, Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
+        const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined
+          ? Number(reg.amount_paid)
+          : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : (isConfirmed ? (qty * 300) : 0));
+        const unitPriceVal = reg.unit_price !== null && reg.unit_price !== undefined
+          ? Number(reg.unit_price)
+          : Number(((paidVal + (Number(reg.discount_amount) || 0)) / qty).toFixed(2));
+
         const tierName = reg.tier_name || "Early Bird";
         const couponCode = reg.coupon_code || "None";
         const hasValidCoupon = Boolean(reg.coupon_code && Number(reg.discount_amount) > 0);
         const discountAmount = hasValidCoupon ? String(reg.discount_amount) : "0";
+
+        const otherAttendees = Array.isArray(reg.attendees_json) && reg.attendees_json.length > 1
+          ? reg.attendees_json.slice(1)
+          : [];
+
+        const coParticipantsText = otherAttendees.length > 0
+          ? otherAttendees
+              .map((att, i) => `Pass #${i + 2}: ${att.fullName || "Delegate"} (${att.email || "No Email"} | ${att.phone || "No Phone"} | ${att.organization || "GCEM"}${att.designation ? ` - ${att.designation}` : ""})`)
+              .join(" | ")
+          : "None (Solo Delegate)";
 
         return [
           escapeCSV(idx + 1),
@@ -1268,10 +1382,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           escapeCSV(reg.organization),
           escapeCSV(reg.designation || "Student"),
           escapeCSV(tierName),
-          escapeCSV(statusText),
-          escapeCSV(amount),
+          escapeCSV(unitPriceVal.toFixed(2)),
+          escapeCSV(qty),
+          escapeCSV(paidVal.toFixed(2)),
           escapeCSV(couponCode),
           escapeCSV(discountAmount),
+          escapeCSV(coParticipantsText),
+          escapeCSV(statusText),
           escapeCSV(method),
           escapeCSV(paymentId),
           escapeCSV(orderId),
@@ -1297,7 +1414,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     }
 
     // ── BEAUTIFULLY STYLED EXCEL (HTML/XML SPREADSHEET) WITH BOOKMAN ANTIQUA (FONT SIZE 9) ──
-    const rowsHtml = registrations
+    const rowsHtml = consolidatedRegistrations
       .map((reg, idx) => {
         const ticketId = reg.id ? `TEDX-${reg.id.slice(0, 8).toUpperCase()}` : "TEDX-PASS";
         const dateObj = reg.created_at ? new Date(reg.created_at) : null;
@@ -1317,16 +1434,34 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const orderId = reg.razorpay_order_id || "N/A";
         const utr = reg.utr_number || "N/A";
         const method = reg.payment_method ? reg.payment_method.toUpperCase() : (isConfirmed ? "ONLINE" : "N/A");
+
+        const qty = Math.max(1, Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
         const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined
           ? Number(reg.amount_paid)
-          : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : (isConfirmed ? 300 : 0));
-        const amount = `₹${paidVal.toFixed(2)}`;
+          : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : (isConfirmed ? (qty * 300) : 0));
+        const unitPriceVal = reg.unit_price !== null && reg.unit_price !== undefined
+          ? Number(reg.unit_price)
+          : Number(((paidVal + (Number(reg.discount_amount) || 0)) / qty).toFixed(2));
+
         const tierName = reg.tier_name || "Early Bird";
         const couponCode = reg.coupon_code || "-";
         const discountStr = (reg.coupon_code && Number(reg.discount_amount) > 0) ? `₹${reg.discount_amount}.00` : "-";
         const rowBg = idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
         const statusBg = isConfirmed ? "#DCFCE7" : "#FEF08A";
         const statusColor = isConfirmed ? "#15803D" : "#854D0E";
+
+        const otherAttendees = Array.isArray(reg.attendees_json) && reg.attendees_json.length > 1
+          ? reg.attendees_json.slice(1)
+          : [];
+
+        const coParticipantsHtml = otherAttendees.length > 0
+          ? otherAttendees
+              .map(
+                (att, i) =>
+                  `<div style="margin-bottom: 3px;"><strong>Pass #${i + 2}:</strong> ${att.fullName || "Delegate"} <span style="color: #64748B;">(${att.email || "No Email"} | ${att.phone || "No Phone"} | ${att.organization || "GCEM"}${att.designation ? ` - ${att.designation}` : ""})</span></div>`
+              )
+              .join("")
+          : `<span style="color: #94A3B8; font-style: italic;">None (Solo Delegate)</span>`;
 
         const screenshotCell = reg.payment_screenshot_url
           ? `<a href="${reg.payment_screenshot_url}" target="_blank" style="color: #2563EB; font-weight: bold; text-decoration: underline;">View Receipt Proof</a>`
@@ -1344,10 +1479,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           <td style="border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600; text-transform: uppercase; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${reg.organization || ""}</td>
           <td style="border: 1px solid #E2E8F0; color: #475569; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${reg.designation || "Student"}</td>
           <td style="text-align: center; border: 1px solid #E2E8F0; color: #0F172A; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${tierName}</td>
-          <td style="text-align: center; border: 1px solid #E2E8F0; background-color: ${statusBg}; color: ${statusColor}; font-weight: bold; font-size: 9pt; letter-spacing: 0.5px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">${statusText}</td>
-          <td style="text-align: right; border: 1px solid #E2E8F0; color: #0F172A; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${amount}</td>
+          <td style="text-align: right; border: 1px solid #E2E8F0; color: #0F172A; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">₹${unitPriceVal.toFixed(2)}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #EB0028; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${qty} Pass${qty > 1 ? "es" : ""}</td>
+          <td style="text-align: right; border: 1px solid #E2E8F0; color: #15803D; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">₹${paidVal.toFixed(2)}</td>
           <td style="text-align: center; border: 1px solid #E2E8F0; color: #64748B; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${couponCode}</td>
           <td style="text-align: right; border: 1px solid #E2E8F0; color: #16A34A; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${discountStr}</td>
+          <td style="border: 1px solid #E2E8F0; color: #1E293B; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 8.5pt; line-height: 1.3;">${coParticipantsHtml}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; background-color: ${statusBg}; color: ${statusColor}; font-weight: bold; font-size: 9pt; letter-spacing: 0.5px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">${statusText}</td>
           <td style="text-align: center; border: 1px solid #E2E8F0; color: #475569; font-weight: 600; text-transform: uppercase; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">${method}</td>
           <td style="text-align: center; border: 1px solid #E2E8F0; color: #0F172A; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${paymentId}</td>
           <td style="text-align: center; border: 1px solid #E2E8F0; color: #64748B; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt; mso-number-format: '\\@';">${orderId}</td>
@@ -1392,7 +1530,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         <table>
           <!-- BRAND BANNER HEADER -->
           <tr style="background-color: #000000; height: 45px;">
-            <td colspan="22" style="background-color: #000000; border-top: 4px solid #EB0028; padding: 12px 16px;">
+            <td colspan="25" style="background-color: #000000; border-top: 4px solid #EB0028; padding: 12px 16px;">
               <div class="banner-title"><span style="color: #EB0028;">TEDx</span>GCEM 2026 — OFFICIAL ATTENDEE DELEGATE & TRANSACTION REGISTRY</div>
               <div style="color: #94A3B8; font-size: 9pt; margin-top: 3px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
                 Gopalan College of Engineering & Management &nbsp;|&nbsp; Exported on: <strong>${formattedExportDate} at ${formattedExportTime}</strong> &nbsp;|&nbsp; Confidential Organizing Committee Document
@@ -1402,15 +1540,15 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
           <!-- KPI SUMMARY STATS CARDS -->
           <tr style="background-color: #0F172A; height: 38px;">
-            <td colspan="4" style="background-color: #0F172A; border-right: 1px solid #334155; padding: 8px 12px;">
-              <div class="kpi-title">TOTAL REGISTERED</div>
-              <div class="kpi-value" style="color: #FFFFFF;">${registrations.length} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">Delegates</span></div>
-            </td>
-            <td colspan="4" style="background-color: #0F172A; border-right: 1px solid #334155; padding: 8px 12px;">
-              <div class="kpi-title">CONFIRMED PASSES</div>
-              <div class="kpi-value" style="color: #4ADE80;">${confirmedCount} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">Paid Tickets</span></div>
+            <td colspan="5" style="background-color: #0F172A; border-right: 1px solid #334155; padding: 8px 12px;">
+              <div class="kpi-title">TOTAL BOOKINGS</div>
+              <div class="kpi-value" style="color: #FFFFFF;">${consolidatedRegistrations.length} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">Transactions</span></div>
             </td>
             <td colspan="5" style="background-color: #0F172A; border-right: 1px solid #334155; padding: 8px 12px;">
+              <div class="kpi-title">TOTAL CONFIRMED PASSES</div>
+              <div class="kpi-value" style="color: #4ADE80;">${confirmedPassesCount} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">Paid Tickets</span></div>
+            </td>
+            <td colspan="6" style="background-color: #0F172A; border-right: 1px solid #334155; padding: 8px 12px;">
               <div class="kpi-title">TOTAL REVENUE COLLECTED</div>
               <div class="kpi-value" style="color: #FACC15;">₹${totalRevenue.toLocaleString("en-IN")} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">INR</span></div>
             </td>
@@ -1421,7 +1559,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           </tr>
 
           <!-- EMPTY SPACING ROW -->
-          <tr style="height: 10px;"><td colspan="22" style="border: none;"></td></tr>
+          <tr style="height: 10px;"><td colspan="25" style="border: none;"></td></tr>
 
           <!-- TABLE COLUMN HEADERS -->
           <tr style="background-color: #EB0028; height: 34px; color: #FFFFFF; font-weight: bold; text-transform: uppercase; font-size: 9pt; letter-spacing: 0.5px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
@@ -1429,16 +1567,19 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
             <th style="border: 1px solid #B91C1C; text-align: center; width: 130px; font-size: 9pt;">Ticket ID</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 110px; font-size: 9pt;">Date</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 95px; font-size: 9pt;">Time</th>
-            <th style="border: 1px solid #B91C1C; text-align: left; width: 180px; font-size: 9pt;">Attendee Name</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 180px; font-size: 9pt;">Primary Delegate / Buyer</th>
             <th style="border: 1px solid #B91C1C; text-align: left; width: 220px; font-size: 9pt;">Email Address</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 130px; font-size: 9pt;">Phone Number</th>
             <th style="border: 1px solid #B91C1C; text-align: left; width: 200px; font-size: 9pt;">Institution / Org</th>
             <th style="border: 1px solid #B91C1C; text-align: left; width: 140px; font-size: 9pt;">Designation</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 130px; font-size: 9pt;">Ticket Tier</th>
-            <th style="border: 1px solid #B91C1C; text-align: center; width: 130px; font-size: 9pt;">Ticket Status</th>
-            <th style="border: 1px solid #B91C1C; text-align: right; width: 110px; font-size: 9pt;">Amount Paid</th>
+            <th style="border: 1px solid #B91C1C; text-align: right; width: 110px; font-size: 9pt;">Price / Pass</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 100px; font-size: 9pt;">Quantity</th>
+            <th style="border: 1px solid #B91C1C; text-align: right; width: 130px; font-size: 9pt;">Total Amount Paid</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 120px; font-size: 9pt;">Coupon Code</th>
             <th style="border: 1px solid #B91C1C; text-align: right; width: 110px; font-size: 9pt;">Discount Amount</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 340px; font-size: 9pt;">Co-Participants / Other Delegates</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 130px; font-size: 9pt;">Ticket Status</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 110px; font-size: 9pt;">Method</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 170px; font-size: 9pt;">Payment ID / Ref</th>
             <th style="border: 1px solid #B91C1C; text-align: center; width: 170px; font-size: 9pt;">Order / Session ID</th>
@@ -1454,13 +1595,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
           <!-- SUMMARY FOOTER ROW -->
           <tr style="background-color: #000000; height: 32px; color: #FFFFFF; font-weight: bold; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif; font-size: 9pt;">
-            <td colspan="11" style="text-align: right; border: 1px solid #334155; padding-right: 16px; text-transform: uppercase; font-size: 9pt;">
-              TOTAL CONFIRMED REVENUE (${confirmedCount} TICKETS):
+            <td colspan="12" style="text-align: right; border: 1px solid #334155; padding-right: 16px; text-transform: uppercase; font-size: 9pt;">
+              TOTAL CONFIRMED REVENUE (${confirmedPassesCount} TOTAL PASSES):
             </td>
             <td style="text-align: right; border: 1px solid #334155; color: #4ADE80; font-size: 10pt; font-weight: 900; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
               ₹${totalRevenue.toLocaleString("en-IN")}.00
             </td>
-            <td colspan="10" style="border: 1px solid #334155; color: #94A3B8; font-size: 9pt; text-align: right; padding-right: 14px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
+            <td colspan="12" style="border: 1px solid #334155; color: #94A3B8; font-size: 9pt; text-align: right; padding-right: 14px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
               Generated from TEDxGCEM Admin Portal &nbsp;|&nbsp; All Rights Reserved
             </td>
           </tr>
@@ -1772,19 +1913,19 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               <button
                 type="button"
                 onClick={() => exportRegistrationsToExcel("excel")}
-                disabled={registrations.length === 0}
+                disabled={consolidatedRegistrations.length === 0}
                 title="Download formatted executive Excel spreadsheet (.xls) with full branding, KPI summary cards & color coding"
                 className="px-4 py-2 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500 hover:text-black rounded-full transition-all text-xs font-mono uppercase tracking-wider font-bold flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
-                <span>Download Excel ({registrations.length})</span>
+                <span>Download Excel ({consolidatedRegistrations.length})</span>
               </button>
               <button
                 type="button"
                 onClick={() => exportRegistrationsToExcel("csv")}
-                disabled={registrations.length === 0}
+                disabled={consolidatedRegistrations.length === 0}
                 title="Download plain raw CSV (.csv)"
                 className="px-2.5 py-2 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all text-xs font-mono uppercase tracking-widest font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -1901,7 +2042,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-black/30 border border-white/5 font-mono">
               <div className="space-y-0.5">
                 <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <span>📊</span> Attendee Database ({registrations.length} Total Records)
+                  <span>📊</span> Attendee Database ({consolidatedRegistrations.length} Total Bookings)
                 </div>
                 <p className="text-[10px] text-white/40">
                   Exports a beautiful, standalone spreadsheet (.xls). Local edits in Excel will never alter your live database.
@@ -1911,7 +2052,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                 <button
                   type="button"
                   onClick={() => exportRegistrationsToExcel("excel")}
-                  disabled={registrations.length === 0}
+                  disabled={consolidatedRegistrations.length === 0}
                   className="px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-black border border-emerald-500/40 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -1922,7 +2063,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                 <button
                   type="button"
                   onClick={() => exportRegistrationsToExcel("csv")}
-                  disabled={registrations.length === 0}
+                  disabled={consolidatedRegistrations.length === 0}
                   className="px-3 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   CSV
@@ -1931,29 +2072,40 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
             </div>
 
             <div className="overflow-x-auto">
-              {registrations.length === 0 ? (
+              {consolidatedRegistrations.length === 0 ? (
                 <p className="text-center text-white/40 py-16 font-mono text-sm">No registrations recorded yet.</p>
               ) : (
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-white/10 text-white/40 font-mono uppercase tracking-wider">
-                      <th className="pb-4 pr-4">Attendee</th>
+                      <th className="pb-4 pr-4">Attendee / Buyer</th>
                       <th className="pb-4 px-4">Contact Info</th>
-                      <th className="pb-4 px-4">Organization / Role</th>
-                      <th className="pb-4 px-4">Ticket Tier</th>
+                      <th className="pb-4 px-4">Organization</th>
+                      <th className="pb-4 px-4">Tier & Price</th>
+                      <th className="pb-4 px-4">Passes & Co-Participants</th>
                       <th className="pb-4 px-4">Status & Paid</th>
-                      <th className="pb-4 px-4">Coupon Used</th>
-                      <th className="pb-4 px-4">Razorpay Payment ID / UTR</th>
+                      <th className="pb-4 px-4">Coupon</th>
+                      <th className="pb-4 px-4">UTR & Proof</th>
                       <th className="pb-4 pl-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {registrations.map((reg) => {
+                    {consolidatedRegistrations.map((reg) => {
                       const isConfirmed = reg.ticket_status === "confirmed" || reg.ticket_status === "approved" || !!reg.razorpay_payment_id || !!reg.payment_id;
                       const paymentId = reg.razorpay_payment_id || reg.payment_id;
-                      const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined ? reg.amount_paid : (isConfirmed ? 300 : 0);
+                      const qty = Math.max(1, Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
+                      const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined ? Number(reg.amount_paid) : (isConfirmed ? (qty * 300) : 0);
+                      const unitPriceVal = reg.unit_price !== null && reg.unit_price !== undefined
+                        ? Number(reg.unit_price)
+                        : Number(((paidVal + (Number(reg.discount_amount) || 0)) / qty).toFixed(2));
+
+                      const otherAttendees = Array.isArray(reg.attendees_json) && reg.attendees_json.length > 1
+                        ? reg.attendees_json.slice(1)
+                        : [];
+                      const isExpanded = expandedCoParticipantsId === reg.id;
+
                       return (
-                        <tr key={reg.id} className="hover:bg-white/[0.02] transition-colors">
+                        <tr key={reg.id} className="hover:bg-white/[0.02] transition-colors align-top">
                           <td className="py-4 pr-4">
                             <div className="font-bold text-white uppercase tracking-wider">{reg.full_name}</div>
                             <div className="text-[10px] text-white/30 font-mono mt-0.5">{new Date(reg.created_at).toLocaleDateString()}</div>
@@ -1972,21 +2124,72 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                             <div className="uppercase text-white/80 font-bold">{reg.organization}</div>
                             <div className="text-[10px] text-white/40">{reg.designation || "Student"}</div>
                           </td>
-                          <td className="py-4 px-4 font-mono">
+                          <td className="py-4 px-4 font-mono space-y-1">
                             <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white font-bold text-[10px] uppercase">
                               {reg.tier_name || "Early Bird"}
                             </span>
+                            <div className="text-[10px] text-white/50">
+                              ₹{unitPriceVal.toFixed(2)} / pass
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 font-mono space-y-1.5 min-w-[210px]">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded font-bold text-[10px] ${
+                                qty > 1
+                                  ? "bg-ted-red/20 border border-ted-red/40 text-ted-red"
+                                  : "bg-white/10 border border-white/15 text-white"
+                              }`}>
+                                🎫 {qty} Pass{qty > 1 ? "es" : ""}
+                              </span>
+                              {qty > 1 && (
+                                <span className="text-[9px] text-white/40 uppercase font-bold">Group</span>
+                              )}
+                            </div>
+
+                            {otherAttendees.length > 0 ? (
+                              <div className="pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedCoParticipantsId(isExpanded ? null : reg.id)}
+                                  className="text-[10px] text-blue-400 hover:text-blue-300 font-bold underline flex items-center gap-1 cursor-pointer"
+                                >
+                                  <span>👥</span> {isExpanded ? "Hide Co-Participants" : `View +${otherAttendees.length} Co-Participants`}
+                                </button>
+
+                                {isExpanded && (
+                                  <div className="mt-2 p-2.5 rounded-xl bg-black/70 border border-white/15 text-[10px] space-y-2 text-white/90">
+                                    <div className="text-white/40 uppercase tracking-widest text-[9px] font-bold pb-1 border-b border-white/10 flex items-center justify-between">
+                                      <span>Co-Participants</span>
+                                      <span>{otherAttendees.length} Delegates</span>
+                                    </div>
+                                    {otherAttendees.map((att, i) => (
+                                      <div key={i} className="space-y-0.5 border-b border-white/5 pb-1.5 last:border-none">
+                                        <div className="font-bold text-white flex items-center justify-between">
+                                          <span>Pass #{i + 2}: {att.fullName || "Delegate"}</span>
+                                          <span className="text-white/40 text-[9px]">{att.designation || "Student"}</span>
+                                        </div>
+                                        <div className="text-white/70 text-[9px]">{att.email || "No Email"}</div>
+                                        <div className="text-ted-red text-[9px]">{att.phone}</div>
+                                        <div className="text-white/40 text-[9px]">{att.organization || "GCEM"}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-[10px] text-white/30">Solo Delegate</div>
+                            )}
                           </td>
                           <td className="py-4 px-4 space-y-1">
                             {isConfirmed ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 font-mono text-[10px] uppercase font-bold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                Paid (₹{paidVal})
+                                Paid (₹{paidVal.toLocaleString("en-IN")})
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-mono text-[10px] uppercase font-bold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
-                                Pending
+                                Pending (₹{paidVal.toLocaleString("en-IN")})
                               </span>
                             )}
                             {reg.payment_method && (
@@ -2023,7 +2226,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                                     type="button"
                                     onClick={() => setPreviewScreenshotUrl({
                                       url: reg.payment_screenshot_url!,
-                                      title: `Payment Receipt: ${reg.full_name} (${reg.tier_name || "Delegate"})`,
+                                      title: `Payment Receipt: ${reg.full_name} (${reg.tier_name || "Delegate"}) - ${qty} Pass${qty > 1 ? "es" : ""}`,
                                       utr: reg.utr_number || undefined,
                                     })}
                                     className="inline-flex items-center gap-1 mt-1 text-[10px] text-emerald-400 hover:text-emerald-300 font-bold underline cursor-pointer bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20"
