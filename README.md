@@ -23,12 +23,12 @@
 
 ## 💳 Payment Architectures & Branch Guide
 
-This repository maintains **two distinct payment architectures** distributed across dedicated git branches. You can deploy or switch to either architecture depending on your payment collection requirements:
+This repository devtains **two distinct payment architectures** distributed across dedicated git branches. 
 
 | Architecture | Branch | Fee / Commission | Payment Channels | Verification Method | Best For |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Direct UPI QR & Mobile Handoff** *(Current)* | `v2-upi-payments` | **0% (Zero Fee)** | Google Pay, PhonePe, Paytm, CRED, BHIM, Bank UPI | 12-Digit Bank UTR + Receipt Screenshot Proof (Supabase Storage) | Direct college bank collection without gateway charges or KYC delays |
-| **Razorpay Payment Gateway** | `main` | ~2% + GST | Credit/Debit Cards, NetBanking, UPI, Wallets | Automated Server-Side HMAC-SHA256 Signature Verification | Fully automated commercial gateway checkout |
+| **Razorpay Payment Gateway** | `dev` | ~2% + GST | Credit/Debit Cards, NetBanking, UPI, Wallets | Automated Server-Side HMAC-SHA256 Signature Verification | Fully automated commercial gateway checkout |
 
 ---
 
@@ -58,9 +58,9 @@ The `v2-upi-payments` branch bypasses commercial gateway fees by implementing a 
 
 ---
 
-### Method 2: Razorpay Payment Gateway (`main`)
+### Method 2: Razorpay Payment Gateway (`dev`)
 
-The `main` branch integrates standard commercial checkout via the official Razorpay JavaScript SDK and server-side verification APIs.
+The `dev` branch integrates standard commercial checkout via the official Razorpay JavaScript SDK and server-side verification APIs.
 
 #### Key Capabilities:
 1. **Automated Gateway Checkout:**
@@ -81,7 +81,7 @@ To switch between the two architectures on your local machine:
 git checkout v2-upi-payments
 
 # Switch to Razorpay Gateway Architecture (Cards, NetBanking, Automated Gateway)
-git checkout main
+git checkout dev
 ```
 
 ---
@@ -119,7 +119,7 @@ git checkout main
 * **Multi-Pass Switcher:** Group buyers can cycle through and download passes for all registered delegates from one unified dashboard.
 
 ### 3. Automated Transactional Email Delivery
-* **Resend Integration:** Dispatches emails from verified domain `team@tedxgcem.in`.
+* **Resend Integration:** Dispatches emails from verified dodev `team@tedxgcem.in`.
 * **Buyer Receipt Email:** Full transaction breakdown, UTR / Razorpay reference, and attendee registry.
 * **Individual Delegate Pass Email:** Every participant receives their personal admission pass in their inbox.
 * **Contact Us Relay:** Inquiries routed directly to `tedxgcem@gmail.com` with one-click reply headers.
@@ -155,13 +155,13 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAA...
 ADMIN_EMAIL=tedxgcem@gmail.com
 ADMIN_DELETE_PASSWORD=your_secure_admin_deletion_password
 
-# 5. Resend Email Delivery (Domain: tedxgcem.in)
+# 5. Resend Email Delivery (Dodev: tedxgcem.in)
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
 RESEND_FROM_EMAIL=team@tedxgcem.in
 NEXT_PUBLIC_SITE_URL=https://tedxgcem.in
 ```
 
-### For `main` Branch (Razorpay Gateway):
+### For `dev` Branch (Razorpay Gateway):
 ```env
 # 1. Supabase Database & Auth
 SUPABASE_URL=https://your-project-id.supabase.co
