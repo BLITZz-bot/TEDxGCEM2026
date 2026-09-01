@@ -310,16 +310,27 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
 
       // If multi-ticket order, also send individual ticket emails to other delegates if their emails are distinct
       if (attendees.length > 1) {
-        for (const att of attendees) {
+        const perTicketPrice = Math.round((amountPaid / attendees.length) * 100) / 100;
+
+        for (let idx = 0; idx < attendees.length; idx++) {
+          const att = attendees[idx];
           if (att.email && att.email.toLowerCase() !== buyerEmail.toLowerCase()) {
             try {
-              const delegateTicketId = `TEDX-${att.id.slice(0, 8).toUpperCase()}`;
+              let delegateTicketId = att.id || "TEDX-PASS";
+              if (!delegateTicketId.startsWith("TEDX-")) {
+                const base = delegateTicketId.replace(/^tedx-/i, "").slice(0, 8).toUpperCase();
+                const lastPart = delegateTicketId.includes("-") ? delegateTicketId.split("-").pop() : String(idx + 1);
+                delegateTicketId = (lastPart && /^\d+$/.test(lastPart))
+                  ? `TEDX-${base}-${lastPart}`
+                  : `TEDX-${base}-${idx + 1}`;
+              }
+
               const delegateHtml = generateTicketEmailHtml({
                 recipientName: att.fullName,
                 isBuyerSummary: false,
                 ticketId: delegateTicketId,
                 tierName,
-                amountPaid,
+                amountPaid: perTicketPrice,
                 attendeeList: [att],
                 eventDate,
                 eventVenue,
@@ -334,7 +345,7 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
                 html: delegateHtml,
               });
 
-              console.log(`[Email Service] Delegate pass email sent via Resend to: ${att.email}`);
+              console.log(`[Email Service] Delegate pass email sent via Resend to: ${att.email} (${delegateTicketId})`);
             } catch (delErr) {
               console.warn(`[Email Service] Failed to send email to delegate ${att.email}:`, delErr);
             }
@@ -348,9 +359,9 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
     }
   }
 
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─────────────────────────────────────────────────────────────────────────────
   // B. ATTEMPT TRANSMISSION VIA NODEMAILER SMTP (Fallback / Gmail)
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─────────────────────────────────────────────────────────────────────────────
   if (smtpUser && smtpPass) {
     try {
       const transporter = nodemailer.createTransport({
@@ -377,16 +388,27 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
       console.log(`[Email Service] Confirmation email sent via SMTP to buyer: ${buyerEmail}`);
 
       if (attendees.length > 1) {
-        for (const att of attendees) {
+        const perTicketPrice = Math.round((amountPaid / attendees.length) * 100) / 100;
+
+        for (let idx = 0; idx < attendees.length; idx++) {
+          const att = attendees[idx];
           if (att.email && att.email.toLowerCase() !== buyerEmail.toLowerCase()) {
             try {
-              const delegateTicketId = `TEDX-${att.id.slice(0, 8).toUpperCase()}`;
+              let delegateTicketId = att.id || "TEDX-PASS";
+              if (!delegateTicketId.startsWith("TEDX-")) {
+                const base = delegateTicketId.replace(/^tedx-/i, "").slice(0, 8).toUpperCase();
+                const lastPart = delegateTicketId.includes("-") ? delegateTicketId.split("-").pop() : String(idx + 1);
+                delegateTicketId = (lastPart && /^\d+$/.test(lastPart))
+                  ? `TEDX-${base}-${lastPart}`
+                  : `TEDX-${base}-${idx + 1}`;
+              }
+
               const delegateHtml = generateTicketEmailHtml({
                 recipientName: att.fullName,
                 isBuyerSummary: false,
                 ticketId: delegateTicketId,
                 tierName,
-                amountPaid,
+                amountPaid: perTicketPrice,
                 attendeeList: [att],
                 eventDate,
                 eventVenue,
@@ -400,6 +422,8 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
                 subject: `Your Delegate Pass: TEDxGCEM 2026 [${delegateTicketId}]`,
                 html: delegateHtml,
               });
+
+              console.log(`[Email Service] Delegate pass email sent via SMTP to: ${att.email} (${delegateTicketId})`);
             } catch (delErr) {
               console.warn(`[Email Service] SMTP dispatch to delegate ${att.email} failed:`, delErr);
             }

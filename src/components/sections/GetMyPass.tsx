@@ -14,6 +14,7 @@ interface GetMyPassProps {
 
 interface Registration {
   id: string;
+  pass_code?: string;
   full_name: string;
   email: string;
   buyer_email?: string | null;
@@ -25,6 +26,10 @@ interface Registration {
   razorpay_payment_id?: string | null;
   utr_number?: string | null;
   payment_method?: string | null;
+  amount_paid?: number;
+  unit_price?: number;
+  delegate_index?: number;
+  total_delegates?: number;
 }
 
 export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
@@ -87,9 +92,11 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
   }, [user, settings]);
 
   const eventYear = getEventYear(settings?.event_date);
-  const ticketId = registration?.id
-    ? `TEDX-${registration.id.slice(0, 8).toUpperCase()}`
-    : "TEDX-PASS";
+  const ticketId = registration?.pass_code || (
+    registration?.id
+      ? (registration.id.startsWith("TEDX-") ? registration.id : `TEDX-${registration.id.slice(0, 8).toUpperCase()}`)
+      : "TEDX-PASS"
+  );
 
   // ─────────────────────────────────────────────────────────────────────────
   // PORTRAIT CANVAS PASS GENERATOR (800 × 1200 VERTICAL DELEGATE BADGE)

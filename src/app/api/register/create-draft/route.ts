@@ -98,7 +98,16 @@ export async function POST(request: Request) {
       amount: verifiedFinalAmount,
       coupon_code: validatedCouponCode,
       discount_amount: verifiedDiscount,
-      attendees_json: attendees,
+      attendees_json: Array.isArray(attendees)
+        ? attendees.map((a: { fullName?: string; email?: string; phone?: string; organization?: string; designation?: string; linkedin?: string; referral?: string }) => ({
+            ...a,
+            fullName: (a.fullName || "").trim(),
+            email: (a.email || "").trim().toLowerCase(),
+            phone: (a.phone || "").trim(),
+            organization: (a.organization || "").trim() || "GCEM",
+            designation: (a.designation || "").trim() || "Student",
+          }))
+        : [],
       status: "pending",
       created_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),

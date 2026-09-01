@@ -35,19 +35,120 @@ export async function GET(request: Request) {
 
     const supabase = await createClient();
     
-    // Extract short ID part (e.g. TEDX-27197CEA -> 27197cea)
-    const rawId = id ? id.replace("TEDX-", "").toLowerCase() : "";
+    // Extract ID and parse optional sub-index (e.g. TEDX-27197CEA-2 -> baseId: 27197cea, subIndex: 2)
+    const cleanId = id ? id.trim().replace(/^TEDX-/i, "").toLowerCase() : "";
+    let baseId = cleanId;
+    let subIndex: number | null = null;
 
-    let query = supabase.from("registrations").select("id, full_name, email, buyer_email, organization, designation, ticket_status, payment_id, created_at");
-    
-    if (email) {
-      query = query.eq("email", email);
+    const lastDash = cleanId.lastIndexOf("-");
+    if (lastDash !== -1) {
+      const parsedIdx = parseInt(cleanId.slice(lastDash + 1), 10);
+      if (!isNaN(parsedIdx) && parsedIdx > 0) {
+        subIndex = parsedIdx;
+        baseId = cleanId.slice(0, lastDash);
+      }
     }
 
-    const { data: rows } = await query;
-    const matched = rows?.find((r: { id?: string; full_name?: string }) => 
-      !rawId || (r.id && r.id.toLowerCase().startsWith(rawId))
-    ) || rows?.[0];
+    const cleanEmail = email ? email.trim().toLowerCase() : "";
+
+    let query = supabase
+      .from("registrations")
+      .select("id, full_name, email, buyer_email, organization, designation, ticket_status, payment_id, created_at, attendees_json, unit_price, amount_paid, tier_name");
+    
+    if (baseId) {
+      query = query.ilike("id", `${baseId}%`);
+    } else if (cleanEmail) {
+      query = query.or(`email.ilike.${cleanEmail},buyer_email.ilike.${cleanEmail}`);
+    }
+
+    let { data: rows } = await query;
+
+    // Fallback: If no rows found by direct email, search attendees_json for matching email
+    if ((!rows || rows.length === 0) && cleanEmail) {
+      try {
+        const { data: jsonSearchRows } = await supabase
+          .from("registrations")
+          .select("id, full_name, email, buyer_email, organization, designation, ticket_status, payment_id, created_at, attendees_json, unit_price, amount_paid, tier_name")
+          .filter("attendees_json", "cs", JSON.stringify([{ email: cleanEmail }]));
+        if (jsonSearchRows && jsonSearchRows.length > 0) {
+          rows = jsonSearchRows;
+        }
+      } catch {
+        // non-blocking
+      }
+    }
+
+    const primaryRow = rows?.[0];
+
+    interface AttendeeRecord {
+      fullName?: string;
+      email?: string;
+      phone?: string;
+      organization?: string;
+      designation?: string;
+    }
+
+    interface VerifiedRegistration {
+      id?: string;
+      full_name?: string;
+      email?: string;
+      buyer_email?: string | null;
+      organization?: string;
+      designation?: string | null;
+      ticket_status?: string;
+      payment_id?: string | null;
+      created_at?: string;
+      pass_code?: string;
+      amount_paid?: number | string | null;
+      unit_price?: number | string | null;
+      [key: string]: unknown;
+    }
+
+    let matched: VerifiedRegistration | null = (primaryRow as VerifiedRegistration) || null;
+
+    if (primaryRow && Array.isArray(primaryRow.attendees_json) && primaryRow.attendees_json.length > 1) {
+      let attendeeItem: AttendeeRecord | null = null;
+      let resolvedIndex = subIndex || 1;
+
+      // Match by email if available
+      if (cleanEmail) {
+        const emailIdx = primaryRow.attendees_json.findIndex(
+          (a: AttendeeRecord) => a.email && a.email.toLowerCase().trim() === cleanEmail
+        );
+        if (emailIdx !== -1) {
+          attendeeItem = primaryRow.attendees_json[emailIdx];
+          resolvedIndex = emailIdx + 1;
+        }
+      }
+
+      // Match by subIndex if not matched by email
+      if (!attendeeItem && subIndex && subIndex >= 1 && subIndex <= primaryRow.attendees_json.length) {
+        attendeeItem = primaryRow.attendees_json[subIndex - 1];
+        resolvedIndex = subIndex;
+      }
+
+      // Fallback to first attendee
+      if (!attendeeItem && primaryRow.attendees_json.length > 0) {
+        attendeeItem = primaryRow.attendees_json[0];
+        resolvedIndex = 1;
+      }
+
+      if (attendeeItem) {
+        const unitPrice =
+          Number(primaryRow.unit_price) ||
+          (primaryRow.amount_paid ? Math.round(Number(primaryRow.amount_paid) / primaryRow.attendees_json.length) : 300);
+
+        matched = {
+          ...primaryRow,
+          full_name: attendeeItem.fullName?.trim() || primaryRow.full_name,
+          email: attendeeItem.email?.trim() || primaryRow.email,
+          organization: attendeeItem.organization?.trim() || primaryRow.organization || "GCEM",
+          designation: attendeeItem.designation?.trim() || primaryRow.designation || "Student",
+          pass_code: `TEDX-${primaryRow.id.slice(0, 8).toUpperCase()}-${resolvedIndex}`,
+          amount_paid: unitPrice,
+        };
+      }
+    }
 
     const isValid = matched && (matched.ticket_status === "confirmed" || matched.ticket_status === "approved" || matched.payment_id);
 
@@ -97,6 +198,13 @@ export async function GET(request: Request) {
             </div>
 
             <div class="info-group" style="margin-top: 20px;">
+              <div class="label">PASS CODE</div>
+              <div style="font-family: monospace; font-size: 14px; font-weight: 800; color: #EB0028; letter-spacing: 1px;">
+                ${matched.pass_code || (matched.id ? 'TEDX-' + matched.id.slice(0, 8).toUpperCase() : 'TEDX-PASS')}
+              </div>
+            </div>
+
+            <div class="info-group" style="margin-top: 16px;">
               <div class="label">PAYMENT RECEIPT</div>
               <div style="font-family: monospace; font-size: 12px; color: #4ade80;">${matched.payment_id || 'VERIFIED ONLINE'}</div>
             </div>
