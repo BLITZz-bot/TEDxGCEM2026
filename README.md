@@ -23,7 +23,7 @@
 
 ## 💳 Payment Architectures & Branch Guide
 
-This repository maintains **two distinct payment architectures** distributed across dedicated git branches. You can deploy or switch to either architecture depending on your payment collection requirements:
+This repository maintains **two distinct payment architectures** distributed across dedicated git branches. 
 
 | Architecture | Branch | Fee / Commission | Payment Channels | Verification Method | Best For |
 | :--- | :--- | :--- | :--- | :--- | :--- |
