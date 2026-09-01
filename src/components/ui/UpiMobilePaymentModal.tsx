@@ -584,6 +584,14 @@ export default function UpiMobilePaymentModal({
                   setTurnstileExpired(false);
                   setErrorMsg(null);
                 }}
+                onError={(err) => {
+                  setTurnstileToken("");
+                  setErrorMsg(
+                    err
+                      ? `Security challenge note (${err}). If testing locally, ensure localhost is in your Cloudflare Turnstile allowed domains or test keys.`
+                      : "Security check failed to initialize. Please refresh the page and try again."
+                  );
+                }}
                 onExpire={() => {
                   setTurnstileToken("");
                   setTurnstileExpired(true);
