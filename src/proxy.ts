@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
 // Proprietary and confidential. Unauthorized copying, modification, or
 // distribution of this file is strictly prohibited. See LICENSE for details.
 /**
@@ -111,6 +111,6 @@ export const config = {
      * - favicon.ico   (favicon file)
      * - image files   (svg, png, jpg, jpeg, gif, webp)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/register/upi-submit|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
