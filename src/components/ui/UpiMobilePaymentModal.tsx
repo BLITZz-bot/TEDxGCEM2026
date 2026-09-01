@@ -12,6 +12,8 @@ import {
   ArrowRight,
   RefreshCw,
   Tag,
+  Copy,
+  Check,
 } from "lucide-react";
 import TurnstileWidget from "@/components/ui/TurnstileWidget";
 import UtrHelpModal from "@/components/ui/UtrHelpModal";
@@ -84,15 +86,38 @@ export default function UpiMobilePaymentModal({
   const originalAmount = discountAmount && discountAmount > 0 ? totalAmount + discountAmount : null;
 
   const [hasClickedPay, setHasClickedPay] = useState(false);
+  const [copiedUpi, setCopiedUpi] = useState(false);
+
+  const handleCopyUpi = () => {
+    if (upiId && typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(upiId);
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 2500);
+    }
+  };
+
   // Detect mobile to show appropriate UPI button behaviour
   const isMobileDevice =
     typeof navigator !== "undefined" &&
     /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
-  // Reset ALL state when modal opens/closes
+  // Check if returning to an in-progress payment, otherwise reset state
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add("modal-open");
+      try {
+        const saved = sessionStorage.getItem("tedx_active_upi_session");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Date.now() - parsed.timestamp < 30 * 60 * 1000) {
+            setModalStep("proof");
+            setHasAgreed(true);
+            setHasClickedPay(true);
+            return;
+          }
+        }
+      } catch {}
+
       const timer = setTimeout(() => {
         setModalStep("instructions");
         setHasAgreed(false);
@@ -233,13 +258,44 @@ export default function UpiMobilePaymentModal({
 
   const handleLaunchUpi = () => {
     setHasClickedPay(true);
+    // Immediately move to the proof upload step so when user returns, they are ready to submit UTR
+    setModalStep("proof");
+
+    try {
+      sessionStorage.setItem(
+        "tedx_active_upi_session",
+        JSON.stringify({
+          draftId,
+          modalStep: "proof",
+          totalAmount,
+          tierName,
+          timestamp: Date.now(),
+        })
+      );
+    } catch {}
+
     if (!isMobileDevice) {
-      // Desktop — UPI deep links only work on mobile UPI apps
-      setModalStep("proof");
       return;
     }
-    // Open UPI deep link on mobile
-    window.location.href = upiUri;
+
+    // Launch UPI intent via temporary anchor tag click.
+    // NEVER use window.location.href = upiUri because on Android Chrome / mobile Safari,
+    // setting window.location to a non-HTTP scheme mutates browser history, leading to
+    // "This page could not load" / ERR_UNKNOWN_URL_SCHEME when returning to the tab.
+    try {
+      const a = document.createElement("a");
+      a.href = upiUri;
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        if (document.body.contains(a)) {
+          document.body.removeChild(a);
+        }
+      }, 500);
+    } catch {
+      window.location.assign(upiUri);
+    }
   };
 
   const handleSubmitProof = async (e: React.FormEvent) => {
@@ -289,6 +345,10 @@ export default function UpiMobilePaymentModal({
       if (!res.ok) {
         throw new Error(data.error || "Submission failed. Please check details and retry.");
       }
+
+      try {
+        sessionStorage.removeItem("tedx_active_upi_session");
+      } catch {}
 
       // Only call onSuccess if truly successful (do NOT reset isSubmitting — modal will unmount)
       onSuccess({
@@ -421,6 +481,37 @@ export default function UpiMobilePaymentModal({
                 </span>
               </label>
 
+              {/* Official UPI ID Copy Card */}
+              {upiId && (
+                <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 block">
+                      Official TEDx UPI ID / VPA:
+                    </span>
+                    <span className="font-mono text-xs text-white font-semibold select-all">
+                      {upiId}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyUpi}
+                    className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-mono flex items-center space-x-1.5 transition-colors cursor-pointer"
+                  >
+                    {copiedUpi ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-white/70" />
+                        <span>Copy ID</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
               {/* Launch Payment CTA */}
               <div className="space-y-2 pt-1">
                 {!isMobileDevice && (
@@ -433,23 +524,40 @@ export default function UpiMobilePaymentModal({
                     </span>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={handleLaunchUpi}
-                  disabled={!hasAgreed}
-                  className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center space-x-2 font-mono ${
-                    hasAgreed
-                      ? "bg-ted-red hover:bg-white text-white hover:text-black cursor-pointer shadow-[0_0_25px_rgba(235,0,40,0.4)]"
-                      : "bg-white/10 text-white/30 cursor-not-allowed"
-                  }`}
-                >
-                  <span>
-                    {isMobileDevice
-                      ? `Proceed to Pay ₹${totalAmount.toFixed(2)} via UPI App`
-                      : `Already Paid on Mobile? Upload Proof ₹${totalAmount.toFixed(2)}`}
-                  </span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                {isMobileDevice ? (
+                  <a
+                    href={hasAgreed ? upiUri : undefined}
+                    onClick={(e) => {
+                      if (!hasAgreed) {
+                        e.preventDefault();
+                        return;
+                      }
+                      handleLaunchUpi();
+                    }}
+                    className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center space-x-2 font-mono ${
+                      hasAgreed
+                        ? "bg-ted-red hover:bg-white text-white hover:text-black cursor-pointer shadow-[0_0_25px_rgba(235,0,40,0.4)]"
+                        : "bg-white/10 text-white/30 cursor-not-allowed pointer-events-none"
+                    }`}
+                  >
+                    <span>Proceed to Pay ₹{totalAmount.toFixed(2)} via UPI App</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleLaunchUpi}
+                    disabled={!hasAgreed}
+                    className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center space-x-2 font-mono ${
+                      hasAgreed
+                        ? "bg-ted-red hover:bg-white text-white hover:text-black cursor-pointer shadow-[0_0_25px_rgba(235,0,40,0.4)]"
+                        : "bg-white/10 text-white/30 cursor-not-allowed"
+                    }`}
+                  >
+                    <span>Already Paid on Mobile? Upload Proof ₹{totalAmount.toFixed(2)}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -465,6 +573,24 @@ export default function UpiMobilePaymentModal({
           {/* VIEW 2: PROOF SUBMISSION */}
           {modalStep === "proof" && (
             <form onSubmit={handleSubmitProof} className="space-y-5">
+              {/* Payment recap banner */}
+              {upiId && (
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-2 text-white/70">
+                    <span className="font-mono text-[11px] text-white/40">UPI ID:</span>
+                    <span className="font-mono text-white font-medium select-all">{upiId}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyUpi}
+                    className="text-[11px] text-ted-red hover:underline font-mono flex items-center space-x-1 cursor-pointer"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>{copiedUpi ? "Copied!" : "Copy"}</span>
+                  </button>
+                </div>
+              )}
+
               {errorMsg && (
                 <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-start space-x-2">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
