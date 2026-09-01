@@ -159,7 +159,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
         })
         .catch((err) => console.warn("Handoff verification error:", err));
     } else {
-      // Restore local in-progress draft if exists within 24h
+      // 1. Restore local in-progress draft if exists within 24h
       try {
         const saved = localStorage.getItem("tedx_local_draft_v1");
         if (saved) {
@@ -171,26 +171,30 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
               if (parsed.ticketQuantity) setTicketQuantity(parsed.ticketQuantity);
               if (parsed.appliedCoupon) setAppliedCoupon(parsed.appliedCoupon);
               setRestoredNotification(true);
-
-              // Check if user was in the middle of active UPI checkout (e.g. app switch reload)
-              try {
-                const activeUpi = sessionStorage.getItem("tedx_active_upi_session");
-                if (activeUpi) {
-                  const parsedUpi = JSON.parse(activeUpi);
-                  if (Date.now() - parsedUpi.timestamp < 30 * 60 * 1000) {
-                    setStep("form");
-                    if (parsedUpi.draftId) setActiveDraftId(parsedUpi.draftId);
-                    setRestoreUpiSession(true);
-                    setMobileModalOpen(true);
-                  }
-                }
-              } catch {}
             }, 0);
           }
         }
       } catch {
         // ignore localStorage error
       }
+
+      // 2. Check if user is returning from UPI payment app (via upi_return param or active sessionStorage)
+      try {
+        const upiReturnParam = params.get("upi_return");
+        const activeUpi = sessionStorage.getItem("tedx_active_upi_session");
+        if (activeUpi || upiReturnParam) {
+          const parsedUpi = activeUpi ? JSON.parse(activeUpi) : null;
+          const isFresh = parsedUpi ? Date.now() - parsedUpi.timestamp < 30 * 60 * 1000 : true;
+          if (isFresh) {
+            setTimeout(() => {
+              setStep("form");
+              if (parsedUpi?.draftId) setActiveDraftId(parsedUpi.draftId);
+              setRestoreUpiSession(true);
+              setMobileModalOpen(true);
+            }, 50);
+          }
+        }
+      } catch {}
     }
   }, []);
 

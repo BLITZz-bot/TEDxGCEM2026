@@ -14,7 +14,11 @@ import {
   Tag,
   Copy,
   Check,
+  QrCode,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import TurnstileWidget from "@/components/ui/TurnstileWidget";
 import UtrHelpModal from "@/components/ui/UtrHelpModal";
 
@@ -90,6 +94,7 @@ export default function UpiMobilePaymentModal({
 
   const [hasClickedPay, setHasClickedPay] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [showQrCode, setShowQrCode] = useState(false);
 
   const handleCopyUpi = () => {
     if (upiId && typeof navigator !== "undefined" && navigator.clipboard) {
@@ -270,7 +275,7 @@ export default function UpiMobilePaymentModal({
     if (file) await processFile(file);
   };
 
-  const handleLaunchUpi = () => {
+  const handleLaunchUpi = (customPackage?: string) => {
     setHasClickedPay(true);
     // Immediately move to the proof upload step so when user returns, they are ready to submit UTR
     setModalStep("proof");
@@ -292,24 +297,23 @@ export default function UpiMobilePaymentModal({
       return;
     }
 
-    // ── Android Chrome / Mobile Safari UPI intent launch ─────────────────────
-    // Strategy: push the current page URL into browser history BEFORE navigating
-    // to upi://.  When the user presses "Back" inside Google Pay / PhonePe, the
-    // browser pops to this history entry (tedxgcem.in) instead of trying to
-    // render upi:// which cannot be displayed and shows "page couldn't load".
-    //
-    // history.pushState does NOT trigger a navigation / page reload — it only
-    // inserts a new history entry with the current URL so Back lands here safely.
-    try {
-      window.history.pushState({ upiHandoff: true }, "", window.location.href);
-    } catch {}
+    const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.in";
+    const fallbackUrl = encodeURIComponent(`${siteUrl}/?tab=register&upi_return=1`);
+    const isAndroid = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
 
-    // Now navigate to the UPI deep link via a temporary anchor element.
-    // Using a.click() instead of window.location.href so the intent is dispatched
-    // as a link-click (handled by the OS intent system), not a tab navigation.
+    // On Android, use the official Chrome intent format with S.browser_fallback_url.
+    // This tells Android Chrome to delegate the UPI link to installed UPI apps (GPay, PhonePe, Paytm),
+    // and if the user cancels or presses Back, Chrome falls back cleanly to the website
+    // instead of throwing net::ERR_UNKNOWN_URL_SCHEME / "This page could not load".
+    let targetUri = upiUri;
+    if (isAndroid) {
+      const packageParam = customPackage ? `package=${customPackage};` : "";
+      targetUri = `intent://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${totalAmount.toFixed(2)}&mam=${totalAmount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(`TEDxGCEM ${tierName} Pass`)}#Intent;scheme=upi;${packageParam}S.browser_fallback_url=${fallbackUrl};end;`;
+    }
+
     try {
       const a = document.createElement("a");
-      a.href = upiUri;
+      a.href = targetUri;
       a.rel = "noopener noreferrer";
       document.body.appendChild(a);
       a.click();
@@ -319,9 +323,7 @@ export default function UpiMobilePaymentModal({
         }
       }, 500);
     } catch {
-      // Last-resort: navigate directly. The pushState above means Back still
-      // returns to the correct page even in this case.
-      window.location.href = upiUri;
+      window.location.assign(targetUri);
     }
   };
 
@@ -539,8 +541,38 @@ export default function UpiMobilePaymentModal({
                 </div>
               )}
 
+              {/* Show/Hide QR Code option */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowQrCode((prev) => !prev)}
+                  className="w-full p-3 flex items-center justify-between text-xs font-mono text-white/70 hover:text-white transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center space-x-2">
+                    <QrCode className="w-4 h-4 text-ted-red" />
+                    <span>Prefer to scan or screenshot QR code?</span>
+                  </div>
+                  {showQrCode ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {showQrCode && (
+                  <div className="p-4 pt-1 flex flex-col items-center border-t border-white/5 space-y-2 bg-black/40">
+                    <div className="p-3 bg-white rounded-2xl shadow-xl">
+                      <QRCodeSVG
+                        value={upiUri}
+                        size={180}
+                        level="M"
+                        includeMargin={false}
+                      />
+                    </div>
+                    <span className="text-[11px] font-mono text-white/50 text-center">
+                      Scan or take screenshot &amp; open in Google Pay / PhonePe scanner
+                    </span>
+                  </div>
+                )}
+              </div>
+
               {/* Launch Payment CTA */}
-              <div className="space-y-2 pt-1">
+              <div className="space-y-2.5 pt-1">
                 {!isMobileDevice && (
                   <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs flex items-start space-x-2">
                     <Smartphone className="w-4 h-4 shrink-0 mt-0.5" />
@@ -571,7 +603,7 @@ export default function UpiMobilePaymentModal({
                 ) : (
                   <button
                     type="button"
-                    onClick={handleLaunchUpi}
+                    onClick={() => handleLaunchUpi()}
                     disabled={!hasAgreed}
                     className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center space-x-2 font-mono ${
                       hasAgreed
@@ -582,6 +614,38 @@ export default function UpiMobilePaymentModal({
                     <span>Already Paid on Mobile? Upload Proof ₹{totalAmount.toFixed(2)}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
+                )}
+
+                {/* Specific 1-tap app launchers */}
+                {isMobileDevice && hasAgreed && (
+                  <div className="pt-1">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 block text-center mb-1.5">
+                      Or Open Directly In:
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleLaunchUpi("com.google.android.apps.nbu.paisa.user")}
+                        className="py-2 px-2 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-mono text-white text-center transition-colors cursor-pointer"
+                      >
+                        Google Pay
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleLaunchUpi("com.phonepe.app")}
+                        className="py-2 px-2 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-mono text-white text-center transition-colors cursor-pointer"
+                      >
+                        PhonePe
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleLaunchUpi("net.one97.paytm")}
+                        className="py-2 px-2 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-mono text-white text-center transition-colors cursor-pointer"
+                      >
+                        Paytm
+                      </button>
+                    </div>
+                  </div>
                 )}
 
                 <button
@@ -598,6 +662,18 @@ export default function UpiMobilePaymentModal({
           {/* VIEW 2: PROOF SUBMISSION */}
           {modalStep === "proof" && (
             <form onSubmit={handleSubmitProof} className="space-y-5">
+              <div className="flex items-center justify-between pb-1">
+                <button
+                  type="button"
+                  onClick={() => setModalStep("instructions")}
+                  className="text-xs text-white/60 hover:text-white font-mono flex items-center space-x-1 cursor-pointer transition-colors"
+                >
+                  <span>← Back to Instructions &amp; QR</span>
+                </button>
+                <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
+                  Step 2 of 2
+                </span>
+              </div>
               {/* Payment recap banner */}
               {upiId && (
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
