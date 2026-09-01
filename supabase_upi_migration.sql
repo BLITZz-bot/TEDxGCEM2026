@@ -2,6 +2,15 @@
 -- TEDxGCEM 2026: Complete Direct UPI, Handoff & Dynamic Tier Pricing Migration
 -- Master idempotent script (Safe to run in Supabase SQL Editor anytime)
 -- =============================================================================
+--
+-- ⚡ QUICK RUN (If you only need the latest Multi-Ticket / Co-Participants update):
+-- Copy and run these 3 lines:
+--
+-- ALTER TABLE public.registrations
+--     ADD COLUMN IF NOT EXISTS attendees_json JSONB DEFAULT '[]'::jsonb,
+--     ADD COLUMN IF NOT EXISTS unit_price NUMERIC;
+--
+-- =============================================================================
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 1. TICKET TIERS TABLE (With Live Admin Pricing & Seat Capacity Controls)
@@ -97,7 +106,15 @@ END $$;
 -- 4. REGISTRATIONS TABLE COLUMN UPDATES & ANTI-FRAUD UTR PROTECTION
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE public.registrations
-    ADD COLUMN IF NOT EXISTS payment_screenshot_url TEXT;
+    ADD COLUMN IF NOT EXISTS payment_screenshot_url TEXT,
+    ADD COLUMN IF NOT EXISTS attendees_json JSONB DEFAULT '[]'::jsonb,
+    ADD COLUMN IF NOT EXISTS unit_price NUMERIC,
+    ADD COLUMN IF NOT EXISTS ticket_count INTEGER DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS buyer_email TEXT,
+    ADD COLUMN IF NOT EXISTS designation TEXT DEFAULT 'Student',
+    ADD COLUMN IF NOT EXISTS referral TEXT,
+    ADD COLUMN IF NOT EXISTS utr_number TEXT,
+    ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'direct_upi';
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_utr_number 
     ON public.registrations(utr_number) 

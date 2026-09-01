@@ -54,7 +54,10 @@ ADD COLUMN IF NOT EXISTS tier_name TEXT DEFAULT 'Early Bird',
 ADD COLUMN IF NOT EXISTS coupon_code TEXT,
 ADD COLUMN IF NOT EXISTS discount_amount NUMERIC DEFAULT 0,
 ADD COLUMN IF NOT EXISTS amount_paid NUMERIC DEFAULT 300,
-ADD COLUMN IF NOT EXISTS ticket_count INTEGER DEFAULT 1 NOT NULL;
+ADD COLUMN IF NOT EXISTS unit_price NUMERIC,
+ADD COLUMN IF NOT EXISTS ticket_count INTEGER DEFAULT 1 NOT NULL,
+ADD COLUMN IF NOT EXISTS payment_screenshot_url TEXT,
+ADD COLUMN IF NOT EXISTS attendees_json JSONB DEFAULT '[]'::jsonb;
 
 CREATE INDEX IF NOT EXISTS idx_registrations_email ON public.registrations(email);
 CREATE INDEX IF NOT EXISTS idx_registrations_buyer_email ON public.registrations(buyer_email);
