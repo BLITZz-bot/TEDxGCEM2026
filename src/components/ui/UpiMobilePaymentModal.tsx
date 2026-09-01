@@ -294,7 +294,8 @@ export default function UpiMobilePaymentModal({
         }
       }, 500);
     } catch {
-      window.location.assign(upiUri);
+      // Intentionally no fallback to window.location.assign(upiUri) —
+      // doing so would navigate the tab to upi:// and break the page on return.
     }
   };
 
@@ -525,13 +526,11 @@ export default function UpiMobilePaymentModal({
                   </div>
                 )}
                 {isMobileDevice ? (
-                  <a
-                    href={hasAgreed ? upiUri : undefined}
-                    onClick={(e) => {
-                      if (!hasAgreed) {
-                        e.preventDefault();
-                        return;
-                      }
+                  <button
+                    type="button"
+                    disabled={!hasAgreed}
+                    onClick={() => {
+                      if (!hasAgreed) return;
                       handleLaunchUpi();
                     }}
                     className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center space-x-2 font-mono ${
@@ -542,7 +541,7 @@ export default function UpiMobilePaymentModal({
                   >
                     <span>Proceed to Pay ₹{totalAmount.toFixed(2)} via UPI App</span>
                     <ArrowRight className="w-4 h-4" />
-                  </a>
+                  </button>
                 ) : (
                   <button
                     type="button"
