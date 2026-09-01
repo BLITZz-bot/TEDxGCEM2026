@@ -306,9 +306,8 @@ export default function UpiMobilePaymentModal({
     // and if the user cancels or presses Back, Chrome falls back cleanly to the website
     // instead of throwing net::ERR_UNKNOWN_URL_SCHEME / "This page could not load".
     let targetUri = upiUri;
-    if (isAndroid) {
-      const packageParam = customPackage ? `package=${customPackage};` : "";
-      targetUri = `intent://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${totalAmount.toFixed(2)}&mam=${totalAmount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(`TEDxGCEM ${tierName} Pass`)}#Intent;scheme=upi;${packageParam}S.browser_fallback_url=${fallbackUrl};end;`;
+    if (isAndroid && customPackage) {
+      targetUri = `intent://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${totalAmount.toFixed(2)}&mam=${totalAmount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(`TEDxGCEM ${tierName} Pass`)}#Intent;scheme=upi;package=${customPackage};S.browser_fallback_url=${fallbackUrl};end;`;
     }
 
     try {
