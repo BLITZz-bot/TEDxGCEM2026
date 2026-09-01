@@ -68,10 +68,11 @@ export default function TurnstileWidget({
             theme: "dark",
             size: "normal",
             callback: (token: string) => {
+              console.log("[Turnstile] Verified successfully! Security token generated.");
               if (isMounted) onSuccess(token);
             },
             "error-callback": (err: string) => {
-              console.warn("[Turnstile] Widget error:", err);
+              console.warn("[Turnstile] Widget error callback:", err);
               if (isMounted && onError) onError(err);
             },
             "expired-callback": () => {

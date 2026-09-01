@@ -14,11 +14,7 @@ import {
   Tag,
   Copy,
   Check,
-  QrCode,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
 import TurnstileWidget from "@/components/ui/TurnstileWidget";
 import UtrHelpModal from "@/components/ui/UtrHelpModal";
 
@@ -94,7 +90,6 @@ export default function UpiMobilePaymentModal({
 
   const [hasClickedPay, setHasClickedPay] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
-  const [showQrCode, setShowQrCode] = useState(false);
 
   const handleCopyUpi = () => {
     if (upiId && typeof navigator !== "undefined" && navigator.clipboard) {
@@ -275,7 +270,7 @@ export default function UpiMobilePaymentModal({
     if (file) await processFile(file);
   };
 
-  const handleLaunchUpi = (customPackage?: string) => {
+  const handleLaunchUpi = () => {
     setHasClickedPay(true);
     // Immediately move to the proof upload step so when user returns, they are ready to submit UTR
     setModalStep("proof");
@@ -297,22 +292,9 @@ export default function UpiMobilePaymentModal({
       return;
     }
 
-    const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.in";
-    const fallbackUrl = encodeURIComponent(`${siteUrl}/?tab=register&upi_return=1`);
-    const isAndroid = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
-
-    // On Android, use the official Chrome intent format with S.browser_fallback_url.
-    // This tells Android Chrome to delegate the UPI link to installed UPI apps (GPay, PhonePe, Paytm),
-    // and if the user cancels or presses Back, Chrome falls back cleanly to the website
-    // instead of throwing net::ERR_UNKNOWN_URL_SCHEME / "This page could not load".
-    let targetUri = upiUri;
-    if (isAndroid && customPackage) {
-      targetUri = `intent://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${totalAmount.toFixed(2)}&mam=${totalAmount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(`TEDxGCEM ${tierName} Pass`)}#Intent;scheme=upi;package=${customPackage};S.browser_fallback_url=${fallbackUrl};end;`;
-    }
-
     try {
       const a = document.createElement("a");
-      a.href = targetUri;
+      a.href = upiUri;
       a.rel = "noopener noreferrer";
       document.body.appendChild(a);
       a.click();
@@ -322,7 +304,7 @@ export default function UpiMobilePaymentModal({
         }
       }, 500);
     } catch {
-      window.location.assign(targetUri);
+      window.location.assign(upiUri);
     }
   };
 
@@ -540,35 +522,7 @@ export default function UpiMobilePaymentModal({
                 </div>
               )}
 
-              {/* Show/Hide QR Code option */}
-              <div className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setShowQrCode((prev) => !prev)}
-                  className="w-full p-3 flex items-center justify-between text-xs font-mono text-white/70 hover:text-white transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center space-x-2">
-                    <QrCode className="w-4 h-4 text-ted-red" />
-                    <span>Prefer to scan or screenshot QR code?</span>
-                  </div>
-                  {showQrCode ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {showQrCode && (
-                  <div className="p-4 pt-1 flex flex-col items-center border-t border-white/5 space-y-2 bg-black/40">
-                    <div className="p-3 bg-white rounded-2xl shadow-xl">
-                      <QRCodeSVG
-                        value={upiUri}
-                        size={180}
-                        level="M"
-                        includeMargin={false}
-                      />
-                    </div>
-                    <span className="text-[11px] font-mono text-white/50 text-center">
-                      Scan or take screenshot &amp; open in Google Pay / PhonePe scanner
-                    </span>
-                  </div>
-                )}
-              </div>
+
 
               {/* Launch Payment CTA */}
               <div className="space-y-2.5 pt-1">
@@ -615,37 +569,7 @@ export default function UpiMobilePaymentModal({
                   </button>
                 )}
 
-                {/* Specific 1-tap app launchers */}
-                {isMobileDevice && hasAgreed && (
-                  <div className="pt-1">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 block text-center mb-1.5">
-                      Or Open Directly In:
-                    </span>
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleLaunchUpi("com.google.android.apps.nbu.paisa.user")}
-                        className="py-2 px-2 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-mono text-white text-center transition-colors cursor-pointer"
-                      >
-                        Google Pay
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleLaunchUpi("com.phonepe.app")}
-                        className="py-2 px-2 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-mono text-white text-center transition-colors cursor-pointer"
-                      >
-                        PhonePe
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleLaunchUpi("net.one97.paytm")}
-                        className="py-2 px-2 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-mono text-white text-center transition-colors cursor-pointer"
-                      >
-                        Paytm
-                      </button>
-                    </div>
-                  </div>
-                )}
+
 
                 <button
                   type="button"
