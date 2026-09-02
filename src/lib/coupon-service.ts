@@ -86,7 +86,7 @@ export async function createCoupon(
   const expiresAt = new Date(now.getTime() + durationMinutes * 60 * 1000);
 
   const newCoupon: PromoCoupon = {
-    id: `cpn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    id: `cpn_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`,
     code: cleanCode,
     discount_amount: discountAmount,
     applies_to_tier: tierRestriction ?? null,

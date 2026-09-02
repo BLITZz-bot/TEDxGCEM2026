@@ -37,6 +37,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
   const [isChecking, setIsChecking] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [hasPendingVerification, setHasPendingVerification] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
   const registration = registrations[selectedIndex] || null;
@@ -47,6 +48,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
       const res = await fetch("/api/pass");
       const data = await res.json();
       if (res.ok) {
+        setHasPendingVerification(!!data.hasPendingVerification);
         if (Array.isArray(data.registrations) && data.registrations.length > 0) {
           setRegistrations(data.registrations);
         } else if (data.registration) {
@@ -549,18 +551,48 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
                   animate={{ opacity: 1, y: 0 }}
                   className="relative z-10 text-center space-y-6 py-6"
                 >
-                  <div className="space-y-2">
-                    <h4 className="text-2xl font-black uppercase tracking-tight text-white">No Pass Application Found</h4>
-                    <p className="text-white/50 text-sm leading-relaxed max-w-sm mx-auto">
-                      We could not find any active pass associated with <span className="text-white font-bold font-mono">{user.email}</span>.
-                    </p>
-                  </div>
-                  <button 
-                    onClick={() => onTabChange("register")}
-                    className="px-8 py-4 bg-ted-red border border-ted-red text-white font-black rounded-2xl text-base shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest cursor-pointer"
-                  >
-                    Apply Now
-                  </button>
+                  {hasPendingVerification ? (
+                    <div className="space-y-4 max-w-md mx-auto">
+                      <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-3xl">
+                        ⏳
+                      </div>
+                      <div className="space-y-2">
+                        <span className="inline-block px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-bold uppercase tracking-widest">
+                          Payment Under Verification
+                        </span>
+                        <h4 className="text-2xl font-black uppercase tracking-tight text-white">
+                          Pass Verification in Progress
+                        </h4>
+                        <p className="text-white/60 text-xs leading-relaxed font-light">
+                          Your registration associated with <span className="text-white font-bold font-mono">{user.email}</span> is currently being verified against bank records by the TEDxGCEM organizing committee.
+                        </p>
+                        <p className="text-amber-400/80 text-[11px] font-mono">
+                          Your official QR Pass Badge will be available to download here as soon as verification is approved.
+                        </p>
+                      </div>
+                      <a
+                        href="mailto:tedxgcem@gmail.com"
+                        className="inline-block px-6 py-3 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 rounded-xl text-xs font-mono uppercase tracking-wider font-bold transition-all"
+                      >
+                        Contact Team
+                      </a>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <h4 className="text-2xl font-black uppercase tracking-tight text-white">No Pass Application Found</h4>
+                        <p className="text-white/50 text-sm leading-relaxed max-w-sm mx-auto">
+                          We could not find any active pass associated with <span className="text-white font-bold font-mono">{user.email}</span>.
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => onTabChange("register")}
+                        className="px-8 py-4 bg-ted-red border border-ted-red text-white font-black rounded-2xl text-base shadow-[0_0_20px_rgba(235,0,40,0.3)] hover:bg-white hover:text-ted-red transition-all uppercase tracking-widest cursor-pointer"
+                      >
+                        Apply Now
+                      </button>
+                    </>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

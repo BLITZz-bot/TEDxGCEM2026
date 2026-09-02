@@ -2,11 +2,21 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 import { redeemCoupon } from "@/lib/coupon-service";
-import { sendRegistrationConfirmationEmail } from "@/lib/email-service";
+import { sendVerificationPendingEmail } from "@/lib/email-service";
 import { getActiveTicketTier } from "@/lib/ticket-service";
 import { getDraft, updateDraftStatus } from "@/lib/draft-store";
 
 export const dynamic = "force-dynamic";
+
+interface AttendeeRecord {
+  fullName: string;
+  email?: string;
+  phone: string;
+  organization?: string;
+  designation?: string;
+  linkedin?: string;
+  referral?: string;
+}
 
 export async function POST(request: Request) {
   try {
@@ -65,12 +75,18 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!utrNumber || !/^\d{12}$/.test(utrNumber)) {
+    // NPCI UTR / UPI reference numbers range from 8-22 alphanumeric chars across all banks.
+    // Strictly \d{12} was rejecting valid Axis/ICICI/Google Pay alphanumeric references.
+    const normalizedUtr = utrNumber.toUpperCase();
+    if (!normalizedUtr || !/^[A-Z0-9]{8,22}$/.test(normalizedUtr)) {
       return NextResponse.json(
-        { error: "Invalid UTR number. Must be exactly 12 numeric digits." },
+        { error: "Invalid UTR number. Must be 8–22 alphanumeric characters (letters and digits only)." },
         { status: 400 }
       );
     }
+    // Use normalized uppercase UTR going forward
+    utrNumber = normalizedUtr;
+
 
     if (!screenshotBuffer || screenshotBuffer.length === 0) {
       return NextResponse.json(
@@ -210,16 +226,6 @@ export async function POST(request: Request) {
     }
 
     // Prepare attendee records — always sourced from server-side draft, never from client
-    interface AttendeeRecord {
-      fullName: string;
-      email?: string;
-      phone: string;
-      organization?: string;
-      designation?: string;
-      linkedin?: string;
-      referral?: string;
-    }
-
     const rawAttendeeList: AttendeeRecord[] =
       draft.attendees_json && Array.isArray(draft.attendees_json) && draft.attendees_json.length > 0
         ? draft.attendees_json
@@ -264,7 +270,8 @@ export async function POST(request: Request) {
       linkedin: primaryAttendee.linkedin?.trim() || null,
       referral: primaryAttendee.referral?.trim() || null,
       user_id: userId,
-      ticket_status: "confirmed",
+      ticket_status: "pending_verification",
+      approval_status: "pending_approval",
       payment_id: `UPI-${utrNumber}`,
       utr_number: utrNumber,
       payment_method: "direct_upi",
@@ -284,11 +291,17 @@ export async function POST(request: Request) {
       .insert([registrationRecord])
       .select("id");
 
-    // Resilient fallback in case database table does not yet have attendees_json or unit_price columns
-    if (insertError && (insertError.message?.includes("attendees_json") || insertError.message?.includes("unit_price"))) {
+    // Resilient fallback in case database table does not yet have attendees_json, unit_price or approval_status columns
+    if (
+      insertError &&
+      (insertError.message?.includes("attendees_json") ||
+        insertError.message?.includes("unit_price") ||
+        insertError.message?.includes("approval_status"))
+    ) {
       const fallbackRecord = { ...registrationRecord };
       delete fallbackRecord.attendees_json;
       delete fallbackRecord.unit_price;
+      delete fallbackRecord.approval_status;
       const retry = await supabase
         .from("registrations")
         .insert([fallbackRecord])
@@ -299,13 +312,25 @@ export async function POST(request: Request) {
 
     if (insertError || !insertedData || insertedData.length === 0) {
       console.error("[Supabase] UPI Registration insert error:", insertError);
+      if (
+        insertError?.code === "23505" ||
+        insertError?.message?.toLowerCase().includes("unique") ||
+        insertError?.message?.toLowerCase().includes("duplicate key")
+      ) {
+        return NextResponse.json(
+          {
+            error: `This 12-digit UTR (${utrNumber}) has already been registered in our system. If you believe this is an error, please contact support.`,
+          },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { error: "Failed to store registration pass. Please contact support with UTR: " + utrNumber },
         { status: 500 }
       );
     }
 
-    // Mark draft as confirmed
+    // Mark draft as submitted/pending_verification
     await updateDraftStatus(draftId, "confirmed");
 
     // Redeem coupon if applicable
@@ -325,32 +350,22 @@ export async function POST(request: Request) {
       }
     }
 
-    // Trigger automated confirmation email
+    // Trigger automated verification pending email (Pass will be issued only upon admin approval)
     try {
-      const primaryRegId = insertedData[0]?.id || `TEDX-${utrNumber}`;
-      const emailAttendees = attendeeList.map((att, idx) => ({
-        id: idx === 0 ? primaryRegId : `${primaryRegId}-${idx + 1}`,
-        fullName: att.fullName,
-        email: att.email || buyerEmail,
-        phone: att.phone,
-        organization: att.organization || "GCEM",
-        designation: att.designation || "Student",
-      }));
-
-      await sendRegistrationConfirmationEmail({
+      await sendVerificationPendingEmail({
         buyerEmail,
         buyerName: attendeeList[0]?.fullName || buyerEmail.split("@")[0],
-        attendees: emailAttendees,
+        utrNumber,
         tierName,
         amountPaid: totalAmount,
-        razorpayPaymentId: `UPI-${utrNumber}`,
       });
     } catch (emailErr) {
-      console.warn("Email confirmation trigger error:", emailErr);
+      console.warn("Verification pending email trigger error:", emailErr);
     }
 
     return NextResponse.json({
       success: true,
+      pendingApproval: true,
       confirmedCount: attendeeList.length,
       primaryRegistrationId: insertedData[0]?.id,
       utrNumber,

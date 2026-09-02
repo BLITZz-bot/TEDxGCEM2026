@@ -51,6 +51,8 @@ export async function saveDraft(draft: RegistrationDraftRecord): Promise<void> {
 }
 
 export async function getDraft(draftId: string): Promise<RegistrationDraftRecord | null> {
+  let draft: RegistrationDraftRecord | null = null;
+
   // 1. Try Supabase first
   try {
     const supabase = await createClient();
@@ -61,14 +63,28 @@ export async function getDraft(draftId: string): Promise<RegistrationDraftRecord
       .single();
 
     if (!error && data) {
-      return data as RegistrationDraftRecord;
+      draft = data as RegistrationDraftRecord;
     }
   } catch {
     // fallback to memory
   }
 
   // 2. Memory fallback
-  return memoryDraftMap.get(draftId) || null;
+  if (!draft) {
+    draft = memoryDraftMap.get(draftId) || null;
+  }
+
+  if (!draft) return null;
+
+  // 3. Expiration check
+  if (draft.expires_at && new Date(draft.expires_at).getTime() < Date.now()) {
+    if (draft.status === "pending") {
+      void updateDraftStatus(draftId, "expired");
+      return null;
+    }
+  }
+
+  return draft;
 }
 
 export async function updateDraftStatus(

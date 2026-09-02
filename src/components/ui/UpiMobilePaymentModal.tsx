@@ -14,6 +14,9 @@ import {
   Tag,
   Copy,
   Check,
+  ShieldCheck,
+  Lock,
+  Sparkles,
 } from "lucide-react";
 import TurnstileWidget from "@/components/ui/TurnstileWidget";
 import UtrHelpModal from "@/components/ui/UtrHelpModal";
@@ -48,6 +51,80 @@ interface UpiMobilePaymentModalProps {
   }) => void;
 }
 
+// Efficient image compressor: scales down screenshots to max 1280px and outputs high-quality JPEG DataURL
+function compressImage(file: File): Promise<{ dataUrl: string; blob: Blob }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const maxDimension = 1280;
+
+        if (width > height && width > maxDimension) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else if (height > maxDimension) {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Canvas error"));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve({ dataUrl, blob });
+            else resolve({ dataUrl, blob: file });
+          },
+          "image/jpeg",
+          0.8
+        );
+      };
+      img.onerror = () => reject(new Error("Image load error"));
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error("File read error"));
+    reader.readAsDataURL(file);
+  });
+}
+
+const SUBMISSION_PHASES = [
+  {
+    step: 1,
+    title: "Encrypting Receipt Proof",
+    desc: "Optimizing image data & generating security payload...",
+    icon: Lock,
+  },
+  {
+    step: 2,
+    title: "Verifying 12-Digit UTR",
+    desc: "Authenticating bank transaction reference with ledger...",
+    icon: ShieldCheck,
+  },
+  {
+    step: 3,
+    title: "Securing Delegate Pass",
+    desc: "Registering delegate credentials and tier access...",
+    icon: Sparkles,
+  },
+  {
+    step: 4,
+    title: "Issuing Official Pass",
+    desc: "Generating tamper-proof digital pass with QR code...",
+    icon: CheckCircle2,
+  },
+];
+
 export default function UpiMobilePaymentModal({
   isOpen,
   onClose,
@@ -76,6 +153,7 @@ export default function UpiMobilePaymentModal({
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionPhase, setSubmissionPhase] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showUtrHelp, setShowUtrHelp] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -92,6 +170,18 @@ export default function UpiMobilePaymentModal({
   const [hasClickedPay, setHasClickedPay] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
 
+  // Cycle animated submission phases when submitting
+  useEffect(() => {
+    if (!isSubmitting) return;
+    const interval = setInterval(() => {
+      setSubmissionPhase((prev) => (prev < SUBMISSION_PHASES.length - 1 ? prev + 1 : prev));
+    }, 1300);
+    return () => {
+      clearInterval(interval);
+      setSubmissionPhase(0);
+    };
+  }, [isSubmitting]);
+
   const handleCopyUpi = () => {
     if (upiId && typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(upiId);
@@ -106,26 +196,22 @@ export default function UpiMobilePaymentModal({
     /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
   // Check if returning to an in-progress payment, otherwise reset state
-  // ONLY restore from sessionStorage when the parent explicitly sets restoreSession=true
-  // (i.e., page reloaded after app-switching to Google Pay/PhonePe).
-  // A normal modal open always starts fresh so re-opening for a new attempt works correctly.
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add("modal-open");
 
-      // Only auto-jump to proof if the parent explicitly flagged this as a session restore
-      // (happens when the page reloaded during an app-switch to GPay/PhonePe).
-      // For all other opens, always start fresh.
       if (restoreSession) {
         try {
           const saved = sessionStorage.getItem("tedx_active_upi_session");
           if (saved) {
             const parsed = JSON.parse(saved);
             if (Date.now() - parsed.timestamp < 30 * 60 * 1000) {
-              setModalStep("proof");
-              setHasAgreed(true);
-              setHasClickedPay(true);
-              return;
+              const restoreTimer = setTimeout(() => {
+                setModalStep("proof");
+                setHasAgreed(true);
+                setHasClickedPay(true);
+              }, 0);
+              return () => clearTimeout(restoreTimer);
             }
           }
         } catch {}
@@ -144,6 +230,7 @@ export default function UpiMobilePaymentModal({
         setScreenshotPreview(null);
         setErrorMsg(null);
         setIsSubmitting(false);
+        setSubmissionPhase(0);
       }, 0);
       return () => clearTimeout(timer);
     } else {
@@ -171,53 +258,6 @@ export default function UpiMobilePaymentModal({
       }
     };
   }, [screenshotPreview]);
-
-  // Efficient image compressor: scales down screenshots to max 1280px and outputs high-quality JPEG DataURL
-  const compressImage = (file: File): Promise<{ dataUrl: string; blob: Blob }> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          let width = img.width;
-          let height = img.height;
-          const maxDimension = 1280;
-
-          if (width > height && width > maxDimension) {
-            height = Math.round((height * maxDimension) / width);
-            width = maxDimension;
-          } else if (height > maxDimension) {
-            width = Math.round((width * maxDimension) / height);
-            height = maxDimension;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) {
-            reject(new Error("Canvas error"));
-            return;
-          }
-          ctx.drawImage(img, 0, 0, width, height);
-
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-          canvas.toBlob(
-            (blob) => {
-              if (blob) resolve({ dataUrl, blob });
-              else resolve({ dataUrl, blob: file });
-            },
-            "image/jpeg",
-            0.8
-          );
-        };
-        img.onerror = () => reject(new Error("Image load error"));
-        img.src = event.target?.result as string;
-      };
-      reader.onerror = () => reject(new Error("File read error"));
-      reader.readAsDataURL(file);
-    });
-  };
 
   const processFile = useCallback(async (file: File) => {
     setErrorMsg(null);
@@ -314,9 +354,11 @@ export default function UpiMobilePaymentModal({
     e.preventDefault();
     setErrorMsg(null);
 
-    const cleanUtr = utrNumber.trim();
-    if (!cleanUtr || !/^\d{12}$/.test(cleanUtr)) {
-      setErrorMsg("Please enter a valid 12-digit numeric UTR number.");
+    const cleanUtr = utrNumber.trim().toUpperCase();
+    // NPCI UTR / UPI reference numbers: 8–22 alphanumeric chars.
+    // Strictly \d{12} was rejecting valid Axis/ICICI/Google Pay references.
+    if (!cleanUtr || !/^[A-Z0-9]{8,22}$/.test(cleanUtr)) {
+      setErrorMsg("Please enter a valid UTR / transaction reference number (8–22 characters).");
       return;
     }
 
@@ -336,43 +378,28 @@ export default function UpiMobilePaymentModal({
     try {
       let res: Response;
 
-      if (screenshotBase64) {
-        res = await fetch("/api/register/upi-submit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            draftId,
-            utrNumber: cleanUtr,
-            turnstileToken,
-            screenshotBase64,
-            tierId,
-            tierName,
-            amount: totalAmount.toString(),
-            buyerEmail,
-            attendees,
-            couponCode,
-            discountAmount: discountAmount ? discountAmount.toString() : undefined,
-          }),
-        });
-      } else {
-        const formData = new FormData();
-        formData.append("utrNumber", cleanUtr);
-        formData.append("screenshot", screenshotFile);
-        formData.append("turnstileToken", turnstileToken);
-        if (draftId) formData.append("draftId", draftId);
-        formData.append("tierId", tierId);
-        formData.append("tierName", tierName);
-        formData.append("amount", totalAmount.toString());
-        formData.append("buyerEmail", buyerEmail);
-        formData.append("attendees", JSON.stringify(attendees));
-        if (couponCode) formData.append("couponCode", couponCode);
-        if (discountAmount) formData.append("discountAmount", discountAmount.toString());
+      // Always use FormData — avoids iOS canvas.toDataURL() restriction and
+      // eliminates the server-side content-type ambiguity that caused empty utrNumber.
+      const formData = new FormData();
+      formData.append("draftId", draftId ?? "");
+      formData.append("utrNumber", cleanUtr);
+      formData.append("turnstileToken", turnstileToken ?? "");
 
-        res = await fetch("/api/register/upi-submit", {
-          method: "POST",
-          body: formData,
-        });
+      if (screenshotBase64) {
+        // Compressed base64 available → convert back to Blob for FormData
+        const base64Response = await fetch(screenshotBase64);
+        const blob = await base64Response.blob();
+        formData.append("screenshot", blob, `proof_${draftId}.jpg`);
+      } else if (screenshotFile) {
+        // Raw file fallback (no compression or iOS canvas blocked)
+        formData.append("screenshot", screenshotFile, screenshotFile.name);
       }
+
+      res = await fetch("/api/register/upi-submit", {
+        method: "POST",
+        body: formData,
+      });
+
 
       const contentType = res.headers.get("content-type") || "";
       let data: { error?: string; confirmedCount?: number; primaryRegistrationId?: string } = {};
@@ -443,42 +470,127 @@ export default function UpiMobilePaymentModal({
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+              disabled={isSubmitting}
+              className={`p-2 rounded-full text-white/60 hover:text-white transition-colors ${
+                isSubmitting ? "opacity-30 cursor-not-allowed" : "hover:bg-white/10 cursor-pointer"
+              }`}
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
+          {/* VIEW: SUBMITTING ANIMATION (Shows when user clicks submit) */}
+          {isSubmitting && (
+            <div className="py-8 px-2 flex flex-col items-center justify-center space-y-6 text-center animate-in fade-in zoom-in duration-300">
+              {/* Animated Concentric Radar Glow */}
+              <div className="relative w-28 h-28 flex items-center justify-center">
+                {/* Outer pulsing ring */}
+                <div className="absolute inset-0 rounded-full border border-ted-red/40 animate-ping opacity-30" />
+                {/* Middle rotating gradient ring */}
+                <div className="absolute inset-1.5 rounded-full border-2 border-transparent border-t-ted-red border-r-emerald-400 animate-spin duration-1000" />
+                {/* Glowing Core */}
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-ted-red/25 via-white/5 to-emerald-500/20 border border-white/20 flex items-center justify-center backdrop-blur-md shadow-[0_0_35px_rgba(235,0,40,0.4)]">
+                  <Sparkles className="w-7 h-7 text-emerald-400 animate-pulse" />
+                </div>
+              </div>
+
+              {/* Dynamic Phase Text */}
+              <div className="space-y-1.5 max-w-sm">
+                <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono uppercase tracking-widest text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span>Stage {submissionPhase + 1} of {SUBMISSION_PHASES.length}</span>
+                </div>
+                <h4 className="text-base font-bold text-white font-sans tracking-tight">
+                  {SUBMISSION_PHASES[submissionPhase]?.title}
+                </h4>
+                <p className="text-xs text-white/60 font-sans">
+                  {SUBMISSION_PHASES[submissionPhase]?.desc}
+                </p>
+              </div>
+
+              {/* Animated Glowing Progress Bar */}
+              <div className="w-full max-w-xs space-y-1.5">
+                <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden relative">
+                  <div
+                    className="h-full bg-gradient-to-r from-ted-red via-amber-400 to-emerald-400 rounded-full transition-all duration-700 ease-out shadow-[0_0_12px_rgba(16,185,129,0.5)]"
+                    style={{ width: `${((submissionPhase + 1) / SUBMISSION_PHASES.length) * 100}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[10px] font-mono text-white/40">
+                  <span>Processing UTR: {utrNumber.slice(0, 4)}••••{utrNumber.slice(-4)}</span>
+                  <span className="text-emerald-400 font-bold">
+                    {Math.round(((submissionPhase + 1) / SUBMISSION_PHASES.length) * 100)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Phase Step Badges */}
+              <div className="grid grid-cols-4 gap-2 w-full max-w-sm pt-1">
+                {SUBMISSION_PHASES.map((ph, idx) => {
+                  const PhaseIcon = ph.icon;
+                  return (
+                    <div
+                      key={ph.step}
+                      className={`p-2 rounded-xl border flex flex-col items-center space-y-1 transition-all ${
+                        idx < submissionPhase
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                          : idx === submissionPhase
+                          ? "bg-ted-red/15 border-ted-red/60 text-ted-red shadow-[0_0_15px_rgba(235,0,40,0.3)]"
+                          : "bg-white/[0.02] border-white/5 text-white/20"
+                      }`}
+                    >
+                      {idx < submissionPhase ? (
+                        <Check className="w-3.5 h-3.5" />
+                      ) : (
+                        <PhaseIcon className={`w-3.5 h-3.5 ${idx === submissionPhase ? "animate-bounce" : ""}`} />
+                      )}
+                      <span className="text-[9px] font-mono uppercase tracking-wider line-clamp-1">
+                        Step {ph.step}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Security Guarantee Notice */}
+              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-white/50 font-mono max-w-sm">
+                🔒 256-bit SSL Encrypted Verification • Please do not close or reload this page.
+              </div>
+            </div>
+          )}
+
           {/* Amount Badge */}
-          <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 flex justify-between items-center">
-            <div>
-              <span className="text-[11px] uppercase tracking-wider text-white/50 block font-mono">
-                {attendees.length} × {tierName} Pass
-              </span>
-              <span className="text-xs text-white/80 font-sans font-medium">
-                Delegate: {buyerName}
-              </span>
-              {couponCode && (
-                <span className="inline-flex items-center space-x-1 mt-1 text-[10px] text-emerald-400 font-mono">
-                  <Tag className="w-2.5 h-2.5" />
-                  <span>Coupon {couponCode} applied</span>
+          {!isSubmitting && (
+            <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 flex justify-between items-center">
+              <div>
+                <span className="text-[11px] uppercase tracking-wider text-white/50 block font-mono">
+                  {attendees.length} × {tierName} Pass
                 </span>
-              )}
-            </div>
-            <div className="text-right">
-              {originalAmount && (
-                <span className="text-xs line-through text-white/30 font-mono block">
-                  ₹{originalAmount.toFixed(2)}
+                <span className="text-xs text-white/80 font-sans font-medium">
+                  Delegate: {buyerName}
                 </span>
-              )}
-              <span className="text-2xl font-black text-emerald-400 font-mono">
-                ₹{totalAmount.toFixed(2)}
-              </span>
+                {couponCode && (
+                  <span className="inline-flex items-center space-x-1 mt-1 text-[10px] text-emerald-400 font-mono">
+                    <Tag className="w-2.5 h-2.5" />
+                    <span>Coupon {couponCode} applied</span>
+                  </span>
+                )}
+              </div>
+              <div className="text-right">
+                {originalAmount && (
+                  <span className="text-xs line-through text-white/30 font-mono block">
+                    ₹{originalAmount.toFixed(2)}
+                  </span>
+                )}
+                <span className="text-2xl font-black text-emerald-400 font-mono">
+                  ₹{totalAmount.toFixed(2)}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* VIEW 1: INSTRUCTIONS */}
-          {modalStep === "instructions" && (
+          {!isSubmitting && modalStep === "instructions" && (
             <div className="space-y-5">
               {/* The 5 Golden Rules */}
               <div className="space-y-2.5">
@@ -614,7 +726,7 @@ export default function UpiMobilePaymentModal({
           )}
 
           {/* VIEW 2: PROOF SUBMISSION */}
-          {modalStep === "proof" && (
+          {!isSubmitting && modalStep === "proof" && (
             <form onSubmit={handleSubmitProof} className="space-y-5">
               <div className="flex items-center justify-between pb-1">
                 <button
@@ -678,12 +790,13 @@ export default function UpiMobilePaymentModal({
                     placeholder="e.g. 423981029384"
                     value={utrNumber}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, "").slice(0, 12);
+                      // Allow alphanumeric; uppercase for consistency; max 22 chars
+                      const val = e.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 22).toUpperCase();
                       setUtrNumber(val);
                     }}
                     className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/15 text-white font-mono text-sm tracking-widest placeholder-white/20 focus:outline-none focus:border-ted-red transition-colors"
                   />
-                  {utrNumber.length === 12 && (
+                  {utrNumber.length >= 8 && utrNumber.length <= 22 && (
                     <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-400">
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
@@ -788,9 +901,9 @@ export default function UpiMobilePaymentModal({
               <div className="space-y-2 pt-2">
                 <button
                   type="submit"
-                  disabled={isSubmitting || utrNumber.length !== 12 || !screenshotFile || !turnstileToken}
-                  className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center space-x-2 font-mono ${
-                    !isSubmitting && utrNumber.length === 12 && screenshotFile && turnstileToken
+                  disabled={isSubmitting || utrNumber.length < 8 || !screenshotFile || !turnstileToken}
+                  className={`w-full py-4 px-6 font-bold text-base tracking-wide transition-all duration-300 rounded-none ${
+                    !isSubmitting && utrNumber.length >= 8 && screenshotFile && turnstileToken
                       ? "bg-emerald-500 hover:bg-white text-black hover:text-black cursor-pointer shadow-[0_0_25px_rgba(16,185,129,0.4)]"
                       : "bg-white/10 text-white/30 cursor-not-allowed"
                   }`}

@@ -126,7 +126,7 @@ export async function getTierSoldCounts(): Promise<Record<string, number>> {
           if (counts[tierKey] !== undefined) {
             counts[tierKey] += count;
           } else {
-            counts.early_bird += count;
+            counts[tierKey] = count;
           }
         }
       });

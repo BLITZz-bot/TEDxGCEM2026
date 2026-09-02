@@ -29,6 +29,7 @@ interface AdminRegistration {
   utr_number?: string | null;
   payment_method?: string | null;
   payment_screenshot_url?: string | null;
+  approval_status?: "pending_approval" | "approved" | "rejected" | string | null;
   tier_id?: string | null;
   tier_name?: string | null;
   coupon_code?: string | null;
@@ -114,7 +115,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [ticketTiers, setTicketTiers] = useState<TicketTier[]>(() => globalAdminCache?.ticketTiers || []);
   const [couponsList, setCouponsList] = useState<PromoCoupon[]>(() => globalAdminCache?.couponsList || []);
   const [loading, setLoading] = useState(() => !globalAdminCache);
-  const [activeSubTab, setActiveSubTab] = useState<"registrations" | "tickets" | "coupons" | "messages" | "settings" | "team" | "speakers" | "partners" | "scanner">("registrations");
+  const [activeSubTab, setActiveSubTab] = useState<"approvals" | "registrations" | "rejected" | "tickets" | "coupons" | "messages" | "settings" | "team" | "speakers" | "partners" | "scanner">("approvals");
   const [errorMsg, setErrorMsg] = useState("");
 
   // Expandable Co-Participants viewer state in registrations table
@@ -178,6 +179,90 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
     return [...Array.from(grouped.values()), ...singles];
   }, [registrations]);
+
+  // Filtered lists for the 3 distinct registration boards
+  const pendingApprovals = React.useMemo(() => {
+    return consolidatedRegistrations.filter(
+      (reg) => reg.approval_status === "pending_approval" || reg.ticket_status === "pending_verification"
+    );
+  }, [consolidatedRegistrations]);
+
+  const approvedRegistrations = React.useMemo(() => {
+    return consolidatedRegistrations.filter(
+      (reg) =>
+        reg.approval_status === "approved" ||
+        (!reg.approval_status && reg.ticket_status !== "pending_verification" && reg.ticket_status !== "rejected")
+    );
+  }, [consolidatedRegistrations]);
+
+  const rejectedRegistrations = React.useMemo(() => {
+    return consolidatedRegistrations.filter(
+      (reg) => reg.approval_status === "rejected" || reg.ticket_status === "rejected"
+    );
+  }, [consolidatedRegistrations]);
+
+  // Approval / Rejection Workflow States
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectionModalReg, setRejectionModalReg] = useState<AdminRegistration | null>(null);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState<string>("");
+
+  const handleApproveRegistration = async (reg: AdminRegistration) => {
+    if (
+      !confirm(
+        `Are you sure you want to APPROVE ${reg.full_name} (${reg.utr_number || "UPI"})?\n\nThis will generate their official Delegate Pass and immediately dispatch the confirmation email with QR code.`
+      )
+    ) {
+      return;
+    }
+    setApprovingId(reg.id);
+    try {
+      const res = await fetch("/api/admin/registrations/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: reg.id, action: "approve" }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.error || "Failed to approve registration.");
+        return;
+      }
+      setRegistrations((prev) =>
+        prev.map((r) => (r.id === reg.id ? { ...r, approval_status: "approved", ticket_status: "confirmed" } : r))
+      );
+      await fetchData(true);
+    } catch (err: any) {
+      alert("Error approving registration: " + (err.message || "Network error"));
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const handleRejectRegistration = async (regId: string, reason?: string) => {
+    setRejectingId(regId);
+    try {
+      const res = await fetch("/api/admin/registrations/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: regId, action: "reject", rejectionReason: reason }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.error || "Failed to reject registration.");
+        return;
+      }
+      setRegistrations((prev) =>
+        prev.map((r) => (r.id === regId ? { ...r, approval_status: "rejected", ticket_status: "rejected" } : r))
+      );
+      setRejectionModalReg(null);
+      setRejectionReasonInput("");
+      await fetchData(true);
+    } catch (err: any) {
+      alert("Error rejecting registration: " + (err.message || "Network error"));
+    } finally {
+      setRejectingId(null);
+    }
+  };
 
   // Ticket Tiers State
   const [tierActionLoading, setTierActionLoading] = useState<string | null>(null);
@@ -1822,13 +1907,44 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       )}
 
       {/* Bento Grid Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        <div className="bg-ted-dark-gray/30 border border-white/5 p-6 rounded-2xl">
-          <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Total Successful Registrations</span>
-          <span className="text-3xl font-black text-white">{totalRegistrations}</span>
+      {/* Bento Grid Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div
+          onClick={() => setActiveSubTab("approvals")}
+          className={`border p-6 rounded-2xl cursor-pointer transition-all ${
+            pendingApprovals.length > 0
+              ? "bg-amber-500/10 border-amber-500/40 hover:border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+              : "bg-ted-dark-gray/30 border-white/5 hover:border-white/10"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-mono tracking-widest text-amber-400 uppercase font-bold">
+              ⚡ Pending Approvals
+            </span>
+            {pendingApprovals.length > 0 && (
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            )}
+          </div>
+          <span className={`text-3xl font-black ${pendingApprovals.length > 0 ? "text-amber-400" : "text-white"}`}>
+            {pendingApprovals.length}
+          </span>
         </div>
-        <div className="bg-ted-dark-gray/30 border border-white/5 p-6 rounded-2xl">
-          <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Total Inbox Messages</span>
+        <div
+          onClick={() => setActiveSubTab("registrations")}
+          className="bg-ted-dark-gray/30 border border-white/5 hover:border-white/10 p-6 rounded-2xl cursor-pointer transition-all"
+        >
+          <span className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold block mb-1">
+            ✅ Confirmed Passes
+          </span>
+          <span className="text-3xl font-black text-white">{approvedRegistrations.length}</span>
+        </div>
+        <div
+          onClick={() => setActiveSubTab("messages")}
+          className="bg-ted-dark-gray/30 border border-white/5 hover:border-white/10 p-6 rounded-2xl cursor-pointer transition-all"
+        >
+          <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">
+            Total Inbox Messages
+          </span>
           <span className="text-3xl font-black text-white">{totalMessages}</span>
         </div>
       </div>
@@ -1837,17 +1953,42 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       <div className="flex flex-wrap gap-3 border-b border-white/5 pb-4 mb-6">
         <button
           type="button"
+          onClick={() => setActiveSubTab("approvals")}
+          className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-2 ${
+            activeSubTab === "approvals"
+              ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20 font-black"
+              : pendingApprovals.length > 0
+              ? "bg-amber-500/15 border border-amber-500/40 text-amber-300 hover:bg-amber-500/25 font-bold"
+              : "bg-white/5 text-white/50 hover:bg-white/10"
+          }`}
+        >
+          <span>⚡</span> Approvals ({pendingApprovals.length})
+          {pendingApprovals.length > 0 && (
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+          )}
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveSubTab("registrations")}
-          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+          className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "registrations" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
           }`}
         >
-          Registrations ({totalRegistrations})
+          Registrations ({approvedRegistrations.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab("rejected")}
+          className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+            activeSubTab === "rejected" ? "bg-red-600 text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+          }`}
+        >
+          Rejected ({rejectedRegistrations.length})
         </button>
         <button
           type="button"
           onClick={() => setActiveSubTab("tickets")}
-          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+          className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "tickets" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
           }`}
         >
@@ -1856,7 +1997,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         <button
           type="button"
           onClick={() => setActiveSubTab("messages")}
-          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+          className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "messages" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
           }`}
         >
@@ -1865,7 +2006,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         <button
           type="button"
           onClick={() => setActiveSubTab("settings")}
-          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+          className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "settings" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
           }`}
         >
@@ -1874,41 +2015,41 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         <button
           type="button"
           onClick={() => setActiveSubTab("team")}
-          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+          className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "team" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
           }`}
         >
-          Team Manager ({teamMembers.length})
+          Team ({teamMembers.length})
         </button>
         <button
           type="button"
           onClick={() => setActiveSubTab("speakers")}
-          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+          className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "speakers" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
           }`}
         >
-          Speakers Manager ({speakersList.length})
+          Speakers ({speakersList.length})
         </button>
         <button
           type="button"
           onClick={() => setActiveSubTab("partners")}
-          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+          className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "partners" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
           }`}
         >
-          Partners Manager ({partnersList.length})
+          Partners ({partnersList.length})
         </button>
         <button
           type="button"
           onClick={() => setActiveSubTab("scanner")}
-          className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-2 ${
+          className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-2 ${
             activeSubTab === "scanner" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
           }`}
         >
-          <span>📷</span> Ticket Scanner
+          <span>📷</span> Scanner
         </button>
         <div className="md:ml-auto flex flex-wrap items-center gap-2">
-          {activeSubTab === "registrations" && (
+          {(activeSubTab === "registrations" || activeSubTab === "approvals") && (
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
@@ -1920,7 +2061,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
-                <span>Download Excel ({consolidatedRegistrations.length})</span>
+                <span>Export Excel</span>
               </button>
               <button
                 type="button"
@@ -1977,6 +2118,157 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         {loading ? (
           <div className="flex-grow flex items-center justify-center py-16">
             <div className="w-8 h-8 border-4 border-ted-red border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : activeSubTab === "approvals" ? (
+          /* APPROVALS QUEUE VIEW */
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 font-mono">
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2">
+                  <span>⚡</span> Direct UPI Payment Approvals Queue ({pendingApprovals.length} Pending)
+                </div>
+                <p className="text-[11px] text-white/60">
+                  Verify the 12-digit UTR against your bank statement before approving. Approving generates the official delegate pass and dispatches the confirmation email.
+                </p>
+              </div>
+              <div className="text-[10px] text-amber-400 font-bold px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 shrink-0">
+                Action Required
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              {pendingApprovals.length === 0 ? (
+                <div className="text-center py-16 font-mono space-y-3">
+                  <div className="text-3xl">🎉</div>
+                  <p className="text-white/60 text-sm font-bold">All caught up! No pending payment verifications.</p>
+                  <p className="text-white/30 text-xs">New registrations submitted via Direct UPI will appear here for verification.</p>
+                </div>
+              ) : (
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-white/40 font-mono uppercase tracking-wider">
+                      <th className="pb-4 pr-4">Applicant / Buyer</th>
+                      <th className="pb-4 px-4">Contact</th>
+                      <th className="pb-4 px-4">Tier & Passes</th>
+                      <th className="pb-4 px-4">Amount</th>
+                      <th className="pb-4 px-4">Bank UTR</th>
+                      <th className="pb-4 px-4">Screenshot Proof</th>
+                      <th className="pb-4 pl-4 text-right">Verification Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {pendingApprovals.map((reg) => {
+                      const qty = Math.max(1, Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
+                      const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined ? Number(reg.amount_paid) : (qty * 300);
+                      const isApproving = approvingId === reg.id;
+                      const isRejecting = rejectingId === reg.id;
+                      const isBusy = isApproving || isRejecting;
+
+                      return (
+                        <tr key={reg.id} className="hover:bg-white/[0.02] transition-colors align-top">
+                          <td className="py-4 pr-4">
+                            <div className="font-bold text-white uppercase tracking-wider text-sm">{reg.full_name}</div>
+                            <div className="text-[10px] text-white/40 font-mono mt-0.5">{new Date(reg.created_at).toLocaleString()}</div>
+                            <div className="text-[9px] text-white/25 font-mono">DRAFT: {reg.id.slice(0, 8).toUpperCase()}</div>
+                          </td>
+                          <td className="py-4 px-4 space-y-1">
+                            <div className="text-white/90 font-mono">{reg.email}</div>
+                            {reg.buyer_email && reg.buyer_email.toLowerCase() !== reg.email.toLowerCase() && (
+                              <div className="text-[10px] text-blue-400 font-mono">↳ Payer: {reg.buyer_email}</div>
+                            )}
+                            <div className="text-ted-red font-mono font-bold text-[11px]">{reg.phone}</div>
+                            <div className="text-[10px] text-white/40">{reg.organization || "GCEM"} ({reg.designation || "Student"})</div>
+                          </td>
+                          <td className="py-4 px-4 font-mono space-y-1">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-white font-bold text-[10px] uppercase">
+                              {reg.tier_name || "Delegate Pass"}
+                            </span>
+                            <div className="text-[10px] text-white/60">
+                              🎫 {qty} Pass{qty > 1 ? "es" : ""}
+                            </div>
+                            {Array.isArray(reg.attendees_json) && reg.attendees_json.length > 1 && (
+                              <div className="text-[9px] text-amber-400 font-bold">
+                                +{reg.attendees_json.length - 1} Co-Participants
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 font-mono space-y-1">
+                            <div className="text-base font-black text-white">₹{paidVal.toLocaleString("en-IN")}</div>
+                            {reg.coupon_code && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-ted-red/15 border border-ted-red/30 text-ted-red text-[9px] font-bold">
+                                🏷️ {reg.coupon_code} (-₹{reg.discount_amount || 0})
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 font-mono">
+                            {reg.utr_number ? (
+                              <div className="space-y-1">
+                                <div className="text-xs font-black text-amber-400 tracking-wider bg-black/40 px-2.5 py-1 rounded border border-amber-500/20 inline-block select-all">
+                                  {reg.utr_number}
+                                </div>
+                                <div className="text-[9px] text-white/30">Direct UPI Reference</div>
+                              </div>
+                            ) : (
+                              <span className="text-white/20 italic">No UTR</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 font-mono">
+                            {reg.payment_screenshot_url ? (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewScreenshotUrl({
+                                  url: reg.payment_screenshot_url!,
+                                  title: `Verify Payment: ${reg.full_name} (${reg.tier_name || "Delegate"}) — ₹${paidVal}`,
+                                  utr: reg.utr_number || undefined,
+                                })}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-black border border-emerald-500/30 text-xs font-bold transition-all cursor-pointer shadow-sm"
+                              >
+                                <span>📸</span> View Screenshot
+                              </button>
+                            ) : (
+                              <span className="text-red-400/60 text-[10px] italic">No receipt attached</span>
+                            )}
+                          </td>
+                          <td className="py-4 pl-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleApproveRegistration(reg)}
+                                disabled={isBusy}
+                                className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black rounded-lg uppercase text-xs font-black tracking-wider transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-emerald-500/20"
+                              >
+                                {isApproving ? (
+                                  <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <span>✓</span>
+                                )}
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRejectionModalReg(reg);
+                                  setRejectionReasonInput("");
+                                }}
+                                disabled={isBusy}
+                                className="px-3 py-1.5 bg-red-500/15 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 rounded-lg uppercase text-xs font-bold tracking-wider transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {isRejecting ? (
+                                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <span>✗</span>
+                                )}
+                                Reject
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         ) : activeSubTab === "registrations" ? (
           /* REGISTRATIONS VIEW */
@@ -2042,17 +2334,17 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-black/30 border border-white/5 font-mono">
               <div className="space-y-0.5">
                 <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <span>📊</span> Attendee Database ({consolidatedRegistrations.length} Total Bookings)
+                  <span>📊</span> Confirmed Attendee Database ({approvedRegistrations.length} Passes Issued)
                 </div>
                 <p className="text-[10px] text-white/40">
-                  Exports a beautiful, standalone spreadsheet (.xls). Local edits in Excel will never alter your live database.
+                  Displays all verified and confirmed passes. Exports a beautiful spreadsheet (.xls).
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => exportRegistrationsToExcel("excel")}
-                  disabled={consolidatedRegistrations.length === 0}
+                  disabled={approvedRegistrations.length === 0}
                   className="px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-black border border-emerald-500/40 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -2063,7 +2355,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                 <button
                   type="button"
                   onClick={() => exportRegistrationsToExcel("csv")}
-                  disabled={consolidatedRegistrations.length === 0}
+                  disabled={approvedRegistrations.length === 0}
                   className="px-3 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   CSV
@@ -2072,8 +2364,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
             </div>
 
             <div className="overflow-x-auto">
-              {consolidatedRegistrations.length === 0 ? (
-                <p className="text-center text-white/40 py-16 font-mono text-sm">No registrations recorded yet.</p>
+              {approvedRegistrations.length === 0 ? (
+                <p className="text-center text-white/40 py-16 font-mono text-sm">No confirmed registrations recorded yet.</p>
               ) : (
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
@@ -2090,8 +2382,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {consolidatedRegistrations.map((reg) => {
-                      const isConfirmed = reg.ticket_status === "confirmed" || reg.ticket_status === "approved" || !!reg.razorpay_payment_id || !!reg.payment_id;
+                    {approvedRegistrations.map((reg) => {
+                      const isConfirmed = reg.ticket_status === "confirmed" || reg.ticket_status === "approved" || reg.approval_status === "approved" || !!reg.razorpay_payment_id || !!reg.payment_id;
                       const paymentId = reg.razorpay_payment_id || reg.payment_id;
                       const qty = Math.max(1, Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
                       const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined ? Number(reg.amount_paid) : (isConfirmed ? (qty * 300) : 0);
@@ -2181,17 +2473,10 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                             )}
                           </td>
                           <td className="py-4 px-4 space-y-1">
-                            {isConfirmed ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 font-mono text-[10px] uppercase font-bold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                Paid (₹{paidVal.toLocaleString("en-IN")})
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-mono text-[10px] uppercase font-bold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
-                                Pending (₹{paidVal.toLocaleString("en-IN")})
-                              </span>
-                            )}
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 font-mono text-[10px] uppercase font-bold">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                              Approved (₹{paidVal.toLocaleString("en-IN")})
+                            </span>
                             {reg.payment_method && (
                               <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
                                 Method: <span className="text-white">{reg.payment_method}</span>
@@ -2251,6 +2536,88 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                         </tr>
                       );
                     })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        ) : activeSubTab === "rejected" ? (
+          /* REJECTED REGISTRATIONS VIEW */
+          <div className="space-y-6">
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 font-mono flex items-center justify-between">
+              <div className="text-xs font-bold text-red-300 uppercase tracking-wider flex items-center gap-2">
+                <span>❌</span> Rejected Payment Applications ({rejectedRegistrations.length})
+              </div>
+              <span className="text-[10px] text-white/40">These applicants received rejection notices</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              {rejectedRegistrations.length === 0 ? (
+                <p className="text-center text-white/40 py-16 font-mono text-sm">No rejected registrations.</p>
+              ) : (
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-white/40 font-mono uppercase tracking-wider">
+                      <th className="pb-4 pr-4">Attendee</th>
+                      <th className="pb-4 px-4">Contact</th>
+                      <th className="pb-4 px-4">Tier & Amount</th>
+                      <th className="pb-4 px-4">Submitted UTR</th>
+                      <th className="pb-4 px-4">Receipt</th>
+                      <th className="pb-4 px-4">Status</th>
+                      <th className="pb-4 pl-4 text-right">Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {rejectedRegistrations.map((reg) => (
+                      <tr key={reg.id} className="hover:bg-white/[0.02] transition-colors align-top opacity-80">
+                        <td className="py-4 pr-4">
+                          <div className="font-bold text-white uppercase tracking-wider">{reg.full_name}</div>
+                          <div className="text-[10px] text-white/30 font-mono">{new Date(reg.created_at).toLocaleDateString()}</div>
+                        </td>
+                        <td className="py-4 px-4 font-mono space-y-0.5">
+                          <div className="text-white/80">{reg.email}</div>
+                          <div className="text-white/40">{reg.phone}</div>
+                        </td>
+                        <td className="py-4 px-4 font-mono">
+                          <div className="text-white font-bold">{reg.tier_name || "Delegate Pass"}</div>
+                          <div className="text-white/50 text-[10px]">₹{reg.amount_paid || 0}</div>
+                        </td>
+                        <td className="py-4 px-4 font-mono">
+                          <span className="text-red-400 font-bold">{reg.utr_number || "N/A"}</span>
+                        </td>
+                        <td className="py-4 px-4 font-mono">
+                          {reg.payment_screenshot_url ? (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewScreenshotUrl({
+                                url: reg.payment_screenshot_url!,
+                                title: `Rejected Receipt: ${reg.full_name}`,
+                                utr: reg.utr_number || undefined,
+                              })}
+                              className="text-[10px] text-white/60 hover:text-white underline cursor-pointer"
+                            >
+                              View Proof
+                            </button>
+                          ) : (
+                            <span className="text-white/20">None</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded bg-red-500/20 border border-red-500/40 text-red-400 font-mono text-[10px] uppercase font-bold">
+                            Rejected
+                          </span>
+                        </td>
+                        <td className="py-4 pl-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => deleteRegistration(reg.id)}
+                            className="px-2.5 py-1 bg-white/5 hover:bg-red-600 hover:text-white rounded text-white/40 text-[10px] uppercase font-bold cursor-pointer transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               )}
@@ -4155,6 +4522,85 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                   className="px-4 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors cursor-pointer"
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Rejection Reason & Confirmation Modal */}
+        {rejectionModalReg && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-[#141417] border border-red-500/30 rounded-2xl max-w-md w-full overflow-hidden flex flex-col shadow-2xl">
+              <div className="p-5 border-b border-white/10 flex items-center justify-between bg-red-500/10">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">⚠️</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">Reject Payment Application</h4>
+                    <p className="text-[10px] text-white/50 font-mono">This will notify the delegate via email</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRejectionModalReg(null)}
+                  className="p-1 text-white/50 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer text-lg leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4 text-xs font-mono">
+                <div className="p-3.5 rounded-xl bg-black/50 border border-white/10 space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-white/40">Applicant:</span>
+                    <span className="text-white font-bold">{rejectionModalReg.full_name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/40">Email:</span>
+                    <span className="text-white">{rejectionModalReg.email}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/40">UTR Number:</span>
+                    <span className="text-red-400 font-bold">{rejectionModalReg.utr_number || "N/A"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/40">Amount:</span>
+                    <span className="text-white">₹{rejectionModalReg.amount_paid || 0}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-white uppercase tracking-wider block">
+                    Rejection Reason (Optional, included in email):
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="e.g. UTR number not found in bank ledger / screenshot unreadable"
+                    value={rejectionReasonInput}
+                    onChange={(e) => setRejectionReasonInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white font-sans text-xs focus:outline-none focus:border-red-500 transition-colors placeholder:text-white/20"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-white/10 bg-black/40 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setRejectionModalReg(null)}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors cursor-pointer text-xs font-bold uppercase tracking-wider"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRejectRegistration(rejectionModalReg.id, rejectionReasonInput.trim())}
+                  disabled={rejectingId === rejectionModalReg.id}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors cursor-pointer text-xs font-bold uppercase tracking-wider flex items-center gap-2 disabled:opacity-50"
+                >
+                  {rejectingId === rejectionModalReg.id ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : null}
+                  Confirm & Reject
                 </button>
               </div>
             </div>

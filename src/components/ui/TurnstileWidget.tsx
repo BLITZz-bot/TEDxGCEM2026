@@ -43,9 +43,11 @@ export default function TurnstileWidget({
   const onErrorRef = useRef(onError);
   const onExpireRef = useRef(onExpire);
 
-  onSuccessRef.current = onSuccess;
-  onErrorRef.current = onError;
-  onExpireRef.current = onExpire;
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onErrorRef.current = onError;
+    onExpireRef.current = onExpire;
+  });
 
   useEffect(() => {
     // If no real production/test key is configured yet, safely auto-verify in dev mode
