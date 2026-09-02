@@ -16,13 +16,14 @@ const cspDirectives: Record<string, string[]> = {
   // Default: only this origin
   "default-src": ["'self'"],
 
-  // Scripts: self + Cloudflare Turnstile widget + Next.js inline chunks
+  // Scripts: self + Cloudflare Turnstile widget + Next.js inline chunks + Vercel Web Analytics
   // 'unsafe-inline' is required by Next.js for its inline <script> bootstrapping.
   // 'unsafe-eval' is required in development by Next.js HMR/debugging; omitted in prod.
   "script-src": [
     "'self'",
     "'unsafe-inline'",
     "https://challenges.cloudflare.com",
+    "https://va.vercel-scripts.com",
     ...(isDev ? ["'unsafe-eval'"] : []),
   ],
 
@@ -40,20 +41,40 @@ const cspDirectives: Record<string, string[]> = {
   //   blob:  → screenshot preview (FileReader → createObjectURL)
   //   data:  → QR code SVG data URIs
   //   Supabase storage → payment proof screenshots
-  "img-src": ["'self'", "blob:", "data:", SUPABASE_HOST],
+  //   Google user content → Google OAuth profile avatars
+  //   QR Server API → fallback ticket QR code rendering
+  "img-src": [
+    "'self'",
+    "blob:",
+    "data:",
+    SUPABASE_HOST,
+    "https://*.googleusercontent.com",
+    "https://lh3.googleusercontent.com",
+    "https://api.qrserver.com",
+  ],
 
   // API fetch / WebSocket calls:
   //   Supabase REST API + Realtime (wss for live draft-status polling)
   //   Cloudflare Turnstile token validation
+  //   Vercel Analytics & Speed Insights
   "connect-src": [
     "'self'",
+    "data:",
+    "blob:",
     SUPABASE_HOST,
     SUPABASE_WSS,
     "https://challenges.cloudflare.com",
+    "https://va.vercel-scripts.com",
+    "https://*.vercel-insights.com",
+    "https://vitals.vercel-insights.com",
   ],
 
-  // Iframes: only Cloudflare Turnstile renders in an iframe
-  "frame-src": ["https://challenges.cloudflare.com"],
+  // Iframes: Cloudflare Turnstile widget & Google Maps embed in Contact section
+  "frame-src": [
+    "https://challenges.cloudflare.com",
+    "https://www.google.com",
+    "https://maps.google.com",
+  ],
 
   // Workers: Next.js service worker (if any)
   "worker-src": ["'self'", "blob:"],
@@ -85,10 +106,10 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   // Referrer Policy: only send origin on cross-origin requests
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // Disable browser features that are not needed
+  // Permissions Policy: allow camera on self for Admin Console ticket QR scanner
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+    value: "camera=(self), microphone=(), geolocation=(), interest-cohort=()",
   },
   // HSTS: enforce HTTPS for 1 year
   {
@@ -125,6 +146,16 @@ const nextConfig: NextConfig = {
   // Optimise images: serve WebP/AVIF where supported
   images: {
     formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "wpiujexqajeseifzuxnc.supabase.co",
+      },
+    ],
   },
 };
 
