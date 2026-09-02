@@ -1,14 +1,25 @@
 -- =============================================================================
--- TEDxGCEM 2026: Complete Direct UPI, Handoff & Dynamic Tier Pricing Migration
+-- TEDxGCEM 2026: Complete Direct UPI, Handoff, Multi-Ticket & Admin Approvals Migration
 -- Master idempotent script (Safe to run in Supabase SQL Editor anytime)
 -- =============================================================================
 --
--- ⚡ QUICK RUN (If you only need the latest Multi-Ticket / Co-Participants update):
--- Copy and run these 3 lines:
+-- ⚡ QUICK RUN (If you only need the latest Admin Approval + Multi-Ticket columns):
+-- Copy and run these lines:
 --
 -- ALTER TABLE public.registrations
+--     ADD COLUMN IF NOT EXISTS payment_screenshot_url TEXT,
 --     ADD COLUMN IF NOT EXISTS attendees_json JSONB DEFAULT '[]'::jsonb,
---     ADD COLUMN IF NOT EXISTS unit_price NUMERIC;
+--     ADD COLUMN IF NOT EXISTS unit_price NUMERIC,
+--     ADD COLUMN IF NOT EXISTS ticket_count INTEGER DEFAULT 1,
+--     ADD COLUMN IF NOT EXISTS buyer_email TEXT,
+--     ADD COLUMN IF NOT EXISTS designation TEXT DEFAULT 'Student',
+--     ADD COLUMN IF NOT EXISTS referral TEXT,
+--     ADD COLUMN IF NOT EXISTS utr_number TEXT,
+--     ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'direct_upi',
+--     ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'pending_approval';
+--
+-- CREATE INDEX IF NOT EXISTS idx_registrations_approval_status
+--     ON public.registrations(approval_status);
 --
 -- =============================================================================
 
@@ -24,7 +35,7 @@ CREATE TABLE IF NOT EXISTS public.ticket_tiers (
     total_capacity INTEGER NOT NULL,
     allow_coupons BOOLEAN DEFAULT false NOT NULL,
     discount_price NUMERIC,
-    status TEXT DEFAULT 'upcoming' NOT NULL,
+    status TEXT DEFAULT 'upcoming' NOT NULL, -- 'active' | 'upcoming' | 'sold_out' | 'closed'
     sort_order INTEGER NOT NULL,
     manual_override BOOLEAN DEFAULT false NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
@@ -60,6 +71,9 @@ CREATE TABLE IF NOT EXISTS public.coupons (
     amount_paid NUMERIC
 );
 
+CREATE INDEX IF NOT EXISTS idx_coupons_code ON public.coupons(code);
+CREATE INDEX IF NOT EXISTS idx_coupons_is_used ON public.coupons(is_used);
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 3. REGISTRATION DRAFTS TABLE (Cross-Device Mobile QR Handoff & Auto-Sync)
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -83,7 +97,7 @@ CREATE TABLE IF NOT EXISTS public.registration_drafts (
     coupon_code TEXT,
     discount_amount NUMERIC(10, 2) DEFAULT 0.00,
     attendees_json JSONB DEFAULT '[]'::jsonb,
-    status TEXT DEFAULT 'pending',
+    status TEXT DEFAULT 'pending', -- 'pending' | 'submitted' | 'confirmed' | 'expired'
     created_at TIMESTAMPTZ DEFAULT now(),
     expires_at TIMESTAMPTZ DEFAULT (now() + INTERVAL '24 hours')
 );
@@ -91,7 +105,7 @@ CREATE TABLE IF NOT EXISTS public.registration_drafts (
 CREATE INDEX IF NOT EXISTS idx_registration_drafts_token ON public.registration_drafts(auth_handoff_token);
 CREATE INDEX IF NOT EXISTS idx_registration_drafts_user ON public.registration_drafts(user_id);
 
--- Enable Supabase Realtime for instant laptop auto-sync
+-- Enable Supabase Realtime for instant laptop auto-sync when mobile finishes
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -118,16 +132,17 @@ ALTER TABLE public.registrations
     -- Approval workflow: 'pending_approval' | 'approved' | 'rejected'
     ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'pending_approval';
 
+-- Unique constraint on UTR to prevent double-spending / duplicate receipts
 CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_utr_number 
     ON public.registrations(utr_number) 
     WHERE utr_number IS NOT NULL AND utr_number != '';
 
--- Index for fast admin approval dashboard queries
+-- Index for fast admin approval queue queries
 CREATE INDEX IF NOT EXISTS idx_registrations_approval_status
     ON public.registrations(approval_status);
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 5. PAYMENT PROOFS STORAGE BUCKET (2MB Limit)
+-- 5. PAYMENT PROOFS STORAGE BUCKET (2MB Limit, Public Read, Secure Upload)
 -- ─────────────────────────────────────────────────────────────────────────────
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
