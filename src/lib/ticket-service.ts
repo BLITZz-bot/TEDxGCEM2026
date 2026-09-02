@@ -144,7 +144,7 @@ export async function getTierSoldCounts(): Promise<Record<string, number>> {
 export async function getAllTicketTiers(): Promise<TicketTier[]> {
   let tiers = readLocalTiers();
 
-  // Try fetching from Supabase if table exists
+  // 1. Fetch from Supabase (Primary Source of Truth)
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -154,6 +154,8 @@ export async function getAllTicketTiers(): Promise<TicketTier[]> {
 
     if (!error && data && data.length > 0) {
       tiers = data;
+      // Sync local JSON cache with Supabase
+      saveLocalTiers(data);
     }
   } catch {
     // fallback to local tiers
@@ -170,8 +172,6 @@ export async function getAllTicketTiers(): Promise<TicketTier[]> {
   const manualClosedTier = tiers.find((t) => t.status === "closed");
 
   // Determine the progression tier
-  // If an active tier exists, verify if it is full
-  // If no manual override, find the first tier whose sold_count < total_capacity
   let currentProgressionIndex = -1;
 
   if (manualActiveTier) {
@@ -249,7 +249,8 @@ export async function getActiveTicketTier(): Promise<TicketTier> {
  * Update a tier's status or manual override (Admin only)
  */
 export async function updateTierStatus(tierId: string, status: "active" | "closed" | "upcoming", manualOverride = true): Promise<boolean> {
-  const tiers = readLocalTiers();
+  // Fetch latest tiers directly to ensure we have the live database state
+  const tiers = await getAllTicketTiers();
   const index = tiers.findIndex((t) => t.id === tierId);
   if (index === -1) return false;
 
@@ -285,25 +286,18 @@ export async function updateTierStatus(tierId: string, status: "active" | "close
   try {
     const supabase = await createClient();
     for (const t of tiers) {
+      // ONLY update status and manual_override, DO NOT overwrite price!
       await supabase
         .from("ticket_tiers")
-        .upsert({
-          id: t.id,
-          name: t.name,
-          tag: t.tag,
-          description: t.description,
-          price: t.price,
-          total_capacity: t.total_capacity,
-          allow_coupons: t.allow_coupons,
-          discount_price: t.discount_price,
+        .update({
           status: t.status,
-          sort_order: t.sort_order,
           manual_override: t.manual_override,
           updated_at: new Date().toISOString(),
-        });
+        })
+        .eq("id", t.id);
     }
   } catch (err) {
-    console.warn("Supabase ticket_tiers update error:", err);
+    console.warn("Supabase ticket_tiers status update error:", err);
   }
 
   return true;
@@ -347,7 +341,7 @@ export async function updateTierPrice(
 ): Promise<boolean> {
   if (newPrice < 0) return false;
 
-  const tiers = readLocalTiers();
+  const tiers = await getAllTicketTiers();
   const index = tiers.findIndex((t) => t.id === tierId);
   if (index === -1) return false;
 
