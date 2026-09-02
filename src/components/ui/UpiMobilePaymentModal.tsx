@@ -381,14 +381,28 @@ export default function UpiMobilePaymentModal({
       formData.append("utrNumber", cleanUtr);
       formData.append("turnstileToken", turnstileToken ?? "");
 
-      if (screenshotBase64) {
-        // Compressed base64 available → convert back to Blob for FormData
-        const base64Response = await fetch(screenshotBase64);
-        const blob = await base64Response.blob();
-        formData.append("screenshot", blob, `proof_${draftId}.jpg`);
-      } else if (screenshotFile) {
-        // Raw file fallback (no compression or iOS canvas blocked)
-        formData.append("screenshot", screenshotFile, screenshotFile.name);
+      if (screenshotFile) {
+        // Direct compressed/original File instance
+        formData.append("screenshot", screenshotFile, screenshotFile.name || `proof_${draftId}.jpg`);
+      } else if (screenshotBase64) {
+        // Safe in-memory base64 to Blob conversion without fetch()
+        try {
+          const parts = screenshotBase64.split(",");
+          const mime = parts[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+          const bstr = atob(parts[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          const blob = new Blob([u8arr], { type: mime });
+          formData.append("screenshot", blob, `proof_${draftId}.jpg`);
+        } catch {
+          // Last resort fallback
+          const base64Response = await fetch(screenshotBase64);
+          const blob = await base64Response.blob();
+          formData.append("screenshot", blob, `proof_${draftId}.jpg`);
+        }
       }
 
       const res = await fetch("/api/register/upi-submit", {
@@ -894,25 +908,30 @@ export default function UpiMobilePaymentModal({
               )}
 
               {/* Submit CTA */}
-              <div className="space-y-2 pt-2">
+              <div className="space-y-3 pt-2">
                 <button
                   type="submit"
                   disabled={isSubmitting || utrNumber.length < 8 || !screenshotFile || !turnstileToken}
-                  className={`w-full py-4 px-6 font-bold text-base tracking-wide transition-all duration-300 rounded-none ${
+                  className={`relative group overflow-hidden w-full py-4 px-6 rounded-2xl font-black text-xs md:text-sm tracking-wider uppercase transition-all duration-300 flex items-center justify-center space-x-2.5 font-mono shadow-2xl select-none ${
                     !isSubmitting && utrNumber.length >= 8 && screenshotFile && turnstileToken
-                      ? "bg-emerald-500 hover:bg-white text-black hover:text-black cursor-pointer shadow-[0_0_25px_rgba(16,185,129,0.4)]"
-                      : "bg-white/10 text-white/30 cursor-not-allowed"
+                      ? "bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 text-black border border-emerald-300/50 shadow-[0_0_35px_rgba(16,185,129,0.35)] hover:shadow-[0_0_50px_rgba(16,185,129,0.6)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                      : "bg-white/[0.04] border border-white/10 text-white/30 cursor-not-allowed pointer-events-none"
                   }`}
                 >
+                  {/* Subtle light shimmer sweep on hover */}
+                  {!isSubmitting && (
+                    <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+                  )}
+
                   {isSubmitting ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Verifying &amp; Issuing Pass...</span>
+                      <RefreshCw className="w-4 h-4 animate-spin shrink-0 text-black" />
+                      <span className="relative z-10 font-black">Verifying &amp; Issuing Pass...</span>
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Submit Proof &amp; Generate Delegate Pass</span>
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-black" />
+                      <span className="relative z-10 font-black">Submit Proof &amp; Generate Pass</span>
                     </>
                   )}
                 </button>
@@ -920,7 +939,7 @@ export default function UpiMobilePaymentModal({
                 <button
                   type="button"
                   onClick={() => setModalStep("instructions")}
-                  className="w-full py-2 text-[11px] font-mono text-white/50 hover:text-white transition-colors cursor-pointer text-center"
+                  className="w-full py-2 text-xs font-mono text-white/40 hover:text-white transition-colors cursor-pointer text-center block"
                 >
                   ← Re-read payment instructions
                 </button>

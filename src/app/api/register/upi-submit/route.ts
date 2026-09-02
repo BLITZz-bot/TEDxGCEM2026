@@ -111,8 +111,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cloudflare Turnstile Verification — verify when real secret key is configured
-    const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+    // Cloudflare Turnstile Verification
+    const isDev = process.env.NODE_ENV !== "production";
+    const turnstileSecret = isDev
+      ? "1x0000000000000000000000000000000AA"
+      : process.env.TURNSTILE_SECRET_KEY;
+
     const isPlaceholderSecret =
       !turnstileSecret ||
       turnstileSecret.trim() === "" ||
@@ -121,8 +125,8 @@ export async function POST(request: Request) {
 
     const isMockToken = turnstileToken === "mock_dev_verified_turnstile_token";
 
-    if (isMockToken && isPlaceholderSecret && process.env.NODE_ENV !== "production") {
-      console.log("[Turnstile] Accepted dev mock token (no real secret configured).");
+    if (isDev) {
+      console.log("[Turnstile] Accepted verification token in development mode.");
     } else if (turnstileSecret && !isPlaceholderSecret) {
       if (!turnstileToken) {
         return NextResponse.json(
