@@ -6,6 +6,7 @@ import {
   sendRejectionEmail,
   EmailAttendee,
 } from "@/lib/email-service";
+import { getSettings } from "@/lib/settings-service";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +104,7 @@ export async function POST(request: Request) {
 
       // 3. Dispatch official pass confirmation email
       try {
+        const settings = await getSettings().catch(() => null);
         await sendRegistrationConfirmationEmail({
           buyerEmail,
           buyerName,
@@ -110,6 +112,8 @@ export async function POST(request: Request) {
           tierName,
           amountPaid,
           paymentId: reg.payment_id || `UPI-${utrNumber}`,
+          eventDate: settings?.event_date || "October 15, 2026",
+          eventVenue: "GCEM Auditorium, Bengaluru",
         });
       } catch (emailErr) {
         console.warn("[Approve] Confirmation email dispatch warning:", emailErr);

@@ -3,6 +3,7 @@
 // distribution of this file is strictly prohibited. See LICENSE for details.
 import { Resend } from "resend";
 import nodemailer from "nodemailer";
+import { getSettings } from "@/lib/settings-service";
 
 export interface EmailAttendee {
   id: string;
@@ -251,6 +252,8 @@ function generateTicketEmailHtml(params: {
  * Send Automated Confirmation Email using Resend (custom domain) or Nodemailer (SMTP)
  */
 export async function sendRegistrationConfirmationEmail(params: SendConfirmationParams) {
+  const settings = await getSettings().catch(() => null);
+
   const {
     buyerEmail,
     buyerName,
@@ -259,7 +262,7 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
     amountPaid,
     paymentId,
     razorpayPaymentId,
-    eventDate = "October 15, 2026",
+    eventDate = settings?.event_date || "September 26, 2026",
     eventVenue = "GCEM Auditorium, Bengaluru",
   } = params;
 

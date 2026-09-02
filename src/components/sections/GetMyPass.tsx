@@ -101,23 +101,25 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
   );
 
   // ─────────────────────────────────────────────────────────────────────────
-  // PORTRAIT CANVAS PASS GENERATOR (800 × 1200 VERTICAL DELEGATE BADGE)
+  // ─────────────────────────────────────────────────────────────────────────
+  // PORTRAIT CANVAS PASS GENERATOR (1000 × 1600 ULTRA-HD LUXURY DELEGATE BADGE)
+  // Generates a pixel-perfect high-resolution replica of the on-screen pass.
   // ─────────────────────────────────────────────────────────────────────────
   const handleDownloadImage = async () => {
     if (!registration) return;
     setIsDownloading(true);
 
     try {
-      const W = 800;
-      const H = 1200;
-      const R = 36;
+      const W = 1000;
+      const H = 1600;
+      const R = 70;
 
       const canvas = document.createElement("canvas");
       canvas.width = W;
       canvas.height = H;
       const ctx = canvas.getContext("2d")!;
 
-      const roundRect = (x: number, y: number, w: number, h: number, r: number) => {
+      const roundRectPath = (x: number, y: number, w: number, h: number, r: number) => {
         ctx.beginPath();
         ctx.moveTo(x + r, y);
         ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -127,151 +129,158 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
         ctx.closePath();
       };
 
-      // Background
-      roundRect(0, 0, W, H, R);
-      ctx.fillStyle = "#09090b";
-      ctx.fill();
+      // 1. Clip outer rounded badge
+      ctx.save();
+      roundRectPath(0, 0, W, H, R);
+      ctx.clip();
 
-      // Outer White Border
-      roundRect(0, 0, W, H, R);
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 4;
-      ctx.stroke();
+      // Deep Black Canvas Background
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, W, H);
 
-      // Top Red Accent Header Banner
-      roundRect(0, 0, W, 140, R);
+      // 2. Top Red Header Banner
+      const headerH = 260;
       ctx.fillStyle = "#EB0028";
-      ctx.fill();
-      ctx.fillRect(0, 70, W, 70); // Fill bottom half of banner
+      ctx.fillRect(0, 0, W, headerH);
 
-      // Top Lanyard Slot Graphic (Mock Hole)
-      ctx.beginPath();
-      ctx.arc(W / 2, 35, 14, 0, Math.PI * 2);
-      ctx.fillStyle = "#09090b";
+      // Lanyard Notch (Capsule shape at top)
+      const slotW = 100;
+      const slotH = 34;
+      roundRectPath(W / 2 - slotW / 2, 38, slotW, slotH, 17);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,0.4)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Banner Text: TEDxGCEM 2026
-      ctx.font = "bold 44px Arial, sans-serif";
-      ctx.fillStyle = "#ffffff";
+      // Banner Logo: TEDxGCEM 2026
+      ctx.font = "italic 900 68px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      ctx.fillStyle = "#FFFFFF";
       ctx.textAlign = "center";
-      ctx.fillText(`TEDxGCEM ${eventYear}`, W / 2, 105);
+      ctx.textBaseline = "middle";
+      ctx.fillText(`TEDxGCEM ${eventYear}`, W / 2, 160);
 
-      // Subtitle below banner
-      ctx.font = "14px 'Courier New', monospace";
-      ctx.fillStyle = "rgba(255,255,255,0.45)";
-      ctx.fillText("x = independently organized TED event", W / 2, 175);
-
-      // Category Pill: DELEGATE PASS
-      ctx.fillStyle = "rgba(235, 0, 40, 0.15)";
-      roundRect(W / 2 - 130, 205, 260, 40, 20);
+      // 3. Category Pill: OFFICIAL DELEGATE PASS
+      const pillW = 380;
+      const pillH = 50;
+      const pillY = 300;
+      roundRectPath(W / 2 - pillW / 2, pillY, pillW, pillH, 25);
+      ctx.fillStyle = "rgba(235, 0, 40, 0.12)";
       ctx.fill();
       ctx.strokeStyle = "#EB0028";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.stroke();
 
-      ctx.font = "bold 16px 'Courier New', monospace";
+      ctx.font = "bold 18px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
       ctx.fillStyle = "#EB0028";
-      ctx.fillText("● OFFICIAL DELEGATE PASS", W / 2, 230);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("● OFFICIAL DELEGATE PASS", W / 2, pillY + pillH / 2 + 1);
 
-      // ATTENDEE NAME (Large & Bold)
-      ctx.font = "13px 'Courier New', monospace";
-      ctx.fillStyle = "rgba(255,255,255,0.4)";
-      ctx.fillText("ATTENDEE NAME", W / 2, 310);
+      // 4. Attendee Details
+      ctx.font = "bold 17px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+      ctx.fillText("ATTENDEE NAME", W / 2, 415);
 
-      ctx.font = "bold 56px Arial, sans-serif";
-      ctx.fillStyle = "#ffffff";
-      let nameText = (registration.full_name || "").toUpperCase();
-      while (ctx.measureText(nameText).width > W - 100 && nameText.length > 0) {
-        nameText = nameText.slice(0, -1);
+      // Name (auto-scaling)
+      let nameFontSize = 64;
+      ctx.font = `900 ${nameFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+      ctx.fillStyle = "#FFFFFF";
+      let nameText = (registration.full_name || "DELEGATE").toUpperCase();
+      while (ctx.measureText(nameText).width > W - 140 && nameFontSize > 34) {
+        nameFontSize -= 4;
+        ctx.font = `900 ${nameFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
       }
-      ctx.fillText(nameText, W / 2, 375);
+      ctx.fillText(nameText, W / 2, 485);
 
-      // Designation Role
+      // Designation
       if (registration.designation) {
-        ctx.font = "bold 20px 'Courier New', monospace";
+        ctx.font = "bold 22px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
         ctx.fillStyle = "#EB0028";
-        ctx.fillText(registration.designation.toUpperCase(), W / 2, 420);
+        ctx.fillText(registration.designation.toUpperCase(), W / 2, 545);
       }
 
-      // Institution / Organization
-      ctx.font = "13px 'Courier New', monospace";
-      ctx.fillStyle = "rgba(255,255,255,0.4)";
-      ctx.fillText("INSTITUTION / ORGANIZATION", W / 2, 480);
-
-      ctx.font = "bold 26px Arial, sans-serif";
-      ctx.fillStyle = "#ffffff";
-      let orgText = (registration.organization || "").toUpperCase();
-      while (ctx.measureText(orgText).width > W - 120 && orgText.length > 0) {
-        orgText = orgText.slice(0, -1);
-      }
-      ctx.fillText(orgText, W / 2, 520);
-
-      // Divider Line
-      ctx.setLineDash([10, 6]);
-      ctx.strokeStyle = "rgba(255,255,255,0.2)";
-      ctx.lineWidth = 2;
+      // 5. Institution Section
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(60, 565);
-      ctx.lineTo(W - 60, 565);
+      ctx.moveTo(80, 590);
+      ctx.lineTo(W - 80, 590);
       ctx.stroke();
-      ctx.setLineDash([]);
 
-      // QR Code Container Box
-      const qrBoxSize = 250;
+      ctx.font = "bold 17px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+      ctx.fillText("INSTITUTION", W / 2, 630);
+
+      let orgFontSize = 34;
+      ctx.font = `900 ${orgFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      let orgText = (registration.organization || "GCEM").toUpperCase();
+      while (ctx.measureText(orgText).width > W - 160 && orgFontSize > 22) {
+        orgFontSize -= 2;
+        ctx.font = `900 ${orgFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+      }
+      ctx.fillText(orgText, W / 2, 680);
+
+      ctx.beginPath();
+      ctx.moveTo(80, 720);
+      ctx.lineTo(W - 80, 720);
+      ctx.stroke();
+
+      // 6. QR Code Container Box
+      const qrBoxSize = 380;
       const qrBoxX = W / 2 - qrBoxSize / 2;
-      const qrBoxY = 600;
+      const qrBoxY = 760;
 
-      ctx.fillStyle = "#ffffff";
-      roundRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 20);
+      roundRectPath(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 32);
+      ctx.fillStyle = "#FFFFFF";
       ctx.fill();
 
-      // Load & Draw QR Code Image inside white box (encode verification URL so phone camera opens web page)
-      const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.com";
+      // 7. Render QR and Finish
+      const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.in";
       const verifyUrl = `${siteOrigin}/api/verify-pass?id=${encodeURIComponent(ticketId)}&email=${encodeURIComponent(registration.email)}`;
       const qrImg = new window.Image();
       qrImg.crossOrigin = "anonymous";
-      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(verifyUrl)}&color=000000&bgcolor=ffffff`;
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(verifyUrl)}&color=000000&bgcolor=ffffff`;
 
       const finishCanvas = () => {
         // Label under QR Code
-        ctx.font = "bold 13px 'Courier New', monospace";
-        ctx.fillStyle = "rgba(255,255,255,0.5)";
+        ctx.font = "bold 18px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
         ctx.textAlign = "center";
-        ctx.fillText("EVENT DAY CHECK-IN SCAN QR", W / 2, qrBoxY + qrBoxSize + 30);
+        ctx.textBaseline = "middle";
+        ctx.fillText("EVENT DAY CHECK-IN SCAN QR", W / 2, qrBoxY + qrBoxSize + 45);
 
-        // Barcode Strip
-        const bcY = 910;
-        const bcH = 100;
-        const barWidths = [3, 1, 2, 1, 4, 1, 2, 3, 1, 2, 1, 4, 2, 1, 3, 1, 2, 4, 1, 2, 3, 1, 1, 2, 4, 3, 1, 2, 1, 3, 1, 4, 2, 1, 2];
-        let totalW = 0;
-        barWidths.forEach((w) => (totalW += w * 5));
-        let bx = W / 2 - totalW / 2;
+        // Dashed Divider Line
+        ctx.setLineDash([12, 8]);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(80, 1260);
+        ctx.lineTo(W - 80, 1260);
+        ctx.stroke();
+        ctx.setLineDash([]);
 
-        barWidths.forEach((w, i) => {
-          if (i % 2 === 0) {
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(bx, bcY, w * 5, bcH);
-          }
-          bx += w * 5;
-        });
-
-        // Pass ID text
-        ctx.font = "bold 20px 'Courier New', monospace";
+        // Pass ID text (Bright Red)
+        ctx.font = "900 34px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
         ctx.fillStyle = "#EB0028";
-        ctx.fillText(ticketId, W / 2, bcY + bcH + 35);
+        ctx.fillText(ticketId, W / 2, 1330);
 
-        // Bottom Footer Bar
-        ctx.fillStyle = "rgba(255,255,255,0.05)";
-        ctx.fillRect(0, H - 75, W, 75);
+        // Venue Subtitle
+        ctx.font = "bold 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+        ctx.fillText("VENUE: GCEM AUDITORIUM, BENGALURU", W / 2, 1380);
 
-        ctx.font = "14px 'Courier New', monospace";
-        ctx.fillStyle = "rgba(255,255,255,0.4)";
-        ctx.fillText("VENUE: GCEM AUDITORIUM, BENGALURU", W / 2, H - 32);
+        // Restore clipping mask
+        ctx.restore();
 
-        // Download PNG Image
+        // 8. Outer Crisp White Border
+        roundRectPath(3, 3, W - 6, H - 6, R);
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = 6;
+        ctx.stroke();
+
+        // Download High-Res PNG Image
         const link = document.createElement("a");
         const safeName = (registration?.full_name || "Delegate").replace(/[^a-zA-Z0-9]/g, "_");
         link.download = `TEDxGCEM_Pass_${safeName}.png`;
@@ -281,14 +290,17 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
       };
 
       qrImg.onload = () => {
-        ctx.drawImage(qrImg, qrBoxX + 15, qrBoxY + 15, qrBoxSize - 30, qrBoxSize - 30);
+        // Draw QR centered inside white box with padding
+        const qrPadding = 30;
+        ctx.drawImage(qrImg, qrBoxX + qrPadding, qrBoxY + qrPadding, qrBoxSize - qrPadding * 2, qrBoxSize - qrPadding * 2);
         finishCanvas();
       };
 
       qrImg.onerror = () => {
-        ctx.font = "12px monospace";
+        ctx.font = "bold 16px monospace";
         ctx.fillStyle = "#000000";
-        ctx.fillText("QR SCAN CODE", W / 2, qrBoxY + 130);
+        ctx.textAlign = "center";
+        ctx.fillText("QR SCAN CODE", W / 2, qrBoxY + qrBoxSize / 2);
         finishCanvas();
       };
     } catch (err) {

@@ -1339,12 +1339,15 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
   // ─────────────────────────────────────────────────────────────────────────────
   // BEAUTIFUL STYLED EXCEL SPREADSHEET EXPORT (.XLS)
-  // Generates a fully formatted, color-coded executive spreadsheet that opens
-  // directly in Microsoft Excel, Google Sheets, Numbers, and LibreOffice.
+  // Generates a fully formatted, color-coded executive spreadsheet of APPROVED
+  // registrations only that opens directly in Excel, Google Sheets, etc.
   // ─────────────────────────────────────────────────────────────────────────────
   const exportRegistrationsToExcel = (format: "excel" | "csv" = "excel") => {
-    if (consolidatedRegistrations.length === 0) {
-      alert("No registrations recorded to export.");
+    // Strictly filter to ONLY approved & confirmed delegate transactions
+    const targetRegistrations = approvedRegistrations;
+
+    if (targetRegistrations.length === 0) {
+      alert("No approved registrations recorded to export.");
       return;
     }
 
@@ -1363,23 +1366,11 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       hour12: true,
     });
 
-    const confirmedPassesCount = consolidatedRegistrations.reduce((sum, reg) => {
-      const isConfirmed =
-        reg.ticket_status === "confirmed" ||
-        reg.ticket_status === "approved" ||
-        !!reg.razorpay_payment_id ||
-        !!reg.payment_id;
-      if (!isConfirmed) return sum;
+    const confirmedPassesCount = targetRegistrations.reduce((sum, reg) => {
       return sum + (Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
     }, 0);
 
-    const totalRevenue = consolidatedRegistrations.reduce((sum, reg) => {
-      const isConfirmed =
-        reg.ticket_status === "confirmed" ||
-        reg.ticket_status === "approved" ||
-        !!reg.razorpay_payment_id ||
-        !!reg.payment_id;
-      if (!isConfirmed) return sum;
+    const totalRevenue = targetRegistrations.reduce((sum, reg) => {
       const val = reg.amount_paid !== null && reg.amount_paid !== undefined
         ? Number(reg.amount_paid)
         : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : 300);
@@ -1404,7 +1395,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         "Coupon Code",
         "Discount (INR)",
         "Co-Participants / Other Delegates",
-        "Ticket Status",
+        "Approval Status",
         "Payment Method",
         "Payment ID / Ref",
         "Order / Session ID",
@@ -1421,7 +1412,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         return `"${str}"`;
       };
 
-      const rows = consolidatedRegistrations.map((reg, idx) => {
+      const rows = targetRegistrations.map((reg, idx) => {
         const ticketId = reg.id ? `TEDX-${reg.id.slice(0, 8).toUpperCase()}` : "TEDX-PASS";
         const dateObj = reg.created_at ? new Date(reg.created_at) : null;
         const formattedDate = dateObj
@@ -1430,21 +1421,16 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const formattedTime = dateObj
           ? dateObj.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
           : "N/A";
-        const isConfirmed =
-          reg.ticket_status === "confirmed" ||
-          reg.ticket_status === "approved" ||
-          !!reg.razorpay_payment_id ||
-          !!reg.payment_id;
-        const statusText = isConfirmed ? "Confirmed / Paid" : (reg.ticket_status || "Pending");
+        const statusText = "Approved & Confirmed";
         const paymentId = reg.razorpay_payment_id || reg.payment_id || "N/A";
         const orderId = reg.razorpay_order_id || "N/A";
         const utr = reg.utr_number || "N/A";
-        const method = reg.payment_method ? reg.payment_method.toUpperCase() : (isConfirmed ? "ONLINE" : "N/A");
+        const method = reg.payment_method ? reg.payment_method.toUpperCase() : "ONLINE";
         
         const qty = Math.max(1, Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
         const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined
           ? Number(reg.amount_paid)
-          : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : (isConfirmed ? (qty * 300) : 0));
+          : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : (qty * 300));
         const unitPriceVal = reg.unit_price !== null && reg.unit_price !== undefined
           ? Number(reg.unit_price)
           : Number(((paidVal + (Number(reg.discount_amount) || 0)) / qty).toFixed(2));
@@ -1498,7 +1484,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `TEDxGCEM_Registrations_${timestamp}.csv`);
+      link.setAttribute("download", `TEDxGCEM_Approved_Registrations_${timestamp}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1507,7 +1493,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     }
 
     // ── BEAUTIFULLY STYLED EXCEL (HTML/XML SPREADSHEET) WITH BOOKMAN ANTIQUA (FONT SIZE 9) ──
-    const rowsHtml = consolidatedRegistrations
+    const rowsHtml = targetRegistrations
       .map((reg, idx) => {
         const ticketId = reg.id ? `TEDX-${reg.id.slice(0, 8).toUpperCase()}` : "TEDX-PASS";
         const dateObj = reg.created_at ? new Date(reg.created_at) : null;
@@ -1517,21 +1503,16 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const formattedTime = dateObj
           ? dateObj.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
           : "N/A";
-        const isConfirmed =
-          reg.ticket_status === "confirmed" ||
-          reg.ticket_status === "approved" ||
-          !!reg.razorpay_payment_id ||
-          !!reg.payment_id;
-        const statusText = isConfirmed ? "CONFIRMED / PAID" : (reg.ticket_status || "PENDING").toUpperCase();
+        const statusText = "APPROVED & CONFIRMED";
         const paymentId = reg.razorpay_payment_id || reg.payment_id || "N/A";
         const orderId = reg.razorpay_order_id || "N/A";
         const utr = reg.utr_number || "N/A";
-        const method = reg.payment_method ? reg.payment_method.toUpperCase() : (isConfirmed ? "ONLINE" : "N/A");
+        const method = reg.payment_method ? reg.payment_method.toUpperCase() : "ONLINE";
 
         const qty = Math.max(1, Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
         const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined
           ? Number(reg.amount_paid)
-          : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : (isConfirmed ? (qty * 300) : 0));
+          : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : (qty * 300));
         const unitPriceVal = reg.unit_price !== null && reg.unit_price !== undefined
           ? Number(reg.unit_price)
           : Number(((paidVal + (Number(reg.discount_amount) || 0)) / qty).toFixed(2));
@@ -1540,8 +1521,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const couponCode = reg.coupon_code || "-";
         const discountStr = (reg.coupon_code && Number(reg.discount_amount) > 0) ? `₹${reg.discount_amount}.00` : "-";
         const rowBg = idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
-        const statusBg = isConfirmed ? "#DCFCE7" : "#FEF08A";
-        const statusColor = isConfirmed ? "#15803D" : "#854D0E";
+        const statusBg = "#DCFCE7";
+        const statusColor = "#15803D";
 
         const otherAttendees = Array.isArray(reg.attendees_json) && reg.attendees_json.length > 1
           ? reg.attendees_json.slice(1)
@@ -1599,7 +1580,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           <x:ExcelWorkbook>
             <x:ExcelWorksheets>
               <x:ExcelWorksheet>
-                <x:Name>TEDxGCEM 2026 Registrations</x:Name>
+                <x:Name>TEDxGCEM 2026 Approved Passes</x:Name>
                 <x:WorksheetOptions>
                   <x:DisplayGridlines/>
                 </x:WorksheetOptions>
@@ -1624,9 +1605,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           <!-- BRAND BANNER HEADER -->
           <tr style="background-color: #000000; height: 45px;">
             <td colspan="25" style="background-color: #000000; border-top: 4px solid #EB0028; padding: 12px 16px;">
-              <div class="banner-title"><span style="color: #EB0028;">TEDx</span>GCEM 2026 — OFFICIAL ATTENDEE DELEGATE & TRANSACTION REGISTRY</div>
+              <div class="banner-title"><span style="color: #EB0028;">TEDx</span>GCEM 2026 — OFFICIAL APPROVED & CONFIRMED DELEGATE REGISTRY</div>
               <div style="color: #94A3B8; font-size: 9pt; margin-top: 3px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
-                Gopalan College of Engineering & Management &nbsp;|&nbsp; Exported on: <strong>${formattedExportDate} at ${formattedExportTime}</strong> &nbsp;|&nbsp; Confidential Organizing Committee Document
+                Gopalan College of Engineering & Management &nbsp;|&nbsp; Exported on: <strong>${formattedExportDate} at ${formattedExportTime}</strong> &nbsp;|&nbsp; Strictly Verified &amp; Approved Passes Only
               </div>
             </td>
           </tr>
@@ -1634,8 +1615,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           <!-- KPI SUMMARY STATS CARDS -->
           <tr style="background-color: #0F172A; height: 38px;">
             <td colspan="5" style="background-color: #0F172A; border-right: 1px solid #334155; padding: 8px 12px;">
-              <div class="kpi-title">TOTAL BOOKINGS</div>
-              <div class="kpi-value" style="color: #FFFFFF;">${consolidatedRegistrations.length} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">Transactions</span></div>
+              <div class="kpi-title">APPROVED ORDERS</div>
+              <div class="kpi-value" style="color: #FFFFFF;">${targetRegistrations.length} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">Transactions</span></div>
             </td>
             <td colspan="5" style="background-color: #0F172A; border-right: 1px solid #334155; padding: 8px 12px;">
               <div class="kpi-title">TOTAL CONFIRMED PASSES</div>
@@ -1646,8 +1627,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               <div class="kpi-value" style="color: #FACC15;">₹${totalRevenue.toLocaleString("en-IN")} <span style="font-size: 9pt; font-weight: normal; color: #94A3B8;">INR</span></div>
             </td>
             <td colspan="9" style="background-color: #0F172A; padding: 8px 12px;">
-              <div class="kpi-title">PAYMENT VERIFICATION</div>
-              <div class="kpi-value" style="color: #38BDF8; font-size: 9pt;">Direct UPI &amp; Bank UTR Protocol (NPCI)</div>
+              <div class="kpi-title">STATUS FILTER</div>
+              <div class="kpi-value" style="color: #38BDF8; font-size: 9pt;">100% Approved &amp; Bank Verified Only</div>
             </td>
           </tr>
 
@@ -1695,7 +1676,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
               ₹${totalRevenue.toLocaleString("en-IN")}.00
             </td>
             <td colspan="12" style="border: 1px solid #334155; color: #94A3B8; font-size: 9pt; text-align: right; padding-right: 14px; font-family: 'Bookman Antiqua', 'Bookman Old Style', 'Bookman', serif;">
-              Generated from TEDxGCEM Admin Portal &nbsp;|&nbsp; All Rights Reserved
+              Generated from TEDxGCEM Admin Portal &nbsp;|&nbsp; Approved Registry
             </td>
           </tr>
         </table>
@@ -1707,7 +1688,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `TEDxGCEM_Registrations_${timestamp}.xls`);
+    link.setAttribute("download", `TEDxGCEM_Approved_Registrations_${timestamp}.xls`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

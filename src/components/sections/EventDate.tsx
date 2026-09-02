@@ -20,7 +20,7 @@ interface EventDateProps {
 export default function EventDate({ settings }: EventDateProps) {
   // Helper to get formatted short date, e.g., "OCT 15" from "October 15, 2026"
   const getShortDate = () => {
-    if (!settings || !settings.event_date) return "OCT 15";
+    if (!settings || !settings.event_date) return "SEP 26";
     try {
       const date = new Date(settings.event_date);
       if (isNaN(date.getTime())) {
@@ -36,7 +36,7 @@ export default function EventDate({ settings }: EventDateProps) {
       const dayStr = date.getDate();
       return `${monthStr} ${dayStr}`;
     } catch {
-      return "OCT 15";
+      return "SEP 26";
     }
   };
 

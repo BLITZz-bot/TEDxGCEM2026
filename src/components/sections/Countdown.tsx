@@ -263,7 +263,7 @@ export default function Countdown({ onTabChange, settings }: CountdownProps) {
                 <div className="flex items-center gap-2">
                   <Calendar size={12} className="text-ted-red" />
                   <span>
-                    DATE: {settings ? settings.event_date : "October 15, 2026"} 
+                    DATE: {settings ? settings.event_date : "September 26, 2026"} 
                   </span>
                 </div>
               )}
