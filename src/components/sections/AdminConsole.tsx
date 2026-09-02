@@ -4441,8 +4441,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-4 border-t border-white/10">
                     <div>
-                      <span className="text-[9px] text-white/40 block">RAZORPAY PAYMENT ID</span>
-                      <span className="text-ted-red font-bold font-mono">{scanMatchedReg.razorpay_payment_id || scanMatchedReg.payment_id || "No Record"}</span>
+                      <span className="text-[9px] text-white/40 block">PAYMENT REFERENCE</span>
+                      <span className="text-ted-red font-bold font-mono">{scanMatchedReg.payment_id || scanMatchedReg.razorpay_payment_id || "No Record"}</span>
                     </div>
                     <div>
                       <span className="text-[9px] text-white/40 block">UTR NUMBER</span>

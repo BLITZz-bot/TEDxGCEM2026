@@ -19,6 +19,7 @@ export interface SendConfirmationParams {
   attendees: EmailAttendee[];
   tierName: string;
   amountPaid: number;
+  paymentId?: string | null;
   razorpayPaymentId?: string | null;
   razorpayOrderId?: string | null;
   eventDate?: string;
@@ -37,6 +38,7 @@ function generateTicketEmailHtml(params: {
   attendeeList: EmailAttendee[];
   eventDate: string;
   eventVenue: string;
+  paymentId?: string | null;
   razorpayPaymentId?: string | null;
 }) {
   const {
@@ -48,8 +50,11 @@ function generateTicketEmailHtml(params: {
     attendeeList,
     eventDate,
     eventVenue,
+    paymentId,
     razorpayPaymentId,
   } = params;
+
+  const paymentRef = paymentId || razorpayPaymentId || null;
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tedxgcem.in";
 
@@ -140,11 +145,11 @@ function generateTicketEmailHtml(params: {
                         <td style="padding: 6px 0; font-size: 15px; font-weight: 900; color: #EB0028; text-align: right;">₹${amountPaid}.00</td>
                       </tr>
                       ${
-                        razorpayPaymentId
+                        paymentRef
                           ? `
                       <tr>
                         <td style="padding: 6px 0; font-size: 12px; font-family: monospace; color: rgba(255,255,255,0.4); text-transform: uppercase;">Payment Ref:</td>
-                        <td style="padding: 6px 0; font-size: 11px; font-family: monospace; color: rgba(255,255,255,0.8); text-align: right;">${razorpayPaymentId}</td>
+                        <td style="padding: 6px 0; font-size: 11px; font-family: monospace; color: rgba(255,255,255,0.8); text-align: right;">${paymentRef}</td>
                       </tr>
                       `
                           : ""
@@ -252,10 +257,13 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
     attendees,
     tierName,
     amountPaid,
+    paymentId,
     razorpayPaymentId,
     eventDate = "October 15, 2026",
     eventVenue = "GCEM Auditorium, Bengaluru",
   } = params;
+
+  const paymentRef = paymentId || razorpayPaymentId || null;
 
   if (!buyerEmail || attendees.length === 0) {
     console.warn("[Email Service] Missing buyerEmail or attendees. Skipping email transmission.");
@@ -283,12 +291,10 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
     attendeeList: attendees,
     eventDate,
     eventVenue,
-    razorpayPaymentId,
+    paymentId: paymentRef,
   });
 
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // A. ATTEMPT TRANSMISSION VIA RESEND (Custom Domain: tedxgcem.in)
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (resendApiKey) {
     try {
       const resend = new Resend(resendApiKey);
@@ -334,7 +340,7 @@ export async function sendRegistrationConfirmationEmail(params: SendConfirmation
                 attendeeList: [att],
                 eventDate,
                 eventVenue,
-                razorpayPaymentId,
+                paymentId: paymentRef,
               });
 
               await resend.emails.send({

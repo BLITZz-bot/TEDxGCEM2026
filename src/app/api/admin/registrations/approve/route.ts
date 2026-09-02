@@ -107,7 +107,7 @@ export async function POST(request: Request) {
           attendees: emailAttendees,
           tierName,
           amountPaid,
-          razorpayPaymentId: reg.payment_id || `UPI-${utrNumber}`,
+          paymentId: reg.payment_id || `UPI-${utrNumber}`,
         });
       } catch (emailErr) {
         console.warn("[Approve] Confirmation email dispatch warning:", emailErr);
