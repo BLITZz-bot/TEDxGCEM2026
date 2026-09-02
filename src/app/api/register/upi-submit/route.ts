@@ -123,8 +123,6 @@ export async function POST(request: Request) {
       turnstileSecret.includes("...") ||
       turnstileSecret.toLowerCase().includes("placeholder");
 
-    const isMockToken = turnstileToken === "mock_dev_verified_turnstile_token";
-
     if (isDev) {
       console.log("[Turnstile] Accepted verification token in development mode.");
     } else if (turnstileSecret && !isPlaceholderSecret) {

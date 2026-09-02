@@ -186,7 +186,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
       let nameFontSize = 64;
       ctx.font = `900 ${nameFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
       ctx.fillStyle = "#FFFFFF";
-      let nameText = (registration.full_name || "DELEGATE").toUpperCase();
+      const nameText = (registration.full_name || "DELEGATE").toUpperCase();
       while (ctx.measureText(nameText).width > W - 140 && nameFontSize > 34) {
         nameFontSize -= 4;
         ctx.font = `900 ${nameFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
@@ -215,7 +215,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
       let orgFontSize = 34;
       ctx.font = `900 ${orgFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
       ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-      let orgText = (registration.organization || "GCEM").toUpperCase();
+      const orgText = (registration.organization || "GCEM").toUpperCase();
       while (ctx.measureText(orgText).width > W - 160 && orgFontSize > 22) {
         orgFontSize -= 2;
         ctx.font = `900 ${orgFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
