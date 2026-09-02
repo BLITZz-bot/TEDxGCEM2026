@@ -119,10 +119,25 @@ export async function GET() {
 
     const consolidatedRows = Array.from(rowMap.values());
 
-    // 3. Expand / Virtualize Passes
+    const hasPendingVerification = consolidatedRows.some(
+      (r) => r.approval_status === "pending_approval" || r.ticket_status === "pending_verification"
+    );
+
+    const hasRejected = consolidatedRows.some(
+      (r) => r.approval_status === "rejected" || r.ticket_status === "rejected"
+    );
+
+    // 3. Expand / Virtualize Passes (ONLY for approved & confirmed delegates)
+    const approvedRows = consolidatedRows.filter((r) => {
+      if (r.approval_status) {
+        return r.approval_status === "approved";
+      }
+      return r.ticket_status !== "pending_verification" && r.ticket_status !== "rejected";
+    });
+
     const virtualPasses: RegistrationRow[] = [];
 
-    for (const reg of consolidatedRows) {
+    for (const reg of approvedRows) {
       const attendeesList = Array.isArray(reg.attendees_json) ? reg.attendees_json : [];
       const hasGroupAttendees = attendeesList.length > 1;
 
@@ -205,6 +220,8 @@ export async function GET() {
     return NextResponse.json({
       registration: virtualPasses[0] || null,
       registrations: virtualPasses,
+      hasPendingVerification,
+      hasRejected,
     });
   } catch (error: unknown) {
     console.error("Server Pass fetch error:", error);

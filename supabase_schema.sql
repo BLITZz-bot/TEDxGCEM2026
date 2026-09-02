@@ -61,6 +61,9 @@ ADD COLUMN IF NOT EXISTS attendees_json JSONB DEFAULT '[]'::jsonb;
 
 CREATE INDEX IF NOT EXISTS idx_registrations_email ON public.registrations(email);
 CREATE INDEX IF NOT EXISTS idx_registrations_buyer_email ON public.registrations(buyer_email);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_utr_number 
+    ON public.registrations(utr_number) 
+    WHERE utr_number IS NOT NULL AND utr_number != '';
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 2. MESSAGES TABLE

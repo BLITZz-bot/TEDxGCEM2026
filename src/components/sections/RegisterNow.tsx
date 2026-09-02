@@ -594,45 +594,66 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="w-full bg-ted-dark-gray/50 border border-green-500/30 p-8 md:p-12 rounded-[2rem] shadow-2xl backdrop-blur-sm text-center space-y-6 relative overflow-hidden"
+              className="w-full bg-ted-dark-gray/50 border border-amber-500/30 p-8 md:p-12 rounded-[2rem] shadow-2xl backdrop-blur-sm text-center space-y-6 relative overflow-hidden"
             >
-              <div className="w-20 h-20 bg-green-500/10 border border-green-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
-                <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto mb-2 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                <span className="text-4xl animate-bounce">⏳</span>
               </div>
-              <div className="space-y-2">
-                <span className="inline-block px-3 py-1 bg-green-500/20 text-green-400 border border-green-500/30 text-[10px] font-mono font-black uppercase tracking-widest rounded-full">
-                  Payment Verified & Confirmed
+              <div className="space-y-3">
+                <span className="inline-block px-3.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-black uppercase tracking-widest rounded-full">
+                  Payment Received · Under Verification
                 </span>
                 <h4 className="text-3xl font-black uppercase tracking-tight text-white">
-                  Welcome to TEDxGCEM {getEventYear(settings?.event_date)}!
+                  Registration Details Submitted!
                 </h4>
-                <p className="text-white/60 max-w-lg mx-auto text-sm leading-relaxed font-light">
-                  Your registration for <strong className="text-white">{confirmedCount} × {activeTier.name} Delegate Pass{confirmedCount > 1 ? "es" : ""}</strong> is fully confirmed. Your delegate passes with individual QR codes have been issued and stored securely.
+                <p className="text-white/70 max-w-xl mx-auto text-sm leading-relaxed font-light">
+                  Thank you for registering for <strong className="text-ted-red font-bold">TEDxGCEM {getEventYear(settings?.event_date)}</strong>. We have received your payment proof for <strong className="text-white font-semibold">{confirmedCount} × {activeTier.name} Delegate Pass{confirmedCount > 1 ? "es" : ""}</strong>.
                 </p>
+
                 {verifiedPaymentId && (
-                  <p className="text-xs font-mono text-white/40 pt-1">
-                    Payment Reference: <span className="text-white/80">{verifiedPaymentId}</span>
-                  </p>
+                  <div className="inline-block px-4 py-2 rounded-xl bg-black/40 border border-white/10 text-xs font-mono text-white/60">
+                    Payment Reference: <span className="text-amber-400 font-bold tracking-wider">{verifiedPaymentId}</span>
+                  </div>
                 )}
               </div>
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button
-                  onClick={() => onTabChange("get-pass")}
-                  className="px-8 py-4 bg-ted-red hover:bg-white text-white hover:text-black font-black rounded-xl text-xs transition-all uppercase tracking-widest cursor-pointer border border-ted-red shadow-[0_0_20px_rgba(235,0,40,0.3)] font-mono flex items-center gap-2"
-                >
-                  <span>Download Passes</span>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                </button>
+
+              {/* What happens next explainer card */}
+              <div className="max-w-lg mx-auto text-left p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-2.5 font-mono text-xs">
+                <div className="text-amber-400 font-bold uppercase tracking-wider text-[11px] flex items-center gap-2">
+                  <span>ℹ️</span> What Happens Next?
+                </div>
+                <ul className="space-y-2 text-white/70 text-[11px] leading-relaxed">
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-400 font-bold">1.</span>
+                    <span>The TEDxGCEM team will verify your transaction against bank records.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-400 font-bold">2.</span>
+                    <span>Once verified, your official <strong>Delegate Pass with unique QR code</strong> will be generated and dispatched to your email.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-400 font-bold">3.</span>
+                    <span>A verification receipt email has been sent to your inbox.</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <button
                   onClick={() => onTabChange("home")}
+                  className="px-8 py-4 bg-ted-red hover:bg-white text-white hover:text-black font-black rounded-xl text-xs transition-all uppercase tracking-widest cursor-pointer border border-ted-red shadow-[0_0_20px_rgba(235,0,40,0.3)] font-mono flex items-center gap-2"
+                >
+                  <span>Return to Home</span>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </button>
+                <a
+                  href="mailto:tedxgcem@gmail.com"
                   className="px-6 py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-bold rounded-xl text-xs transition-all uppercase tracking-widest cursor-pointer border border-white/10 font-mono"
                 >
-                  Return to Home
-                </button>
+                  Contact Support
+                </a>
               </div>
             </motion.div>
           ) : (

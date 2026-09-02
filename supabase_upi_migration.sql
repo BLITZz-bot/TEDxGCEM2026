@@ -114,11 +114,17 @@ ALTER TABLE public.registrations
     ADD COLUMN IF NOT EXISTS designation TEXT DEFAULT 'Student',
     ADD COLUMN IF NOT EXISTS referral TEXT,
     ADD COLUMN IF NOT EXISTS utr_number TEXT,
-    ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'direct_upi';
+    ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'direct_upi',
+    -- Approval workflow: 'pending_approval' | 'approved' | 'rejected'
+    ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'pending_approval';
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_utr_number 
     ON public.registrations(utr_number) 
     WHERE utr_number IS NOT NULL AND utr_number != '';
+
+-- Index for fast admin approval dashboard queries
+CREATE INDEX IF NOT EXISTS idx_registrations_approval_status
+    ON public.registrations(approval_status);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 5. PAYMENT PROOFS STORAGE BUCKET (2MB Limit)
