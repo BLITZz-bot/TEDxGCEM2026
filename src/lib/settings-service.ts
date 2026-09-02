@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
 // Proprietary and confidential. Unauthorized copying, modification, or
 // distribution of this file is strictly prohibited. See LICENSE for details.
 import fs from "fs";
@@ -30,10 +30,10 @@ const DEFAULT_SETTINGS: EventSettings = {
   reveal_theme: true,
   reveal_date: true,
   reveal_countdown: true,
-  event_date: "October 15, 2026",
-  event_time: "09:00 AM",
-  event_day: "THURSDAY",
-  countdown_target: "2026-10-15T09:00:00",
+  event_date: "September 26, 2026",
+  "event_time": "09:00 AM",
+  event_day: "SATURDAY",
+  countdown_target: "2026-09-26T09:00:00",
   about_theme_name: "TRANSFORMING PERSPECTIVES",
   about_theme_desc: "This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.",
   reveal_about_theme: true,
