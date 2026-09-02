@@ -50,7 +50,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
   // Navigation Steps:
   // "tier_card" (Screen 1: Beautiful Active Ticket Showcase)
   // "intro_pillars" (Screen 2: "Be in the Room Where Ideas Ignite" with 3 pillars from screenshot)
-  // "form" (Screen 3: Registration Form + Coupon + Razorpay Checkout)
+  // "form" (Screen 3: Registration Form + Coupon + Direct UPI Payment)
   const [step, setStep] = useState<"tier_card" | "intro_pillars" | "form">("tier_card");
 
   const [activeTier, setActiveTier] = useState<ActiveTierInfo>({
@@ -964,7 +964,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
               )}
 
               {/* ════════════════════════════════════════════════════════════════
-                  SCREEN 3: ATTENDEE FORM + QUANTITY + RAZORPAY CHECKOUT
+                  SCREEN 3: ATTENDEE FORM + QUANTITY + DIRECT UPI PAYMENT
                   ════════════════════════════════════════════════════════════════ */}
               {step === "form" && (
                 <motion.form

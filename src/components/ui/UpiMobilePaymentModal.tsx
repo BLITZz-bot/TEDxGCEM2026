@@ -132,9 +132,7 @@ export default function UpiMobilePaymentModal({
   totalAmount,
   tierName,
   buyerName,
-  buyerEmail,
   attendees,
-  tierId,
   couponCode,
   discountAmount,
   restoreSession = false,
@@ -376,8 +374,6 @@ export default function UpiMobilePaymentModal({
     setIsSubmitting(true);
 
     try {
-      let res: Response;
-
       // Always use FormData — avoids iOS canvas.toDataURL() restriction and
       // eliminates the server-side content-type ambiguity that caused empty utrNumber.
       const formData = new FormData();
@@ -395,7 +391,7 @@ export default function UpiMobilePaymentModal({
         formData.append("screenshot", screenshotFile, screenshotFile.name);
       }
 
-      res = await fetch("/api/register/upi-submit", {
+      const res = await fetch("/api/register/upi-submit", {
         method: "POST",
         body: formData,
       });

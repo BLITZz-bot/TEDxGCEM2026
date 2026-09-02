@@ -99,7 +99,7 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc list-inside space-y-2 ml-2">
               <li><strong className="text-white">No Selling or Renting:</strong> We will never sell, trade, or rent your personal data to advertisers, sponsors, or third-party marketers.</li>
               <li><strong className="text-white">Secure Storage:</strong> All user records are protected via database Row Level Security (RLS) and encrypted transport (TLS 1.3).</li>
-              <li><strong className="text-white">Authorized Sub-processors:</strong> We utilize industry-standard services including Supabase (Authentication & Database), Razorpay (Payment Processing), and Resend (Transactional Email).</li>
+              <li><strong className="text-white">Authorized Sub-processors:</strong> We utilize industry-standard services including Supabase (Authentication & Database) and Resend (Transactional Email).</li>
             </ul>
           </section>
 

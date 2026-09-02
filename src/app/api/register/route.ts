@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // This endpoint is DEPRECATED.
-// All registrations now go through the secure Razorpay payment flow:
-//   POST /api/payment/create-order  → creates Razorpay order
-//   POST /api/payment/verify        → verifies payment & saves registration
+// All registrations now go through the secure Direct UPI & Handoff flow:
+//   POST /api/register/create-draft  → creates registration draft
+//   POST /api/register/upi-submit    → submits UTR & screenshot verification
 //
 // This route is intentionally disabled to prevent bypassing payment.
 // ─────────────────────────────────────────────────────────────────────────────

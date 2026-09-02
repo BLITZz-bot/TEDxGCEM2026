@@ -10,17 +10,20 @@ import type { NextConfig } from "next";
 const SUPABASE_HOST = "https://wpiujexqajeseifzuxnc.supabase.co";
 const SUPABASE_WSS  = "wss://wpiujexqajeseifzuxnc.supabase.co";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 const cspDirectives: Record<string, string[]> = {
   // Default: only this origin
   "default-src": ["'self'"],
 
   // Scripts: self + Cloudflare Turnstile widget + Next.js inline chunks
   // 'unsafe-inline' is required by Next.js for its inline <script> bootstrapping.
-  // 'unsafe-eval' is required in development by Next.js HMR; removed in prod via env check.
+  // 'unsafe-eval' is required in development by Next.js HMR/debugging; omitted in prod.
   "script-src": [
     "'self'",
     "'unsafe-inline'",
     "https://challenges.cloudflare.com",
+    ...(isDev ? ["'unsafe-eval'"] : []),
   ],
 
   // Styles: self + Google Fonts stylesheet + Next.js inline critical CSS
