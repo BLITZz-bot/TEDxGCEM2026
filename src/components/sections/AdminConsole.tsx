@@ -105,6 +105,13 @@ interface AdminDataCache {
 
 let globalAdminCache: AdminDataCache | null = null;
 
+function updateGlobalAdminCache(cache: Omit<AdminDataCache, "lastFetchedAt">) {
+  globalAdminCache = {
+    ...cache,
+    lastFetchedAt: Date.now(),
+  };
+}
+
 export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsoleProps) {
   const { isAdmin, loading: authLoading } = useAuth();
   const [registrations, setRegistrations] = useState<AdminRegistration[]>(() => globalAdminCache?.registrations || []);
@@ -231,8 +238,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         prev.map((r) => (r.id === reg.id ? { ...r, approval_status: "approved", ticket_status: "confirmed" } : r))
       );
       await fetchData(true);
-    } catch (err: any) {
-      alert("Error approving registration: " + (err.message || "Network error"));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      alert("Error approving registration: " + msg);
     } finally {
       setApprovingId(null);
     }
@@ -257,8 +265,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       setRejectionModalReg(null);
       setRejectionReasonInput("");
       await fetchData(true);
-    } catch (err: any) {
-      alert("Error rejecting registration: " + (err.message || "Network error"));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      alert("Error rejecting registration: " + msg);
     } finally {
       setRejectingId(null);
     }
@@ -509,7 +518,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       }
 
       // Update in-memory cache for instant subsequent tab switches
-      globalAdminCache = {
+      updateGlobalAdminCache({
         registrations: newRegs,
         messages: newMsgs,
         teamMembers: newTeam,
@@ -517,8 +526,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         partnersList: newPartners,
         ticketTiers: newTiers,
         couponsList: newCoupons,
-        lastFetchedAt: Date.now(),
-      };
+      });
     } catch (err: unknown) {
       console.error("Error loading admin records:", err);
       if (!isSilent) {
@@ -1881,7 +1889,6 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   }
 
   // Calculate quick stats
-  const totalRegistrations = registrations.length;
   const totalMessages = messages.length;
 
   return (

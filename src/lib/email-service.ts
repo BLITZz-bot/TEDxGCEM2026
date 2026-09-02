@@ -542,7 +542,7 @@ function generateVerificationPendingHtml(params: VerificationPendingParams): str
 }
 
 export async function sendVerificationPendingEmail(params: VerificationPendingParams) {
-  const { buyerEmail, buyerName } = params;
+  const { buyerEmail } = params;
   if (!buyerEmail) return { success: false, reason: "Missing recipient email" };
 
   const resendApiKey = process.env.RESEND_API_KEY;

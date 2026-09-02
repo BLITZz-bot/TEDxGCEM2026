@@ -90,14 +90,16 @@ export async function POST(request: Request) {
               },
             ];
 
-      const emailAttendees: EmailAttendee[] = rawAttendees.map((att: any, idx: number) => ({
-        id: idx === 0 ? reg.id : `${reg.id}-${idx + 1}`,
-        fullName: att.fullName || reg.full_name,
-        email: att.email || buyerEmail,
-        phone: att.phone || reg.phone,
-        organization: att.organization || reg.organization || "GCEM",
-        designation: att.designation || reg.designation || "Student",
-      }));
+      const emailAttendees: EmailAttendee[] = rawAttendees.map(
+        (att: { fullName?: string; email?: string; phone?: string; organization?: string; designation?: string }, idx: number) => ({
+          id: idx === 0 ? reg.id : `${reg.id}-${idx + 1}`,
+          fullName: att.fullName || reg.full_name,
+          email: att.email || buyerEmail,
+          phone: att.phone || reg.phone,
+          organization: att.organization || reg.organization || "GCEM",
+          designation: att.designation || reg.designation || "Student",
+        })
+      );
 
       // 3. Dispatch official pass confirmation email
       try {
