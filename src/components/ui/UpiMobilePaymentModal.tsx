@@ -313,7 +313,7 @@ export default function UpiMobilePaymentModal({
 
   const handleLaunchUpi = () => {
     setHasClickedPay(true);
-    // Immediately move to the proof upload step so when user returns, they are ready to submit UTR
+    // Move to proof upload step without launching deep links (user pays manually via QR or UPI ID)
     setModalStep("proof");
 
     try {
@@ -328,25 +328,6 @@ export default function UpiMobilePaymentModal({
         })
       );
     } catch {}
-
-    if (!isMobileDevice) {
-      return;
-    }
-
-    try {
-      const a = document.createElement("a");
-      a.href = upiUri;
-      a.rel = "noopener noreferrer";
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        if (document.body.contains(a)) {
-          document.body.removeChild(a);
-        }
-      }, 500);
-    } catch {
-      window.location.assign(upiUri);
-    }
   };
 
   const handleSubmitProof = async (e: React.FormEvent) => {
@@ -600,57 +581,60 @@ export default function UpiMobilePaymentModal({
             </div>
           )}
 
-          {/* VIEW 1: INSTRUCTIONS */}
+          {/* VIEW 1: INSTRUCTIONS & QR PAYMENT */}
           {!isSubmitting && modalStep === "instructions" && (
             <div className="space-y-5">
-              {/* The 5 Golden Rules */}
-              <div className="space-y-2.5">
-                <span className="text-[11px] font-mono uppercase tracking-widest text-white/40 block">
-                  5 Golden Instructions:
-                </span>
-                <div className="space-y-2 text-xs text-white/80">
-                  <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="font-mono text-ted-red font-bold text-[11px]">1.</span>
-                    <span><strong>Direct UPI App:</strong> Tapping the button shows your installed UPI apps — simply select the one you want to use (Google Pay, PhonePe, Paytm, etc.).</span>
-                  </div>
-                  <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300">
-                    <span className="font-mono text-amber-400 font-bold text-[11px]">2.</span>
-                    <span><strong>Pay Ticket Amount:</strong> When your UPI app opens, enter the exact ticket price shown on your ticket above (<strong>₹{totalAmount.toFixed(2)}</strong>). Entering manually prevents bank decline errors.</span>
-                  </div>
-                  <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="font-mono text-ted-red font-bold text-[11px]">3.</span>
-                    <span><strong>Take Screenshot:</strong> Capture a clear screenshot of the payment showing the UTR number on the screen.</span>
-                  </div>
-                  <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="font-mono text-ted-red font-bold text-[11px]">4.</span>
-                    <span><strong>Record 12-Digit UTR:</strong> Note down the UPI Transaction Ref / UTR number from the receipt.</span>
-                  </div>
-                  <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="font-mono text-ted-red font-bold text-[11px]">5.</span>
-                    <span><strong>Finalize Pass:</strong> Return to this browser tab to upload the screenshot and paste your UTR.</span>
+              {/* Official QR Code Card */}
+              <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3 text-center">
+                <div className="relative p-2 bg-white rounded-2xl shadow-xl max-w-[240px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/qr-pay.jpeg"
+                    alt="TEDxGCEM Official UPI QR Code"
+                    className="w-52 h-52 object-contain rounded-xl"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-white/50 block">
+                    📸 Take a screenshot of this QR to scan in your UPI app
+                  </span>
+                  <div className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs font-bold shadow-sm">
+                    <span>Pay Exact Amount for {tierName}: ₹{totalAmount.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Checkbox Gate */}
-              <label className="flex items-start space-x-3 p-3 rounded-2xl bg-white/[0.03] border border-white/10 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={hasAgreed}
-                  onChange={(e) => setHasAgreed(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded text-ted-red focus:ring-ted-red accent-ted-red cursor-pointer"
-                />
-                <span className="text-xs text-white/80 leading-relaxed font-sans">
-                  I have read and agree to all payment instructions. I will take a screenshot of the receipt and note the 12-digit UTR.
+              {/* Step-by-Step Instructions */}
+              <div className="space-y-2.5">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-white/40 block">
+                  How to Complete Payment:
                 </span>
-              </label>
+                <div className="space-y-2 text-xs text-white/80">
+                  <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                    <span className="font-mono text-ted-red font-bold text-[11px]">1.</span>
+                    <span><strong>Screenshot QR:</strong> Take a screenshot of the official QR code above (or copy the UPI ID below).</span>
+                  </div>
+                  <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300">
+                    <span className="font-mono text-amber-400 font-bold text-[11px]">2.</span>
+                    <span><strong>Pay in UPI App:</strong> Open Google Pay, PhonePe, or Paytm, select <em>&ldquo;Scan from Gallery&rdquo;</em>, and enter exactly <strong>₹{totalAmount.toFixed(2)}</strong>.</span>
+                  </div>
+                  <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                    <span className="font-mono text-ted-red font-bold text-[11px]">3.</span>
+                    <span><strong>Capture Screenshot & UTR:</strong> Take a screenshot of the completed payment receipt showing the 12-digit UTR.</span>
+                  </div>
+                  <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                    <span className="font-mono text-ted-red font-bold text-[11px]">4.</span>
+                    <span><strong>Submit Verification:</strong> Tap the button below to paste your 12-digit UTR and upload your payment screenshot.</span>
+                  </div>
+                </div>
+              </div>
 
-              {/* Official UPI ID Copy Card */}
+              {/* Official UPI ID Copy Card (Placed after instructions) */}
               {upiId && (
                 <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 block">
-                      Official TEDx UPI ID / VPA:
+                      Or Pay Manually via Official UPI ID:
                     </span>
                     <span className="font-mono text-xs text-white font-semibold select-all">
                       {upiId}
@@ -676,61 +660,36 @@ export default function UpiMobilePaymentModal({
                 </div>
               )}
 
+              {/* Checkbox Gate */}
+              <label className="flex items-start space-x-3 p-3 rounded-2xl bg-white/[0.03] border border-white/10 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={hasAgreed}
+                  onChange={(e) => setHasAgreed(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded text-ted-red focus:ring-ted-red accent-ted-red cursor-pointer"
+                />
+                <span className="text-xs text-white/80 leading-relaxed font-sans">
+                  I have paid ₹{totalAmount.toFixed(2)} and have the payment screenshot &amp; 12-digit UTR ready.
+                </span>
+              </label>
 
-
-              {/* Launch Payment CTA */}
+              {/* Proceed to Upload Proof CTA */}
               <div className="space-y-2.5 pt-1">
-                {!isMobileDevice && (
-                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs flex items-start space-x-2">
-                    <Smartphone className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>Mobile required:</strong> UPI deep links open Google Pay, PhonePe, or
-                      Paytm on your phone. If you&apos;ve already paid on mobile, tap the button below to
-                      go directly to proof upload.
-                    </span>
-                  </div>
-                )}
-                {isMobileDevice ? (
-                  <button
-                    type="button"
-                    disabled={!hasAgreed}
-                    onClick={() => {
-                      if (!hasAgreed) return;
-                      handleLaunchUpi();
-                    }}
-                    className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center space-x-2 font-mono ${
-                      hasAgreed
-                        ? "bg-ted-red hover:bg-white text-white hover:text-black cursor-pointer shadow-[0_0_25px_rgba(235,0,40,0.4)]"
-                        : "bg-white/10 text-white/30 cursor-not-allowed pointer-events-none"
-                    }`}
-                  >
-                    <span>Open UPI App (Enter ₹{totalAmount.toFixed(2)} & Pay)</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchUpi()}
-                    disabled={!hasAgreed}
-                    className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center space-x-2 font-mono ${
-                      hasAgreed
-                        ? "bg-ted-red hover:bg-white text-white hover:text-black cursor-pointer shadow-[0_0_25px_rgba(235,0,40,0.4)]"
-                        : "bg-white/10 text-white/30 cursor-not-allowed"
-                    }`}
-                  >
-                    <span>Already Paid on Mobile? Upload Proof ₹{totalAmount.toFixed(2)}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                )}
-
-
-
                 <button
                   type="button"
-                  onClick={() => setModalStep("proof")}
-                  className="w-full py-2.5 text-[11px] font-mono text-white/50 hover:text-white transition-colors cursor-pointer text-center"
+                  disabled={!hasAgreed}
+                  onClick={() => {
+                    if (!hasAgreed) return;
+                    handleLaunchUpi();
+                  }}
+                  className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center space-x-2 font-mono ${
+                    hasAgreed
+                      ? "bg-ted-red hover:bg-white text-white hover:text-black cursor-pointer shadow-[0_0_25px_rgba(235,0,40,0.4)]"
+                      : "bg-white/10 text-white/30 cursor-not-allowed pointer-events-none"
+                  }`}
                 >
-                  Already paid? Skip directly to UTR &amp; Screenshot Upload ➔
+                  <span>I Have Paid ₹{totalAmount.toFixed(2)} — Upload Proof</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
