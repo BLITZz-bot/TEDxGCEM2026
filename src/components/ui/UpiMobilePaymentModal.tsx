@@ -160,7 +160,8 @@ export default function UpiMobilePaymentModal({
 
   const upiId = process.env.NEXT_PUBLIC_UPI_ID || "";
   const upiName = process.env.NEXT_PUBLIC_UPI_NAME || "TEDxGCEM 2026";
-  const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${totalAmount.toFixed(2)}&mam=${totalAmount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(`TEDxGCEM ${tierName} Pass`)}`;
+  // Non-amount intent: removes dynamic merchant lock and lets user enter the amount manually in their UPI app
+  const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&cu=INR&tn=TEDxGCEM`;
 
   // Discount display
   const originalAmount = discountAmount && discountAmount > 0 ? totalAmount + discountAmount : null;
@@ -612,9 +613,9 @@ export default function UpiMobilePaymentModal({
                     <span className="font-mono text-ted-red font-bold text-[11px]">1.</span>
                     <span><strong>Direct UPI App:</strong> Tapping the button shows your installed UPI apps — simply select the one you want to use (Google Pay, PhonePe, Paytm, etc.).</span>
                   </div>
-                  <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="font-mono text-ted-red font-bold text-[11px]">2.</span>
-                    <span><strong>Pay the Amount:</strong> The exact amount is automatically loaded into your UPI app for instant verification.</span>
+                  <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300">
+                    <span className="font-mono text-amber-400 font-bold text-[11px]">2.</span>
+                    <span><strong>Enter Amount in UPI App:</strong> When your UPI app opens, enter exactly <strong>₹{totalAmount.toFixed(2)}</strong>. (Entering manually prevents bank decline errors).</span>
                   </div>
                   <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
                     <span className="font-mono text-ted-red font-bold text-[11px]">3.</span>
@@ -703,7 +704,7 @@ export default function UpiMobilePaymentModal({
                         : "bg-white/10 text-white/30 cursor-not-allowed pointer-events-none"
                     }`}
                   >
-                    <span>Proceed to Pay ₹{totalAmount.toFixed(2)} via UPI App</span>
+                    <span>Open UPI App (Enter ₹{totalAmount.toFixed(2)} & Pay)</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 ) : (
