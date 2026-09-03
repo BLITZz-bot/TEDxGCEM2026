@@ -615,7 +615,7 @@ export default function UpiMobilePaymentModal({
                   </div>
                   <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300">
                     <span className="font-mono text-amber-400 font-bold text-[11px]">2.</span>
-                    <span><strong>Enter Amount in UPI App:</strong> When your UPI app opens, enter exactly <strong>₹{totalAmount.toFixed(2)}</strong>. (Entering manually prevents bank decline errors).</span>
+                    <span><strong>Pay Ticket Amount:</strong> When your UPI app opens, enter the exact ticket price shown on your ticket above (<strong>₹{totalAmount.toFixed(2)}</strong>). Entering manually prevents bank decline errors.</span>
                   </div>
                   <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
                     <span className="font-mono text-ted-red font-bold text-[11px]">3.</span>
