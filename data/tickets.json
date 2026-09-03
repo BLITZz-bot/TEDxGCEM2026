@@ -10,8 +10,8 @@
     "discount_price": null,
     "status": "upcoming",
     "sort_order": 1,
-    "sold_count": 0,
-    "manual_override": false
+    "manual_override": false,
+    "updated_at": "2026-08-29T07:02:25.593+00:00"
   },
   {
     "id": "phase_1",
@@ -24,8 +24,8 @@
     "discount_price": 300,
     "status": "upcoming",
     "sort_order": 2,
-    "sold_count": 0,
-    "manual_override": false
+    "manual_override": false,
+    "updated_at": "2026-08-29T07:02:25.656+00:00"
   },
   {
     "id": "phase_2",
@@ -38,8 +38,8 @@
     "discount_price": 400,
     "status": "active",
     "sort_order": 3,
-    "sold_count": 0,
-    "manual_override": true
+    "manual_override": true,
+    "updated_at": "2026-08-29T15:49:52.846+00:00"
   },
   {
     "id": "phase_3",
@@ -52,7 +52,7 @@
     "discount_price": 500,
     "status": "upcoming",
     "sort_order": 4,
-    "sold_count": 0,
-    "manual_override": false
+    "manual_override": false,
+    "updated_at": "2026-08-29T07:02:25.82+00:00"
   }
 ]
