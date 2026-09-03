@@ -108,19 +108,45 @@ export async function getTierSoldCounts(): Promise<Record<string, number>> {
 
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("registrations")
-      .select("id, tier_id, ticket_status, razorpay_payment_id, payment_id, ticket_count");
+    let records: Array<{
+      id?: string;
+      tier_id?: string;
+      ticket_status?: string;
+      approval_status?: string;
+      razorpay_payment_id?: string;
+      payment_id?: string;
+      ticket_count?: number;
+    }> | null = null;
 
-    if (!error && data) {
-      data.forEach((reg: { tier_id?: string; ticket_status?: string; razorpay_payment_id?: string; payment_id?: string; ticket_count?: number }) => {
-        const isPaid =
+    const primaryQuery = await supabase
+      .from("registrations")
+      .select("id, tier_id, ticket_status, approval_status, razorpay_payment_id, payment_id, ticket_count");
+
+    if (primaryQuery.error && primaryQuery.error.message?.includes("approval_status")) {
+      const retry = await supabase
+        .from("registrations")
+        .select("id, tier_id, ticket_status, razorpay_payment_id, payment_id, ticket_count");
+      records = retry.data as typeof records;
+    } else if (!primaryQuery.error && primaryQuery.data) {
+      records = primaryQuery.data;
+    }
+
+    if (records) {
+      records.forEach((reg) => {
+        // Strictly exclude rejected registrations
+        const isRejected = reg.ticket_status === "rejected" || reg.approval_status === "rejected";
+        if (isRejected) {
+          return;
+        }
+
+        // Only count genuinely approved / confirmed tickets
+        const isConfirmed =
+          reg.approval_status === "approved" ||
           reg.ticket_status === "confirmed" ||
           reg.ticket_status === "approved" ||
-          !!reg.razorpay_payment_id ||
-          !!reg.payment_id;
+          (!reg.approval_status && reg.ticket_status !== "pending_verification" && (!!reg.razorpay_payment_id || !!reg.payment_id));
 
-        if (isPaid) {
+        if (isConfirmed) {
           const tierKey = reg.tier_id || "early_bird";
           const count = Number(reg.ticket_count) || 1;
           if (counts[tierKey] !== undefined) {
