@@ -82,6 +82,7 @@ export default function Contact() {
           GET IN TOUCH <br />
           WITH OUR <span className="text-ted-red">TEAM</span>
         </motion.h2>
+        <div className="h-[1.5px] w-20 bg-ted-red" />
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -176,6 +176,7 @@ export default function Schedule({ settings }: ScheduleProps) {
           <h2 className="text-4xl md:text-6xl font-black italic tracking-tighter leading-[0.95] uppercase">
             EVENT <span className="text-ted-red">SCHEDULE</span>
           </h2>
+          <div className="h-[1.5px] w-20 bg-ted-red" />
         </motion.div>
 
         {settings?.reveal_schedule ? (

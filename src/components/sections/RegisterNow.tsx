@@ -545,6 +545,7 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
           JOIN THE <br />
           CONVERSATION <span className="text-ted-red">TODAY</span>
         </motion.h2>
+        <div className="h-[1.5px] w-20 bg-ted-red" />
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
