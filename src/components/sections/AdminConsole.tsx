@@ -273,6 +273,44 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     }
   };
 
+  const [revertingId, setRevertingId] = useState<string | null>(null);
+
+  const handleRevertRegistration = async (reg: AdminRegistration) => {
+    if (
+      !confirm(
+        `Are you sure you want to REVERT ${reg.full_name} (${reg.utr_number || "UPI"}) back to the Pending Approvals list?`
+      )
+    ) {
+      return;
+    }
+    setRevertingId(reg.id);
+    try {
+      const res = await fetch("/api/admin/registrations/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: reg.id, action: "revert" }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.error || "Failed to revert registration.");
+        return;
+      }
+      setRegistrations((prev) =>
+        prev.map((r) =>
+          r.id === reg.id
+            ? { ...r, approval_status: "pending_approval", ticket_status: "pending_verification" }
+            : r
+        )
+      );
+      await fetchData(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      alert("Error reverting registration: " + msg);
+    } finally {
+      setRevertingId(null);
+    }
+  };
+
   // Ticket Tiers State
   const [tierActionLoading, setTierActionLoading] = useState<string | null>(null);
   const [editingTier, setEditingTier] = useState<TicketTier | null>(null);
@@ -2552,7 +2590,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                       <th className="pb-4 px-4">Submitted UTR</th>
                       <th className="pb-4 px-4">Receipt</th>
                       <th className="pb-4 px-4">Status</th>
-                      <th className="pb-4 pl-4 text-right">Delete</th>
+                      <th className="pb-4 pl-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -2596,13 +2634,29 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                           </span>
                         </td>
                         <td className="py-4 pl-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => deleteRegistration(reg.id)}
-                            className="px-2.5 py-1 bg-white/5 hover:bg-red-600 hover:text-white rounded text-white/40 text-[10px] uppercase font-bold cursor-pointer transition-colors"
-                          >
-                            Delete
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleRevertRegistration(reg)}
+                              disabled={revertingId === reg.id}
+                              className="px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500 text-amber-300 hover:text-black border border-amber-500/30 rounded text-[10px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1 shadow-sm disabled:opacity-50"
+                              title="Move back to Pending Approvals list"
+                            >
+                              {revertingId === reg.id ? (
+                                <div className="w-2.5 h-2.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <span>↺</span>
+                              )}
+                              Revert to Approval
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteRegistration(reg.id)}
+                              className="px-2.5 py-1 bg-white/5 hover:bg-red-600 hover:text-white rounded text-white/40 text-[10px] uppercase font-bold cursor-pointer transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
