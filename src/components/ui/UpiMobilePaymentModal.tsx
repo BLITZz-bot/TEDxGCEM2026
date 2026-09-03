@@ -710,23 +710,6 @@ export default function UpiMobilePaymentModal({
                   Step 2 of 2
                 </span>
               </div>
-              {/* Payment recap banner */}
-              {upiId && (
-                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2 text-white/70">
-                    <span className="font-mono text-[11px] text-white/40">UPI ID:</span>
-                    <span className="font-mono text-white font-medium select-all">{upiId}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleCopyUpi}
-                    className="text-[11px] text-ted-red hover:underline font-mono flex items-center space-x-1 cursor-pointer"
-                  >
-                    <Copy className="w-3 h-3" />
-                    <span>{copiedUpi ? "Copied!" : "Copy"}</span>
-                  </button>
-                </div>
-              )}
 
               {errorMsg && (
                 <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-start space-x-2">

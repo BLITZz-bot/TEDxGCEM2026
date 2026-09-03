@@ -204,7 +204,11 @@ export async function POST(request: Request) {
       draft.email ||
       "attendee@tedxgcem.in";
 
-    const userId = sessionUser?.id || draft.user_id || null;
+    const validUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let userId: string | null = sessionUser?.id || draft.user_id || null;
+    if (userId && !validUuidRegex.test(userId)) {
+      userId = null;
+    }
 
     // Upload screenshot to Supabase Storage
     const storagePath = `${draftId}_${Date.now()}_${utrNumber}.${screenshotExt}`;
@@ -293,23 +297,47 @@ export async function POST(request: Request) {
       .insert([registrationRecord])
       .select("id");
 
-    // Resilient fallback in case database table does not yet have attendees_json, unit_price or approval_status columns
-    if (
-      insertError &&
-      (insertError.message?.includes("attendees_json") ||
-        insertError.message?.includes("unit_price") ||
-        insertError.message?.includes("approval_status"))
-    ) {
+    // Comprehensive resilient fallback for foreign keys, missing columns, or schema mismatches
+    if (insertError) {
+      console.warn("[Supabase] Initial registration insert failed, trying resilient fallback:", insertError.message);
       const fallbackRecord = { ...registrationRecord };
-      delete fallbackRecord.attendees_json;
-      delete fallbackRecord.unit_price;
-      delete fallbackRecord.approval_status;
+
+      // If user_id foreign key failed or user deleted from auth, set to null
+      if (
+        insertError.message?.toLowerCase().includes("user_id") ||
+        insertError.message?.toLowerCase().includes("foreign key")
+      ) {
+        fallbackRecord.user_id = null;
+      }
+
+      // If optional newer columns caused the failure, strip them
+      if (insertError.message?.includes("attendees_json")) {
+        delete fallbackRecord.attendees_json;
+      }
+      if (insertError.message?.includes("unit_price")) {
+        delete fallbackRecord.unit_price;
+      }
+      if (insertError.message?.includes("approval_status")) {
+        delete fallbackRecord.approval_status;
+      }
+      if (insertError.message?.includes("buyer_email")) {
+        delete fallbackRecord.buyer_email;
+      }
+      if (insertError.message?.includes("payment_screenshot_url")) {
+        delete fallbackRecord.payment_screenshot_url;
+      }
+
       const retry = await supabase
         .from("registrations")
         .insert([fallbackRecord])
         .select("id");
-      insertedData = retry.data;
-      insertError = retry.error;
+
+      if (retry.data && retry.data.length > 0) {
+        insertedData = retry.data;
+        insertError = null;
+      } else {
+        insertError = retry.error || insertError;
+      }
     }
 
     if (insertError || !insertedData || insertedData.length === 0) {
@@ -319,6 +347,14 @@ export async function POST(request: Request) {
         insertError?.message?.toLowerCase().includes("unique") ||
         insertError?.message?.toLowerCase().includes("duplicate key")
       ) {
+        if (insertError?.message?.toLowerCase().includes("email")) {
+          return NextResponse.json(
+            {
+              error: `This email (${buyerEmail}) has already been registered. Please check "Get My Pass" to view your pass or contact support.`,
+            },
+            { status: 409 }
+          );
+        }
         return NextResponse.json(
           {
             error: `This 12-digit UTR (${utrNumber}) has already been registered in our system. If you believe this is an error, please contact support.`,
@@ -327,7 +363,10 @@ export async function POST(request: Request) {
         );
       }
       return NextResponse.json(
-        { error: "Failed to store registration pass. Please contact support with UTR: " + utrNumber },
+        {
+          error: `Failed to store registration pass: ${insertError?.message || "Database insert error"}. (UTR: ${utrNumber})`,
+          details: insertError?.message,
+        },
         { status: 500 }
       );
     }
