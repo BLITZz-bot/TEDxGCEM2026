@@ -32,9 +32,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { id, action, rejectionReason } = body;
 
-    if (!id || (action !== "approve" && action !== "reject")) {
+    if (!id || (action !== "approve" && action !== "reject" && action !== "revert")) {
       return NextResponse.json(
-        { error: "Invalid parameters. 'id' and valid 'action' ('approve' | 'reject') are required." },
+        { error: "Invalid parameters. 'id' and valid 'action' ('approve' | 'reject' | 'revert') are required." },
         { status: 400 }
       );
     }
@@ -124,6 +124,30 @@ export async function POST(request: Request) {
         action: "approve",
         id,
         message: "Registration successfully approved and pass dispatched.",
+      });
+    } else if (action === "revert") {
+      // 1. Reset database record status to pending approval
+      const { error: updateError } = await supabase
+        .from("registrations")
+        .update({
+          approval_status: "pending_approval",
+          ticket_status: "pending_verification",
+        })
+        .eq("id", id);
+
+      if (updateError) {
+        console.error("[Revert] Update error:", updateError);
+        return NextResponse.json(
+          { error: "Failed to revert registration status in database." },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        action: "revert",
+        id,
+        message: "Registration reverted to pending approval.",
       });
     } else {
       // action === "reject"
