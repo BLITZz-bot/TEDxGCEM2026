@@ -669,7 +669,7 @@ export default function UpiMobilePaymentModal({
                   className="mt-0.5 w-4 h-4 rounded text-ted-red focus:ring-ted-red accent-ted-red cursor-pointer"
                 />
                 <span className="text-xs text-white/80 leading-relaxed font-sans">
-                  I have paid ₹{totalAmount.toFixed(2)} and have the payment screenshot &amp; 12-digit UTR ready.
+                  I have read all instructions.
                 </span>
               </label>
 
