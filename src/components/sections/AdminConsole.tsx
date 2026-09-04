@@ -180,7 +180,25 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           }
         }
       } else {
-        singles.push(reg);
+        const baseAttendees =
+          reg.attendees_json && Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0
+            ? [...reg.attendees_json]
+            : [
+                {
+                  fullName: reg.full_name,
+                  email: reg.email,
+                  phone: reg.phone,
+                  organization: reg.organization,
+                  designation: reg.designation || "Student",
+                  linkedin: reg.linkedin || undefined,
+                  referral: reg.referral || undefined,
+                },
+              ];
+        singles.push({
+          ...reg,
+          attendees_json: baseAttendees,
+          ticket_count: Math.max(Number(reg.ticket_count) || 1, baseAttendees.length),
+        });
       }
     }
 
@@ -201,6 +219,15 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         (!reg.approval_status && reg.ticket_status !== "pending_verification" && reg.ticket_status !== "rejected")
     );
   }, [consolidatedRegistrations]);
+
+  // Total registered people: only approved registrations, including all co-participants and multi-ticket purchases
+  const totalApprovedRegisteredPeople = React.useMemo(() => {
+    return approvedRegistrations.reduce((sum, reg) => {
+      const attendeesLen = Array.isArray(reg.attendees_json) ? reg.attendees_json.length : 0;
+      const ticketCount = Number(reg.ticket_count) || 0;
+      return sum + Math.max(1, ticketCount, attendeesLen);
+    }, 0);
+  }, [approvedRegistrations]);
 
   const rejectedRegistrations = React.useMemo(() => {
     return consolidatedRegistrations.filter(
@@ -1405,7 +1432,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     });
 
     const confirmedPassesCount = targetRegistrations.reduce((sum, reg) => {
-      return sum + (Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
+      const attendeesLen = Array.isArray(reg.attendees_json) ? reg.attendees_json.length : 0;
+      const ticketCount = Number(reg.ticket_count) || 0;
+      return sum + Math.max(1, ticketCount, attendeesLen);
     }, 0);
 
     const totalRevenue = targetRegistrations.reduce((sum, reg) => {
@@ -1465,7 +1494,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const utr = reg.utr_number || "N/A";
         const method = reg.payment_method ? reg.payment_method.toUpperCase() : "ONLINE";
         
-        const qty = Math.max(1, Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
+        const qty = Math.max(1, Number(reg.ticket_count) || 0, Array.isArray(reg.attendees_json) ? reg.attendees_json.length : 0);
         const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined
           ? Number(reg.amount_paid)
           : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : (qty * 300));
@@ -1547,7 +1576,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         const utr = reg.utr_number || "N/A";
         const method = reg.payment_method ? reg.payment_method.toUpperCase() : "ONLINE";
 
-        const qty = Math.max(1, Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
+        const qty = Math.max(1, Number(reg.ticket_count) || 0, Array.isArray(reg.attendees_json) ? reg.attendees_json.length : 0);
         const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined
           ? Number(reg.amount_paid)
           : (reg.amount !== null && reg.amount !== undefined ? Number(reg.amount) : (qty * 300));
@@ -1933,7 +1962,6 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       )}
 
       {/* Bento Grid Stats */}
-      {/* Bento Grid Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div
           onClick={() => setActiveSubTab("approvals")}
@@ -1954,15 +1982,23 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           <span className={`text-3xl font-black ${pendingApprovals.length > 0 ? "text-amber-400" : "text-white"}`}>
             {pendingApprovals.length}
           </span>
+          <div className="text-[10px] text-white/40 font-mono mt-1">
+            {pendingApprovals.length === 1 ? "1 action required" : `${pendingApprovals.length} awaiting review`}
+          </div>
         </div>
         <div
           onClick={() => setActiveSubTab("registrations")}
           className="bg-ted-dark-gray/30 border border-white/5 hover:border-white/10 p-6 rounded-2xl cursor-pointer transition-all"
         >
-          <span className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold block mb-1">
-            ✅ Confirmed Passes
-          </span>
-          <span className="text-3xl font-black text-white">{approvedRegistrations.length}</span>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold block">
+              👥 Total Registered People
+            </span>
+          </div>
+          <span className="text-3xl font-black text-white">{totalApprovedRegisteredPeople}</span>
+          <div className="text-[10px] text-white/40 font-mono mt-1">
+            {approvedRegistrations.length} approved {approvedRegistrations.length === 1 ? "order" : "orders"} (incl. co-participants)
+          </div>
         </div>
         <div
           onClick={() => setActiveSubTab("messages")}
@@ -1972,6 +2008,9 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
             Total Inbox Messages
           </span>
           <span className="text-3xl font-black text-white">{totalMessages}</span>
+          <div className="text-[10px] text-white/40 font-mono mt-1">
+            Inquiries received
+          </div>
         </div>
       </div>
 
@@ -2184,7 +2223,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {pendingApprovals.map((reg) => {
-                      const qty = Math.max(1, Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
+                      const qty = Math.max(1, Number(reg.ticket_count) || 0, Array.isArray(reg.attendees_json) ? reg.attendees_json.length : 0);
                       const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined ? Number(reg.amount_paid) : (qty * 300);
                       const isApproving = approvingId === reg.id;
                       const isRejecting = rejectingId === reg.id;
@@ -2360,7 +2399,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-black/30 border border-white/5 font-mono">
               <div className="space-y-0.5">
                 <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <span>📊</span> Confirmed Attendee Database ({approvedRegistrations.length} Passes Issued)
+                  <span>📊</span> Confirmed Attendee Database ({totalApprovedRegisteredPeople} Registered {totalApprovedRegisteredPeople === 1 ? "Person" : "People"} • {approvedRegistrations.length} Orders)
                 </div>
                 <p className="text-[10px] text-white/40">
                   Displays all verified and confirmed passes. Exports a beautiful spreadsheet (.xls).
@@ -2411,7 +2450,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                     {approvedRegistrations.map((reg) => {
                       const isConfirmed = reg.ticket_status === "confirmed" || reg.ticket_status === "approved" || reg.approval_status === "approved" || !!reg.razorpay_payment_id || !!reg.payment_id;
                       const paymentId = reg.razorpay_payment_id || reg.payment_id;
-                      const qty = Math.max(1, Number(reg.ticket_count) || (Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0 ? reg.attendees_json.length : 1));
+                      const qty = Math.max(1, Number(reg.ticket_count) || 0, Array.isArray(reg.attendees_json) ? reg.attendees_json.length : 0);
                       const paidVal = reg.amount_paid !== null && reg.amount_paid !== undefined ? Number(reg.amount_paid) : (isConfirmed ? (qty * 300) : 0);
                       const unitPriceVal = reg.unit_price !== null && reg.unit_price !== undefined
                         ? Number(reg.unit_price)

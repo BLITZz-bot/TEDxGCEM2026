@@ -7,7 +7,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase_PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![UPI](https://img.shields.io/badge/UPI_Direct_Payments-0074E4?style=for-the-badge&logo=google-pay&logoColor=white)
+![UPI QR](https://img.shields.io/badge/UPI_QR_Payments-0074E4?style=for-the-badge&logo=google-pay&logoColor=white)
 ![Razorpay](https://img.shields.io/badge/Razorpay_Payments-02042B?style=for-the-badge&logo=razorpay&logoColor=3395FF)
 ![Resend](https://img.shields.io/badge/Resend_Email_API-000000?style=for-the-badge&logo=resend&logoColor=white)
 ![Google OAuth](https://img.shields.io/badge/Google_OAuth_2.0-4285F4?style=for-the-badge&logo=google&logoColor=white)
@@ -23,18 +23,18 @@
 
 ## 💳 Payment Architectures & Branch Guide
 
-This repository devtains **two distinct payment architectures** distributed across dedicated git branches. 
+This repository maintains **two distinct payment architectures** distributed across dedicated git branches. You can deploy or switch to either architecture depending on your payment collection requirements:
 
 | Architecture | Branch | Fee / Commission | Payment Channels | Verification Method | Best For |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Direct UPI QR & Mobile Handoff** *(Current)* | `v2-upi-payments` | **0% (Zero Fee)** | Google Pay, PhonePe, Paytm, CRED, BHIM, Bank UPI | 12-Digit Bank UTR + Receipt Screenshot Proof (Supabase Storage) | Direct college bank collection without gateway charges or KYC delays |
+| **UPI QR Code Payment & Mobile Handoff** *(Current)* | `v2-upi-payments` | **0% (Zero Fee)** | Google Pay, PhonePe, Paytm, CRED, BHIM, Bank UPI apps | 12-Digit Bank UTR + Receipt Screenshot Proof (Supabase Storage) | Dynamic QR code checkout without gateway commissions or third-party KYC |
 | **Razorpay Payment Gateway** | `dev` | ~2% + GST | Credit/Debit Cards, NetBanking, UPI, Wallets | Automated Server-Side HMAC-SHA256 Signature Verification | Fully automated commercial gateway checkout |
 
 ---
 
-### Method 1: Direct UPI QR + Cross-Device Mobile Handoff (`v2-upi-payments`)
+### Method 1: Dynamic UPI QR Code Payment + Cross-Device Mobile Handoff (`v2-upi-payments`)
 
-The `v2-upi-payments` branch bypasses commercial gateway fees by implementing a custom NPCI-compliant direct UPI flow with cross-device session synchronization.
+The `v2-upi-payments` branch bypasses commercial gateway fees by implementing a custom NPCI-compliant dynamic UPI QR code payment flow with cross-device session synchronization.
 
 #### Key Capabilities:
 1. **Dynamic NPCI QR & Intent Trigger:**
@@ -77,7 +77,7 @@ The `dev` branch integrates standard commercial checkout via the official Razorp
 To switch between the two architectures on your local machine:
 
 ```bash
-# Switch to Direct UPI Architecture (Zero Fee, Mobile Handoff, UTR + Screenshot)
+# Switch to UPI QR Code Architecture (Zero Fee, Mobile Handoff, UTR + Screenshot)
 git checkout v2-upi-payments
 
 # Switch to Razorpay Gateway Architecture (Cards, NetBanking, Automated Gateway)
@@ -136,16 +136,16 @@ git checkout dev
 
 Create a `.env.local` file in your root directory:
 
-### For `v2-upi-payments` Branch (Direct UPI & Mobile Handoff):
+### For `v2-upi-payments` Branch (UPI QR Code Payment & Mobile Handoff):
 ```env
 # 1. Supabase Database, Auth & Storage
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
-# 2. Direct UPI Payee Configuration
-NEXT_PUBLIC_UPI_ID=gopalancollege@icici
-NEXT_PUBLIC_UPI_NAME=Gopalan College of Engineering and Management
+# 2. UPI QR Code Configuration (Configure privately in .env.local — never commit real credentials)
+NEXT_PUBLIC_UPI_ID=your_merchant_vpa@bank
+NEXT_PUBLIC_UPI_NAME=Your Organization / Institution Name
 
 # 3. Security & Anti-Bot Protection
 TURNSTILE_SECRET_KEY=0x4AAAAAAA...
