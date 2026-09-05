@@ -118,6 +118,11 @@ export async function POST(request: Request) {
       draftId,
       authToken: authHandoffToken,
       expiresAt: authTokenExpiresAt,
+      // Return server-authoritative tier info so client can sync its state
+      tierId: activeTier.id,
+      tierName: activeTier.name,
+      tierPrice: activeTier.price,
+      tierStatus: activeTier.status,
     });
   } catch (error: unknown) {
     console.error("[create-draft] Error:", error);

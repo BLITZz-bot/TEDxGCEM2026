@@ -147,7 +147,9 @@ export async function getTierSoldCounts(): Promise<Record<string, number>> {
           (!reg.approval_status && reg.ticket_status !== "pending_verification" && (!!reg.razorpay_payment_id || !!reg.payment_id));
 
         if (isConfirmed) {
-          const tierKey = reg.tier_id || "early_bird";
+          const tierKey = reg.tier_id;
+          // Skip registrations with no tier_id to avoid incorrectly inflating Early Bird count
+          if (!tierKey) return;
           const count = Number(reg.ticket_count) || 1;
           if (counts[tierKey] !== undefined) {
             counts[tierKey] += count;

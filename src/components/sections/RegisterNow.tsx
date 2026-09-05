@@ -508,6 +508,18 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
       setActiveDraftId(draftData.draftId);
       setActiveAuthToken(draftData.authToken || "");
 
+      // Sync activeTier from the server-authoritative response to ensure the modal
+      // always shows the correct tier (guards against stale client-side default state)
+      if (draftData.tierId && draftData.tierName) {
+        setActiveTier((prev) => ({
+          ...prev,
+          id: draftData.tierId,
+          name: draftData.tierName,
+          price: draftData.tierPrice ?? prev.price,
+          status: draftData.tierStatus ?? prev.status,
+        }));
+      }
+
       // 2. Open Laptop Split Modal or Mobile Payment Modal based on device viewport
       const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
       if (isMobile) {
