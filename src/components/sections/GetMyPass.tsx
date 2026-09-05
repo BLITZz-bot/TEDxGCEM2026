@@ -580,6 +580,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
                           Your registration associated with <span className="text-white font-bold font-mono">{user.email}</span> is currently being verified against bank records by the TEDxGCEM organizing committee.
                         </p>
                         <p className="text-amber-400/80 text-[11px] font-mono">
+                          Verification Timings: Monday to Saturday, 9:00 AM – 5:00 PM IST.<br />
                           Your official QR Pass Badge will be available to download here as soon as verification is approved.
                         </p>
                       </div>

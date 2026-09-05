@@ -643,10 +643,16 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-amber-400 font-bold">2.</span>
-                    <span>Once verified, your official <strong>Delegate Pass with unique QR code</strong> will be generated and dispatched to your email.</span>
+                    <span>
+                      Verification Window: <strong className="text-white">Monday to Saturday, 9:00 AM – 5:00 PM IST</strong> (Submissions outside hours or Sundays are verified next working day).
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-amber-400 font-bold">3.</span>
+                    <span>Once verified, your official <strong>Delegate Pass with unique QR code</strong> will be generated and dispatched to your email.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-400 font-bold">4.</span>
                     <span>A verification receipt email has been sent to your inbox.</span>
                   </li>
                 </ul>

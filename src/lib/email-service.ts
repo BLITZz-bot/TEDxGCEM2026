@@ -520,14 +520,26 @@ function generateVerificationPendingHtml(params: VerificationPendingParams): str
             </td></tr>
           </table>
           <!-- What happens next -->
-          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;margin-bottom:24px;">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;margin-bottom:16px;">
             <tr><td style="padding:20px 24px;">
-              <p style="margin:0 0 12px 0;font-size:12px;font-weight:700;color:#f59e0b;">What happens next?</p>
-              <ol style="margin:0;padding-left:18px;font-size:13px;color:rgba(255,255,255,0.65);line-height:1.8;">
+              <p style="margin:0 0 12px 0;font-size:12px;font-weight:700;color:#f59e0b;letter-spacing:0.5px;text-transform:uppercase;">What happens next?</p>
+              <ol style="margin:0;padding-left:18px;font-size:13px;color:rgba(255,255,255,0.7);line-height:1.8;">
                 <li>The TEDxGCEM team will verify your UPI payment against bank records.</li>
                 <li>Once verified, you will receive a <strong style="color:#ffffff;">confirmation email with your official Delegate Pass</strong> and QR code.</li>
-                <li>This process typically takes <strong style="color:#ffffff;">a few hours</strong>.</li>
+                <li>This process typically takes <strong style="color:#ffffff;">a few hours</strong> during working hours.</li>
               </ol>
+            </td></tr>
+          </table>
+
+          <!-- Verification Hours Notice -->
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:rgba(255,255,255,0.03);border:1px solid rgba(245,158,11,0.3);border-radius:12px;margin-bottom:24px;">
+            <tr><td style="padding:16px 20px;">
+              <p style="margin:0 0 6px 0;font-size:13px;font-weight:700;color:#f59e0b;">
+                ⏰ Verification Timings: Monday to Saturday (9:00 AM – 5:00 PM IST)
+              </p>
+              <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.65);line-height:1.6;">
+                Our verification team reviews submissions from <strong style="color:#ffffff;">9:00 AM to 5:00 PM, Monday through Saturday</strong>. Payments submitted outside of these hours or on Sundays will be verified on the next working day.
+              </p>
             </td></tr>
           </table>
           <p style="margin:0 0 8px 0;font-size:13px;color:rgba(255,255,255,0.5);">For any queries, reply to this email or contact us at:</p>
