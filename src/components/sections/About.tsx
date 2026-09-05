@@ -114,11 +114,11 @@ export default function About({ settings }: AboutProps) {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="md:col-span-12 bg-black border-2 border-white p-8 rounded-none transition-all duration-300 shadow-[6px_6px_0px_0px_#EB0028] hover:shadow-[12px_12px_0px_0px_#EB0028] hover:-translate-x-1.5 hover:-translate-y-1.5 group flex flex-col md:flex-row justify-between items-start md:items-center gap-6 cursor-pointer"
           >
-            <div className="max-w-xl">
+            <div className="flex-1">
               <h4 className="text-2xl font-black italic text-white uppercase mb-2">
                 THEME: <span className="text-ted-red">{settings?.reveal_about_theme ? (settings.about_theme_name || "TRANSFORMING PERSPECTIVES") : "THEME REVEALING SOON"}</span>
               </h4>
-              <p className="text-white/60 text-sm font-light leading-relaxed">
+              <p className="text-white/60 text-sm font-light leading-relaxed whitespace-pre-line">
                 {settings?.reveal_about_theme ? (
                   settings.about_theme_desc || "This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure."
                 ) : (
