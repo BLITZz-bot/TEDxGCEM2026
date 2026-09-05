@@ -118,7 +118,7 @@ export default function About({ settings }: AboutProps) {
               <h4 className="text-2xl font-black italic text-white uppercase mb-2">
                 THEME: <span className="text-ted-red">{settings?.reveal_about_theme ? (settings.about_theme_name || "TRANSFORMING PERSPECTIVES") : "THEME REVEALING SOON"}</span>
               </h4>
-              <p className="text-white/60 text-sm font-light leading-relaxed whitespace-pre-line">
+              <p className="text-white/60 text-sm font-light leading-relaxed whitespace-pre-line text-justify">
                 {settings?.reveal_about_theme ? (
                   settings.about_theme_desc || "This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure."
                 ) : (
