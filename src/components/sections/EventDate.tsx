@@ -154,7 +154,7 @@ export default function EventDate({ settings }: EventDateProps) {
                 THE BLUEPRINT OF THE DAY
               </h3>
               <p className="text-white/60 text-xs md:text-sm font-light leading-relaxed font-mono max-w-2xl">
-                TEDxGCEM {getYear()} brings together thinkers, builders, and community pioneers under {settings && !settings.reveal_theme ? "a theme that will be announced soon" : `the theme &quot;${settings ? settings.theme_name : "RIPPLE"}&quot;`}. On this single day, the campus main auditorium transforms into a launchpad for ideas that challenge the baseline of conventional frameworks and spark new connections.
+                TEDxGCEM {getYear()} brings together thinkers, builders, and community pioneers under {settings && !settings.reveal_theme ? "a theme that will be announced soon" : `the theme "${settings ? settings.theme_name : "RIPPLE"}"`}. On this single day, the campus main auditorium transforms into a launchpad for ideas that challenge the baseline of conventional frameworks and spark new connections.
               </p>
             </div>
 
