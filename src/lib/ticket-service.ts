@@ -199,24 +199,30 @@ export async function getAllTicketTiers(): Promise<TicketTier[]> {
   const manualActiveTier = tiers.find((t) => t.status === "active");
   const manualClosedTier = tiers.find((t) => t.status === "closed");
 
-  // Determine the progression tier
+  // Determine the progression tier index
   let currentProgressionIndex = -1;
 
   if (manualActiveTier) {
     const activeIdx = tiers.findIndex((t) => t.id === manualActiveTier.id);
     const sold = soldCounts[manualActiveTier.id] || 0;
+
     if (sold >= manualActiveTier.total_capacity) {
-      // It reached full capacity! Automatically advance to next tier
-      currentProgressionIndex = activeIdx + 1;
+      // Active tier is full — cascade forward to the first subsequent non-full tier.
+      // A simple +1 is not enough: if the next tier is also full we leave no active tier.
+      let nextIdx = activeIdx + 1;
+      while (nextIdx < tiers.length && (soldCounts[tiers[nextIdx].id] || 0) >= tiers[nextIdx].total_capacity) {
+        nextIdx++;
+      }
+      currentProgressionIndex = nextIdx < tiers.length ? nextIdx : tiers.length - 1;
     } else {
       currentProgressionIndex = activeIdx;
     }
   } else if (manualClosedTier) {
-    // Admin explicitly closed a tier. That tier remains closed, and next tier DOES NOT OPEN!
+    // Admin explicitly closed a tier. That tier remains closed, next tier DOES NOT OPEN!
     const closedIdx = tiers.findIndex((t) => t.id === manualClosedTier.id);
     currentProgressionIndex = closedIdx;
   } else {
-    // Normal auto progression from the beginning: find first non-full tier
+    // No admin override — auto-progress from the beginning: find first non-full tier
     currentProgressionIndex = tiers.findIndex((t) => (soldCounts[t.id] || 0) < t.total_capacity);
     if (currentProgressionIndex === -1) {
       currentProgressionIndex = tiers.length - 1; // All sold out
@@ -232,7 +238,7 @@ export async function getAllTicketTiers(): Promise<TicketTier[]> {
     if (isFull) {
       computedStatus = "sold_out";
     } else if (idx < currentProgressionIndex) {
-      // Prior tiers that reached capacity
+      // Prior tiers (sold out or skipped)
       computedStatus = "sold_out";
     } else if (idx === currentProgressionIndex) {
       if (tier.status === "closed") {
@@ -241,7 +247,7 @@ export async function getAllTicketTiers(): Promise<TicketTier[]> {
         computedStatus = "active";
       }
     } else {
-      // idx > currentProgressionIndex: subsequent tiers stay upcoming
+      // Subsequent tiers remain upcoming
       computedStatus = "upcoming";
     }
 

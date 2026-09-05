@@ -218,10 +218,11 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
     }
   }, [attendees, ticketQuantity, appliedCoupon, isSuccess]);
 
-  // Fetch active ticket tier on load
+  // Fetch active ticket tier on load — always bypass browser cache so tier
+  // transitions (e.g. Early Bird → Phase 1 after sell-out) are reflected immediately.
   useEffect(() => {
     let isMounted = true;
-    fetch("/api/tickets")
+    fetch("/api/tickets", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!isMounted || !data) return;

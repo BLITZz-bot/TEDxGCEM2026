@@ -35,10 +35,17 @@ export async function GET() {
       status: activeTier.status,
     };
 
-    return NextResponse.json({
-      activeTier: sanitizedActiveTier,
-      tiers: publicTiers,
-    });
+    return NextResponse.json(
+      {
+        activeTier: sanitizedActiveTier,
+        tiers: publicTiers,
+      },
+      {
+        // Never cache tier data — tier transitions (sell-out → next phase) must
+        // be visible immediately to all users without stale CDN/browser responses.
+        headers: { "Cache-Control": "no-store, max-age=0" },
+      }
+    );
   } catch (error) {
     console.error("Failed to fetch tickets:", error);
     return NextResponse.json({ error: "Failed to fetch ticket tiers" }, { status: 500 });
