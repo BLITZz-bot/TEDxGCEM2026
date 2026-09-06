@@ -45,6 +45,8 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     photoUrl: '/members/placeholder.png',
     linkedin: 'https://www.linkedin.com/in/bharath-m-m-a9960b309',
     github: 'http://github.com/BLITZz-bot',
+    instagram: 'https://www.instagram.com/bharatha01/',
+    portfolio: 'https://bharatha01.vercel.app/',
     email: 'bharatha9483@gmail.com',
   },
   {
