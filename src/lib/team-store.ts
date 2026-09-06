@@ -46,7 +46,7 @@ function staticToMemberWithScans(m: (typeof INITIAL_MEMBERS)[number]): MemberWit
 
 export async function getAllMembers(): Promise<MemberWithScans[]> {
   try {
-    return await prisma.member.findMany({
+    const members = await prisma.member.findMany({
       orderBy: { createdAt: 'asc' },
       include: {
         scans: {
@@ -56,6 +56,14 @@ export async function getAllMembers(): Promise<MemberWithScans[]> {
         },
         _count: { select: { scans: true } },
       },
+    });
+
+    const slugOrder = new Map(INITIAL_MEMBERS.map((m, idx) => [m.slug.toLowerCase(), idx]));
+    return members.sort((a, b) => {
+      const orderA = slugOrder.has(a.slug.toLowerCase()) ? slugOrder.get(a.slug.toLowerCase())! : 999;
+      const orderB = slugOrder.has(b.slug.toLowerCase()) ? slugOrder.get(b.slug.toLowerCase())! : 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
   } catch (err) {
     console.warn('⚠️  Prisma getAllMembers fallback to INITIAL_MEMBERS:', err);
