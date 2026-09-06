@@ -9,7 +9,7 @@ import {
   Mail, 
   X 
 } from "lucide-react";
-import slImg from "../../../public/SLIMG.png";
+import slImg from "../../../public/SLIMG.webp";
 
 // Local SVG social icons for maximum compatibility
 const Linkedin = (props: React.SVGProps<SVGSVGElement>) => (
