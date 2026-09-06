@@ -4,24 +4,26 @@ import { Pool } from 'pg';
 
 const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString && process.env.NODE_ENV !== 'production') {
-  console.warn(
-    '⚠️  DATABASE_URL is missing. Add it to .env.local to connect to Neon PostgreSQL.'
-  );
-}
-
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+function initPrisma(): PrismaClient {
+  if (connectionString) {
+    const pool = new Pool({ connectionString });
+    const adapter = new PrismaPg(pool);
+    return new PrismaClient({
+      adapter,
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    });
+  }
+
+  // Fallback if DATABASE_URL is not provided (e.g. initial build phase)
+  return new PrismaClient({
+    log: ['error'],
   });
+}
+
+export const prisma = globalForPrisma.prisma ?? initPrisma();
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;

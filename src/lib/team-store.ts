@@ -5,6 +5,7 @@
  */
 
 import { prisma } from './prisma';
+import { INITIAL_MEMBERS } from './members-data';
 import type { Member, ScanEvent } from '@prisma/client';
 
 export type { Member, ScanEvent };
@@ -16,48 +17,90 @@ export type MemberWithScans = Member & {
   _count?: { scans: number };
 };
 
+function staticToMemberWithScans(m: (typeof INITIAL_MEMBERS)[number]): MemberWithScans {
+  return {
+    id: m.slug,
+    slug: m.slug,
+    name: m.name,
+    role: m.role,
+    team: m.team as import('@prisma/client').Team,
+    oneLiner: m.oneLiner,
+    bio: m.bio,
+    contribution: m.contribution,
+    interests: JSON.stringify(m.interests),
+    photoUrl: m.photoUrl,
+    linkedin: m.linkedin || null,
+    instagram: m.instagram || null,
+    github: m.github || null,
+    portfolio: m.portfolio || null,
+    email: m.email || null,
+    scanCount: m.scanCount || 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    scans: [],
+    _count: { scans: m.scanCount || 0 },
+  };
+}
+
 // ─── Read ─────────────────────────────────────────────────────────────────────
 
 export async function getAllMembers(): Promise<MemberWithScans[]> {
-  return prisma.member.findMany({
-    orderBy: { createdAt: 'asc' },
-    include: {
-      scans: {
-        orderBy: { scannedAt: 'desc' },
-        take: 50,
-        select: { scannedAt: true, source: true },
+  try {
+    return await prisma.member.findMany({
+      orderBy: { createdAt: 'asc' },
+      include: {
+        scans: {
+          orderBy: { scannedAt: 'desc' },
+          take: 50,
+          select: { scannedAt: true, source: true },
+        },
+        _count: { select: { scans: true } },
       },
-      _count: { select: { scans: true } },
-    },
-  });
+    });
+  } catch (err) {
+    console.warn('⚠️  Prisma getAllMembers fallback to INITIAL_MEMBERS:', err);
+    return INITIAL_MEMBERS.map(staticToMemberWithScans);
+  }
 }
 
 export async function getMemberBySlug(slug: string): Promise<MemberWithScans | null> {
-  return prisma.member.findUnique({
-    where: { slug: slug.toLowerCase() },
-    include: {
-      scans: {
-        orderBy: { scannedAt: 'desc' },
-        take: 20,
-        select: { scannedAt: true, source: true },
+  try {
+    return await prisma.member.findUnique({
+      where: { slug: slug.toLowerCase() },
+      include: {
+        scans: {
+          orderBy: { scannedAt: 'desc' },
+          take: 20,
+          select: { scannedAt: true, source: true },
+        },
+        _count: { select: { scans: true } },
       },
-      _count: { select: { scans: true } },
-    },
-  });
+    });
+  } catch (err) {
+    console.warn('⚠️  Prisma getMemberBySlug fallback to INITIAL_MEMBERS for slug:', slug, err);
+    const m = INITIAL_MEMBERS.find((mem) => mem.slug.toLowerCase() === slug.toLowerCase());
+    return m ? staticToMemberWithScans(m) : null;
+  }
 }
 
 export async function getMemberById(id: string): Promise<MemberWithScans | null> {
-  return prisma.member.findUnique({
-    where: { id },
-    include: {
-      scans: {
-        orderBy: { scannedAt: 'desc' },
-        take: 20,
-        select: { scannedAt: true, source: true },
+  try {
+    return await prisma.member.findUnique({
+      where: { id },
+      include: {
+        scans: {
+          orderBy: { scannedAt: 'desc' },
+          take: 20,
+          select: { scannedAt: true, source: true },
+        },
+        _count: { select: { scans: true } },
       },
-      _count: { select: { scans: true } },
-    },
-  });
+    });
+  } catch (err) {
+    console.warn('⚠️  Prisma getMemberById fallback to INITIAL_MEMBERS for id:', id, err);
+    const m = INITIAL_MEMBERS.find((mem) => mem.slug === id);
+    return m ? staticToMemberWithScans(m) : null;
+  }
 }
 
 // ─── Scan Tracking ────────────────────────────────────────────────────────────
