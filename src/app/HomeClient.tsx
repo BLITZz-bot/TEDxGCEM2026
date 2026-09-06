@@ -308,7 +308,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
         <div
           className="fixed inset-0 pointer-events-none z-0"
           style={{
-            backgroundImage: "url('/X_wing.png')",
+            backgroundImage: "url('/X_wing.webp')",
             backgroundPosition: "center center",
             backgroundSize: "80%",
             backgroundRepeat: "no-repeat",

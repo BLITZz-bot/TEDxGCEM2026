@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
 // Proprietary and confidential. Unauthorized copying, modification, or
 // distribution of this file is strictly prohibited. See LICENSE for details.
 import { NextResponse } from "next/server";
@@ -24,7 +24,14 @@ async function checkAdmin(supabase: SupabaseClient) {
 export async function GET() {
   try {
     const team = await getTeamMembers();
-    return NextResponse.json({ team });
+    return NextResponse.json(
+      { team },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (error: unknown) {
     console.error("Team GET error:", error);
     const message = error instanceof Error ? error.message : "Failed to load team members.";

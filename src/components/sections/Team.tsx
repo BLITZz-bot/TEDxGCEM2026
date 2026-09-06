@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import demoImg from "../../../public/DEMO.png";
+import demoImg from "../../../public/DEMO.webp";
 import type { EventSettings } from "@/lib/settings-service";
 
 interface TeamMember {

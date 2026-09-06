@@ -219,7 +219,7 @@ export default function Hero({ onTabChange, settings }: HeroProps) {
     <section className="min-h-screen relative flex flex-col justify-center px-6 md:px-20 overflow-hidden select-none bg-black">
       {/* Movable/Draggable Background Image Layer */}
       <motion.img 
-        src="/bg.jpeg"
+        src="/bg.webp"
         drag={isCursorDragActive}
         dragMomentum={false}
         className={`absolute w-full h-full object-contain z-0 select-none hidden md:block ${
@@ -246,7 +246,7 @@ export default function Hero({ onTabChange, settings }: HeroProps) {
 
       {/* Mobile-Only Movable/Draggable Background Image Layer */}
       <motion.img 
-        src="/mobbg.png"
+        src="/mobbg.webp"
         drag={isCursorDragActive}
         dragMomentum={false}
         className={`absolute w-full h-full object-contain z-0 select-none block md:hidden ${

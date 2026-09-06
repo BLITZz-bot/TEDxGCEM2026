@@ -6,6 +6,7 @@ import { TabId } from "@/components/ui/TabNav";
 import { useAuth } from "@/hooks/useAuth";
 import { EventSettings } from "@/lib/settings-service";
 import { getEventYear } from "@/lib/utils";
+import { QRCodeCanvas } from "qrcode.react";
 
 interface GetMyPassProps {
   onTabChange: (id: TabId) => void;
@@ -239,9 +240,6 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
       // 7. Render QR and Finish
       const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.in";
       const verifyUrl = `${siteOrigin}/api/verify-pass?id=${encodeURIComponent(ticketId)}&email=${encodeURIComponent(registration.email)}`;
-      const qrImg = new window.Image();
-      qrImg.crossOrigin = "anonymous";
-      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(verifyUrl)}&color=000000&bgcolor=ffffff`;
 
       const finishCanvas = () => {
         // Label under QR Code
@@ -289,20 +287,29 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
         setIsDownloading(false);
       };
 
-      qrImg.onload = () => {
-        // Draw QR centered inside white box with padding
-        const qrPadding = 30;
-        ctx.drawImage(qrImg, qrBoxX + qrPadding, qrBoxY + qrPadding, qrBoxSize - qrPadding * 2, qrBoxSize - qrPadding * 2);
+      const qrPadding = 30;
+      const qrCanvasEl = document.getElementById("pass-qr-canvas") as HTMLCanvasElement | null;
+      if (qrCanvasEl) {
+        // Draw instantly from local client-side QR canvas (0 network requests, 0 origin transfer)
+        ctx.drawImage(qrCanvasEl, qrBoxX + qrPadding, qrBoxY + qrPadding, qrBoxSize - qrPadding * 2, qrBoxSize - qrPadding * 2);
         finishCanvas();
-      };
-
-      qrImg.onerror = () => {
-        ctx.font = "bold 16px monospace";
-        ctx.fillStyle = "#000000";
-        ctx.textAlign = "center";
-        ctx.fillText("QR SCAN CODE", W / 2, qrBoxY + qrBoxSize / 2);
-        finishCanvas();
-      };
+      } else {
+        // Non-blocking fallback
+        const qrImg = new window.Image();
+        qrImg.crossOrigin = "anonymous";
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(verifyUrl)}&color=000000&bgcolor=ffffff`;
+        qrImg.onload = () => {
+          ctx.drawImage(qrImg, qrBoxX + qrPadding, qrBoxY + qrPadding, qrBoxSize - qrPadding * 2, qrBoxSize - qrPadding * 2);
+          finishCanvas();
+        };
+        qrImg.onerror = () => {
+          ctx.font = "bold 16px monospace";
+          ctx.fillStyle = "#000000";
+          ctx.textAlign = "center";
+          ctx.fillText("QR SCAN CODE", W / 2, qrBoxY + qrBoxSize / 2);
+          finishCanvas();
+        };
+      }
     } catch (err) {
       console.error("Failed to generate pass image:", err);
       setIsDownloading(false);
@@ -503,11 +510,13 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
 
                         {/* QR Code (Encodes web verification URL) */}
                         <div className="bg-white p-3 rounded-2xl shadow-xl flex flex-col items-center justify-center">
-                          <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent((typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.com") + '/api/verify-pass?id=' + encodeURIComponent(ticketId) + '&email=' + encodeURIComponent(registration.email))}&color=000000&bgcolor=ffffff`} 
-                            alt="Event Day Scan QR Code" 
-                            className="w-32 h-32 object-contain"
-                            crossOrigin="anonymous"
+                          <QRCodeCanvas
+                            id="pass-qr-canvas"
+                            value={`${typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.in"}/api/verify-pass?id=${encodeURIComponent(ticketId)}&email=${encodeURIComponent(registration.email)}`}
+                            size={320}
+                            level="M"
+                            marginSize={1}
+                            className="w-32 h-32"
                           />
                         </div>
 

@@ -587,9 +587,8 @@ export default function UpiMobilePaymentModal({
               {/* Official QR Code Card */}
               <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3 text-center">
                 <div className="relative p-2 bg-white rounded-2xl shadow-xl max-w-[240px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/qr-pay.jpeg"
+                    src="/qr-pay.webp"
                     alt="TEDxGCEM Official UPI QR Code"
                     className="w-52 h-52 object-contain rounded-xl"
                   />
