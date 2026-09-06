@@ -20,7 +20,19 @@ export interface StaticMember {
 }
 
 export const INITIAL_MEMBERS: StaticMember[] = [
-  // Leadership (4)
+  // Leadership
+  {
+    slug: 'kartheek-gcr',
+    name: 'Kartheek GCR',
+    role: 'Organizer & Licensee',
+    team: 'leadership',
+    oneLiner: 'Official TED Licensee, Organizer, and Visionary behind TEDxGCEM 2026.',
+    bio: 'Kartheek GCR is the Official TED Licensee and Organizer of TEDxGCEM 2026. He holds the official TED license, securing institutional approvals and steering the grand vision to bring world-class ideas to the GCEM stage.',
+    contribution: 'Official TED Licensee holder, organizing executive leadership, institutional compliance, and event stewardship.',
+    interests: ['Leadership', 'Event Organization', 'TED Compliance', 'Strategic Vision'],
+    photoUrl: '/members/placeholder.png',
+    linkedin: 'https://www.linkedin.com/in/kartheek-g-c-r-98090339/',
+  },
   {
     slug: 'bharatha01',
     name: 'Bharath M',
