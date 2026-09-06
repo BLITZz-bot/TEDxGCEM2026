@@ -104,6 +104,7 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
   const [imageSrc, setImageSrc] = useState(() => getValidPhotoUrl(member.photoUrl));
   const photoContainerRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
+  const isBharath = member.slug === 'bharatha01' || member.slug === 'bharath-m';
 
   const nameFormatted = React.useMemo(() => {
     return formatName(member.name);
@@ -300,14 +301,20 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
                 </div>
 
                 {/* Oversized Name Typography */}
-                <h1 className="font-serif-editorial font-light uppercase tracking-tight text-white leading-[0.88] text-[clamp(3.2rem,8.5vw,9.5rem)] text-balance">
-                  <span className="block font-normal">{nameFormatted.first}</span>
-                  {nameFormatted.rest && (
-                    <span className="block text-neutral-400 font-extralight italic">
-                      {nameFormatted.rest}
-                    </span>
-                  )}
-                </h1>
+                {isBharath ? (
+                  <h1 className="font-serif-editorial font-medium uppercase tracking-tight text-white leading-tight text-[clamp(2.2rem,5.6vw,6.5rem)] whitespace-nowrap drop-shadow-[0_0_35px_rgba(255,255,255,0.35)]">
+                    {member.name}
+                  </h1>
+                ) : (
+                  <h1 className="font-serif-editorial font-light uppercase tracking-tight text-white leading-[0.88] text-[clamp(3.2rem,8.5vw,9.5rem)] text-balance">
+                    <span className="block font-normal">{nameFormatted.first}</span>
+                    {nameFormatted.rest && (
+                      <span className="block text-neutral-400 font-extralight italic">
+                        {nameFormatted.rest}
+                      </span>
+                    )}
+                  </h1>
+                )}
 
                 {/* Sub-line meta */}
                 <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs font-mono tracking-widest text-neutral-400 uppercase">
