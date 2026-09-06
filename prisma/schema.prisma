@@ -1,0 +1,54 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+enum Team {
+  leadership
+  creative
+  curation
+  partnerships
+  media
+  technology
+}
+
+model Member {
+  id           String      @id @default(cuid())
+  slug         String      @unique
+  name         String
+  role         String
+  team         Team
+  oneLiner     String
+  bio          String
+  contribution String
+  interests    String      @default("[]")
+  photoUrl     String      @default("/members/placeholder.png")
+  linkedin     String?
+  instagram    String?
+  github       String?
+  portfolio    String?
+  email        String?
+  scanCount    Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  scans        ScanEvent[]
+}
+
+model ScanEvent {
+  id        String   @id @default(cuid())
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId  String
+  scannedAt DateTime @default(now())
+  source    String?
+}
+
+model AdminUser {
+  id           String @id @default(cuid())
+  email        String @unique
+  passwordHash String
+}

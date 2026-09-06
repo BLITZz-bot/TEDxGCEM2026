@@ -1,41 +1,16 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { ProfileTemplate, MemberData } from '@/components/team/ProfileTemplate';
+import { getMemberBySlug } from '@/lib/team-store';
 import { INITIAL_MEMBERS } from '@/lib/members-data';
 
 export const revalidate = 60;
 
-// Pre-render all known member slugs at build time for instant loading when scanning QR codes
+// Pre-render all known member slugs at build time for instant QR scan loading
 export async function generateStaticParams() {
   return INITIAL_MEMBERS.map((m) => ({
     slug: m.slug,
   }));
-}
-
-async function getMemberBySlug(slug: string): Promise<MemberData | null> {
-  const fallback = INITIAL_MEMBERS.find((m) => m.slug.toLowerCase() === slug.toLowerCase());
-  if (fallback) {
-    return {
-      id: fallback.id || fallback.slug,
-      slug: fallback.slug,
-      name: fallback.name,
-      role: fallback.role,
-      team: fallback.team,
-      oneLiner: fallback.oneLiner,
-      bio: fallback.bio,
-      contribution: fallback.contribution,
-      interests: JSON.stringify(fallback.interests),
-      photoUrl: fallback.photoUrl,
-      linkedin: fallback.linkedin || null,
-      instagram: fallback.instagram || null,
-      github: fallback.github || null,
-      portfolio: fallback.portfolio || null,
-      email: fallback.email || null,
-      scanCount: fallback.scanCount ?? 0,
-    };
-  }
-
-  return null;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -65,9 +40,28 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
     notFound();
   }
 
+  const memberData: MemberData = {
+    id: member.id,
+    slug: member.slug,
+    name: member.name,
+    role: member.role,
+    team: member.team,
+    oneLiner: member.oneLiner,
+    bio: member.bio,
+    contribution: member.contribution,
+    interests: member.interests,
+    photoUrl: member.photoUrl,
+    linkedin: member.linkedin,
+    instagram: member.instagram,
+    github: member.github,
+    portfolio: member.portfolio,
+    email: member.email,
+    scanCount: member.scanCount,
+  };
+
   return (
     <Suspense fallback={null}>
-      <ProfileTemplate member={member} />
+      <ProfileTemplate member={memberData} />
     </Suspense>
   );
 }

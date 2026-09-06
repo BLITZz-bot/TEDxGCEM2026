@@ -20,7 +20,7 @@ export interface StaticMember {
 export const INITIAL_MEMBERS: StaticMember[] = [
   // Leadership (4)
   {
-    slug: 'bharath-m',
+    slug: 'bharatha01',
     name: 'Bharath M',
     role: 'Executive Producer',
     team: 'leadership',
