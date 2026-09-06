@@ -241,7 +241,7 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
                 </div>
 
                 {/* Oversized Name Typography */}
-                {isBharath ? (
+                {isSingleLineName ? (
                   <h1 className="font-serif-editorial font-medium uppercase tracking-tight text-white leading-tight text-[clamp(2.2rem,5.6vw,6.5rem)] whitespace-nowrap drop-shadow-[0_0_35px_rgba(255,255,255,0.35)]">
                     {member.name}
                   </h1>
