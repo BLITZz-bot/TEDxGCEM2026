@@ -2,9 +2,9 @@ import { cookies } from 'next/headers';
 import crypto from 'crypto';
 
 const TEAM_ADMIN_COOKIE = 'tedx_team_admin_token';
-const TEAM_ADMIN_EMAIL = process.env.TEAM_ADMIN_EMAIL || 'admin@tedxgcem.com';
-const TEAM_ADMIN_PASSWORD = process.env.TEAM_ADMIN_PASSWORD || 'TEDxGCEM2026!SecureAdminPass';
-const SECRET_SALT = process.env.NEXTAUTH_SECRET || 'tedxgcem-super-secure-secret-key-2026';
+const TEAM_ADMIN_EMAIL = (process.env.TEAM_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+const TEAM_ADMIN_PASSWORD = process.env.TEAM_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '';
+const SECRET_SALT = process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET || 'tedx-team-admin-session-salt';
 
 function createAuthToken(): string {
   const timestamp = Date.now().toString();
@@ -48,9 +48,13 @@ export async function checkTeamAdminSession(): Promise<boolean> {
 }
 
 export function checkCredentials(email: string, pass: string): boolean {
+  if (!TEAM_ADMIN_EMAIL || !TEAM_ADMIN_PASSWORD) {
+    console.error('TEAM_ADMIN_EMAIL or TEAM_ADMIN_PASSWORD environment variables are not set.');
+    return false;
+  }
   const normalizedEmail = (email || '').trim().toLowerCase();
   return (
-    normalizedEmail === TEAM_ADMIN_EMAIL.toLowerCase() &&
+    normalizedEmail === TEAM_ADMIN_EMAIL &&
     pass === TEAM_ADMIN_PASSWORD
   );
 }
