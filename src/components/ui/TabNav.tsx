@@ -17,7 +17,8 @@ export type TabId =
   | "partners" 
   | "register" 
   | "get-pass" 
-  | "contact";
+  | "contact"
+  | "admin";
 
 interface Tab {
   id: TabId;
@@ -54,6 +55,7 @@ export default function TabNav({ activeTab, onTabChange, settings }: TabNavProps
     { id: "partners", label: "Partners" },
     ...(settings?.reveal_register !== false ? [{ id: "register", label: "Register Now" } as Tab] : []),
     { id: "contact", label: "Contact" },
+    ...(isAdmin ? [{ id: "admin", label: "Admin Console" }] as Tab[] : []),
   ];
 
   React.useEffect(() => {

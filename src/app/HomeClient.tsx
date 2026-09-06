@@ -35,6 +35,7 @@ import Contact from "@/components/sections/Contact";
 import Countdown from "@/components/sections/Countdown";
 import Highlights from "@/components/sections/Highlights";
 import EventDate from "@/components/sections/EventDate";
+import AdminConsole from "@/components/sections/AdminConsole";
 import type { EventSettings } from "@/lib/settings-service";
 
 // ———————————————————————————————————————————————————————————————————————————————————————————————————————————————————— Types ————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
@@ -256,6 +257,10 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
         );
       case "contact":
         return <Contact key="contact" />;
+      case "admin":
+        return (
+          <AdminConsole key="admin" settings={settings} onSettingsUpdate={fetchSettings} />
+        );
       default:
         return <Hero key="home" onTabChange={handleTabChange} settings={settings} />;
     }
