@@ -1,8 +1,9 @@
 import { getSettings } from "@/lib/settings-service";
 import HomeClient from "./HomeClient";
 
-// Force dynamic execution so settings updates are fetched instantly on every refresh
-export const dynamic = "force-dynamic";
+// Cache at Edge CDN for 60s — re-fetches settings from origin every minute.
+// Replaces force-dynamic to eliminate excessive Fast Origin Transfer costs.
+export const revalidate = 60;
 
 export default async function Page() {
   const settings = await getSettings();

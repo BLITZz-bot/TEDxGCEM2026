@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-
-const recentScansMap = new Map<string, number>();
+import { recordScan } from '@/lib/team-store';
 
 export async function POST(
   request: Request,
@@ -15,30 +14,17 @@ export async function POST(
     const url = new URL(request.url);
     const source = url.searchParams.get('src') || 'direct-link';
 
-    const now = Date.now();
-    const lastScanTime = recentScansMap.get(slug);
+    const result = await recordScan(slug, source);
 
-    if (lastScanTime && now - lastScanTime < 10000) {
+    if (result.debounced) {
       return NextResponse.json({ message: 'Scan debounced', recorded: false });
     }
 
-    recentScansMap.set(slug, now);
-
-    if (recentScansMap.size > 100) {
-      for (const [k, v] of recentScansMap.entries()) {
-        if (now - v > 60000) {
-          recentScansMap.delete(k);
-        }
-      }
+    if (!result.recorded) {
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 });
     }
 
-    // Return success response to the client
-    return NextResponse.json({
-      success: true,
-      recorded: true,
-      slug,
-      source,
-    });
+    return NextResponse.json({ success: true, recorded: true, slug, source });
   } catch (error) {
     console.error('Scan tracking error:', error);
     return NextResponse.json({ success: false, error: 'Internal tracking error' }, { status: 500 });

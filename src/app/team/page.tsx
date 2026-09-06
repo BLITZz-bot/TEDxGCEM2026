@@ -2,7 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import Hero3D from '@/components/team/Hero3DWrapper';
 import { TeamGrid, GridMember } from '@/components/team/TeamGrid';
-import { INITIAL_MEMBERS } from '@/lib/members-data';
+import { getAllMembers } from '@/lib/team-store';
 
 export const metadata = {
   title: 'Meet The Team | TEDxGCEM 2026',
@@ -12,15 +12,17 @@ export const metadata = {
 export const revalidate = 60;
 
 export default async function TeamPage() {
-  const gridMembers: GridMember[] = INITIAL_MEMBERS.map((m, idx) => ({
-    id: m.id || `member-${idx}`,
+  const members = await getAllMembers();
+
+  const gridMembers: GridMember[] = members.map((m) => ({
+    id: m.id,
     slug: m.slug,
     name: m.name,
     role: m.role,
     team: m.team,
     oneLiner: m.oneLiner,
     photoUrl: m.photoUrl,
-    scanCount: m.scanCount ?? 0,
+    scanCount: m.scanCount,
   }));
 
   return (
