@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EB0028"/>
+      <stop offset="100%" stop-color="#99001A"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#bg)"/>
+  <circle cx="400" cy="400" r="180" fill="#334155"/>
+  <path d="M400 250 A 110 110 0 1 0 400 470 A 110 110 0 1 0 400 250 Z" fill="#64748B"/>
+  <path d="M160 850 C 160 650, 640 650, 640 850 Z" fill="#334155"/>
+  <rect x="250" y="880" width="300" height="8" rx="4" fill="url(#accent)"/>
+  <text x="400" y="930" font-family="system-ui, sans-serif" font-size="24" font-weight="bold" fill="#94A3B8" text-anchor="middle" letter-spacing="4">TEDxGCEM 2026</text>
+</svg>
