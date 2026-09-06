@@ -112,7 +112,7 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
   const [imageSrc, setImageSrc] = useState(() => getValidPhotoUrl(member.photoUrl));
   const photoContainerRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
-  const isBharath = member.slug === 'bharatha01' || member.slug === 'bharath-m';
+  const isSingleLineName = member.slug === 'bharatha01' || member.slug === 'bharath-m' || member.slug === 'nivet.2006';
 
   const nameFormatted = React.useMemo(() => {
     return formatName(member.name);
