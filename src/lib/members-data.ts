@@ -35,7 +35,7 @@ export const INITIAL_MEMBERS: StaticMember[] = [
   },
   {
     slug: 'bharatha01',
-    name: 'Bharath M',
+    name: 'M M Bharath',
     role: 'Executive Producer',
     team: 'leadership',
     oneLiner: 'Steering TEDxGCEM vision, strategic execution, and grand stage production.',
