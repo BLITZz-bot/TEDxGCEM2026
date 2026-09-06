@@ -41,7 +41,6 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
   }
 
   const memberData: MemberData = {
-    id: member.id,
     slug: member.slug,
     name: member.name,
     role: member.role,
@@ -49,14 +48,15 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
     oneLiner: member.oneLiner,
     bio: member.bio,
     contribution: member.contribution,
-    interests: member.interests,
+    interests: JSON.stringify(member.interests),
     photoUrl: member.photoUrl,
     linkedin: member.linkedin,
     instagram: member.instagram,
     github: member.github,
     portfolio: member.portfolio,
     email: member.email,
-    scanCount: member.scanCount,
+    discord: member.discord,
+    twitter: member.twitter,
   };
 
   return (

@@ -14,6 +14,8 @@ export interface StaticMember {
   github?: string | null;
   portfolio?: string | null;
   email?: string | null;
+  discord?: string | null;
+  twitter?: string | null;
   scanCount?: number;
 }
 
@@ -25,10 +27,13 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     role: 'Executive Producer',
     team: 'leadership',
     oneLiner: 'Steering TEDxGCEM vision, strategic execution, and grand stage production.',
-    bio: 'Bharath M is the Executive Producer of TEDxGCEM 2026, overseeing overall conference direction, institutional partnerships, and stage excellence.',
+    bio: 'As Executive Producer, I am responsible for bringing together every aspect of TEDx — from curation and production to the final on-stage experience. I work across teams to ensure the event\'s vision is executed with clarity and cohesion, while also shaping how our story is presented and experienced by our audience beyond the stage.',
     contribution: 'Directing overarching event strategy, venue execution, and cross-functional leadership teams.',
     interests: ['Event Production', 'Leadership', 'Strategic Vision'],
     photoUrl: '/members/placeholder.png',
+    linkedin: 'https://www.linkedin.com/in/bharath-m-m-a9960b309',
+    github: 'http://github.com/BLITZz-bot',
+    email: 'bharatha9483@gmail.com',
   },
   {
     slug: 'bhargav-bhat',
@@ -86,10 +91,12 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     role: 'Creative Director',
     team: 'creative',
     oneLiner: 'Blending artistic vision with immersive multi-sensory audience touchpoints.',
-    bio: 'Thanisashri S S directs creative direction, campaign artwork, and thematic storytelling assets.',
+    bio: 'I believe creativity is more than making things look good—it’s about making people feel, think, and remember. As Creative Director, I want to shape a strong visual identity for TEDxGCEM and turn the theme into experiences that people remember. I look forward to creating, collaborating, and bringing ideas to life with the team.',
     contribution: 'Directing visual narrative, motion design direction, and promo campaign aesthetics.',
     interests: ['Creative Direction', 'Visual Arts', 'Motion Design'],
     photoUrl: '/members/placeholder.png',
+    linkedin: 'https://www.linkedin.com/in/thanisha-sri-838241326',
+    email: 'thanishasri042@gmail.com',
   },
   {
     slug: 'shruti-sujatha-francis',
@@ -97,10 +104,12 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     role: 'Concept Artist',
     team: 'creative',
     oneLiner: 'Translating abstract conference themes into stunning visual artwork.',
-    bio: 'Shruti Sujatha Francis creates custom illustrations, stage visual concepts, and promotional artwork.',
+    bio: 'As a Concept Artist at TEDxGCEM, I aim to transform ideas into compelling visual concepts that capture attention, communicate stories, and strengthen the identity of the event. I’m excited to contribute my creativity and artistic perspective to a team that brings thought-provoking ideas to life through impactful visuals.',
     contribution: 'Illustrated core theme assets, social graphics, and badge visual elements.',
     interests: ['Illustration', 'Concept Art', 'Digital Painting'],
     photoUrl: '/members/placeholder.png',
+    linkedin: 'https://www.linkedin.com/in/shruti-sujatha-francis',
+    email: 'shrutisf3105@gmail.com',
   },
   {
     slug: 'taruni-sri-reddy',
@@ -328,7 +337,7 @@ export const INITIAL_MEMBERS: StaticMember[] = [
 
   // Technology (2)
   {
-    slug: 'nived-shaji',
+    slug: 'nivet.2006',
     name: 'Nived Shaji',
     role: 'Technical Lead',
     team: 'technology',
@@ -339,9 +348,12 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     photoUrl: '/members/placeholder.png',
     instagram: 'https://www.instagram.com/nivet.2006',
     github: 'https://github.com/Nivet2006',
+    portfolio: 'https://nivet2006.in/',
+    email: 'nivedshaji2006@gmail.com',
+    discord: 'https://discord.com/users/nivet2006',
   },
   {
-    slug: 'yeshwanth',
+    slug: 'itz.yez',
     name: 'Yeshwanth',
     role: 'Technical Lead',
     team: 'technology',
@@ -350,5 +362,10 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     contribution: 'Engineered cloud database migrations, scan analytics tracking, and frontend components.',
     interests: ['Cloud Infrastructure', 'Database Systems', 'React', 'DevOps'],
     photoUrl: '/members/placeholder.png',
+    github: 'https://github.com/WTYeshh',
+    linkedin: 'https://linkedin.com/in/yeshwanth-640958251',
+    instagram: 'https://www.instagram.com/itz.yez/',
+    twitter: 'https://x.com/ye_h18',
+    email: 'yeshwanthkg@gmail.com',
   },
 ];

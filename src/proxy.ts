@@ -28,51 +28,64 @@ export async function proxy(request: NextRequest) {
     request,
   });
 
-  const supabase = createServerClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+  if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("your-project-id")) {
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            supabaseResponse = NextResponse.next({
+              request,
+            });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, {
+                ...options,
+                secure: process.env.NODE_ENV === "production",
+              })
+            );
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({
-            request,
+      }
+    );
+
+    // Refresh session if expired — IMPORTANT: do not remove this call.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      const lastActiveCookie = request.cookies.get("last_active")?.value;
+      const now = Date.now();
+
+      if (lastActiveCookie) {
+        const lastActiveTime = parseInt(lastActiveCookie, 10);
+
+        if (!isNaN(lastActiveTime) && now - lastActiveTime > SEVEN_DAYS_MS) {
+          // User has been inactive for more than 7 days — sign out
+          await supabase.auth.signOut();
+          supabaseResponse.cookies.set("last_active", "", {
+            path: "/",
+            maxAge: -1,
           });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, {
-              ...options,
-              secure: process.env.NODE_ENV === "production",
-            })
-          );
-        },
-      },
-    }
-  );
-
-  // Refresh session if expired — IMPORTANT: do not remove this call.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    const lastActiveCookie = request.cookies.get("last_active")?.value;
-    const now = Date.now();
-
-    if (lastActiveCookie) {
-      const lastActiveTime = parseInt(lastActiveCookie, 10);
-
-      if (!isNaN(lastActiveTime) && now - lastActiveTime > SEVEN_DAYS_MS) {
-        // User has been inactive for more than 7 days — sign out
-        await supabase.auth.signOut();
-        supabaseResponse.cookies.set("last_active", "", {
-          path: "/",
-          maxAge: -1,
-        });
+        } else {
+          // Active — refresh the last_active timestamp
+          supabaseResponse.cookies.set("last_active", now.toString(), {
+            path: "/",
+            maxAge: THIRTY_DAYS_SECONDS,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+          });
+        }
       } else {
-        // Active — refresh the last_active timestamp
+        // First visit or missing cookie — initialise it
         supabaseResponse.cookies.set("last_active", now.toString(), {
           path: "/",
           maxAge: THIRTY_DAYS_SECONDS,
@@ -81,21 +94,13 @@ export async function proxy(request: NextRequest) {
         });
       }
     } else {
-      // First visit or missing cookie — initialise it
-      supabaseResponse.cookies.set("last_active", now.toString(), {
-        path: "/",
-        maxAge: THIRTY_DAYS_SECONDS,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      });
-    }
-  } else {
-    // Not authenticated — clear any stale last_active cookie
-    if (request.cookies.has("last_active")) {
-      supabaseResponse.cookies.set("last_active", "", {
-        path: "/",
-        maxAge: -1,
-      });
+      // Not authenticated — clear any stale last_active cookie
+      if (request.cookies.has("last_active")) {
+        supabaseResponse.cookies.set("last_active", "", {
+          path: "/",
+          maxAge: -1,
+        });
+      }
     }
   }
 

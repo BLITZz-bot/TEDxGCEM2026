@@ -15,14 +15,12 @@ export default async function TeamPage() {
   const members = await getAllMembers();
 
   const gridMembers: GridMember[] = members.map((m) => ({
-    id: m.id,
     slug: m.slug,
     name: m.name,
     role: m.role,
     team: m.team,
     oneLiner: m.oneLiner,
     photoUrl: m.photoUrl,
-    scanCount: m.scanCount,
   }));
 
   return (

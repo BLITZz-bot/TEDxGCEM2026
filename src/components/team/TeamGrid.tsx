@@ -8,14 +8,14 @@ import { ArrowRight } from 'lucide-react';
 import { getTeamTheme, teamThemes, TeamGroup } from '@/lib/themes';
 
 export interface GridMember {
-  id: string;
+  id?: string;
   slug: string;
   name: string;
   role: string;
   team: string;
   oneLiner: string;
   photoUrl: string;
-  scanCount: number;
+  scanCount?: number;
 }
 
 const FALLBACK_PHOTO = '/members/placeholder.png';
@@ -71,13 +71,13 @@ export function TeamGrid({ members }: { members: GridMember[] }) {
         <AnimatePresence mode="popLayout">
           {filteredMembers.map((member, index) => {
             const theme = getTeamTheme(member.team);
-            const imageSrc = failedImages[member.id]
+            const imageSrc = failedImages[member.slug]
               ? FALLBACK_PHOTO
               : getValidPhotoUrl(member.photoUrl);
 
             return (
               <motion.div
-                key={member.id}
+                key={member.slug}
                 layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -108,7 +108,7 @@ export function TeamGrid({ members }: { members: GridMember[] }) {
                       src={imageSrc}
                       alt={member.name}
                       fill
-                      onError={() => setFailedImages((prev) => ({ ...prev, [member.id]: true }))}
+                      onError={() => setFailedImages((prev) => ({ ...prev, [member.slug]: true }))}
                       sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
                       className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
                     />
