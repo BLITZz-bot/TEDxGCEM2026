@@ -320,8 +320,8 @@ Add to `.env.local`:
 # ===================================================
 # DIRECT UPI PAYMENT CONFIGURATION
 # ===================================================
-NEXT_PUBLIC_UPI_ID="tedxgcem@okhdfcbank"
-NEXT_PUBLIC_UPI_NAME="TEDxGCEM 2026"
+NEXT_PUBLIC_UPI_ID="your_merchant_vpa@bank"
+NEXT_PUBLIC_UPI_NAME="Your Organization / Event Name"
 
 # ===================================================
 # CLOUDFLARE TURNSTILE (Supabase-Native Bot Protection)
@@ -339,8 +339,8 @@ SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 # ===================================================
 # RESEND EMAIL CONFIGURATION
 # ===================================================
-RESEND_API_KEY="your-resend-key"
-RESEND_FROME_MAIL="team@tedxgcem.in"
+RESEND_API_KEY="re_xxxxxxxxxxxxxxxxxxxx"
+RESEND_FROM_EMAIL="team@yourdomain.com"
 NEXT_PUBLIC_SITE_URL="https://tedxgcem.in"
 ```
 
