@@ -102,220 +102,408 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
       : "TEDX-PASS"
   );
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // ─────────────────────────────────────────────────────────────────────────
-  // PORTRAIT CANVAS PASS GENERATOR (1000 × 1600 ULTRA-HD LUXURY DELEGATE BADGE)
-  // Generates a pixel-perfect high-resolution replica of the on-screen pass.
-  // ─────────────────────────────────────────────────────────────────────────
+  const trackPassDownload = () => {
+    try {
+      fetch("/api/pass/track-download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passCode: ticketId }),
+      }).catch(() => {});
+    } catch {
+      // Non-blocking telemetry
+    }
+  };
+
   const handleDownloadImage = async () => {
     if (!registration) return;
     setIsDownloading(true);
 
+    const isGuest =
+      registration.pass_code?.startsWith("TEDX-GUEST-") ||
+      registration.tier_name === "Special Guest Pass" ||
+      registration.organization === "GCEM Special Guest";
+
     try {
-      const W = 1000;
-      const H = 1600;
-      const R = 70;
-
-      const canvas = document.createElement("canvas");
-      canvas.width = W;
-      canvas.height = H;
-      const ctx = canvas.getContext("2d")!;
-
-      const roundRectPath = (x: number, y: number, w: number, h: number, r: number) => {
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.arcTo(x + w, y, x + w, y + h, r);
-        ctx.arcTo(x + w, y + h, x, y + h, r);
-        ctx.arcTo(x, y + h, x, y, r);
-        ctx.arcTo(x, y, x + w, y, r);
-        ctx.closePath();
-      };
-
-      // 1. Clip outer rounded badge
-      ctx.save();
-      roundRectPath(0, 0, W, H, R);
-      ctx.clip();
-
-      // Deep Black Canvas Background
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(0, 0, W, H);
-
-      // 2. Top Red Header Banner
-      const headerH = 260;
-      ctx.fillStyle = "#EB0028";
-      ctx.fillRect(0, 0, W, headerH);
-
-      // Lanyard Notch (Capsule shape at top)
-      const slotW = 100;
-      const slotH = 34;
-      roundRectPath(W / 2 - slotW / 2, 38, slotW, slotH, 17);
-      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-      ctx.fill();
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Banner Logo: TEDxGCEM 2026
-      ctx.font = "italic 900 68px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-      ctx.fillStyle = "#FFFFFF";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(`TEDxGCEM ${eventYear}`, W / 2, 160);
-
-      // 3. Category Pill: OFFICIAL DELEGATE PASS or SPECIAL GUEST PASS
-      const isGuest =
-        registration.pass_code?.startsWith("TEDX-GUEST-") ||
-        registration.tier_name === "Special Guest Pass" ||
-        registration.organization === "GCEM Special Guest";
-      const pillLabel = isGuest ? "● SPECIAL GUEST PASS" : "● OFFICIAL DELEGATE PASS";
-
-      const pillW = isGuest ? 340 : 380;
-      const pillH = 50;
-      const pillY = 300;
-      roundRectPath(W / 2 - pillW / 2, pillY, pillW, pillH, 25);
-      ctx.fillStyle = "rgba(235, 0, 40, 0.12)";
-      ctx.fill();
-      ctx.strokeStyle = "#EB0028";
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      ctx.font = "bold 18px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
-      ctx.fillStyle = "#EB0028";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(pillLabel, W / 2, pillY + pillH / 2 + 1);
-
-      // 4. Attendee Details
-      ctx.font = "bold 17px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-      ctx.fillText("ATTENDEE NAME", W / 2, 415);
-
-      // Name (auto-scaling)
-      let nameFontSize = 64;
-      ctx.font = `900 ${nameFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-      ctx.fillStyle = "#FFFFFF";
-      const nameText = (registration.full_name || "DELEGATE").toUpperCase();
-      while (ctx.measureText(nameText).width > W - 140 && nameFontSize > 34) {
-        nameFontSize -= 4;
-        ctx.font = `900 ${nameFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-      }
-      ctx.fillText(nameText, W / 2, 485);
-
-      // Designation
-      if (registration.designation) {
-        ctx.font = "bold 22px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
-        ctx.fillStyle = "#EB0028";
-        ctx.fillText(registration.designation.toUpperCase(), W / 2, 545);
-      }
-
-      // 5. Institution Section
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(80, 590);
-      ctx.lineTo(W - 80, 590);
-      ctx.stroke();
-
-      ctx.font = "bold 17px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-      ctx.fillText("INSTITUTION", W / 2, 630);
-
-      let orgFontSize = 34;
-      ctx.font = `900 ${orgFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-      const orgText = (registration.organization || "GCEM").toUpperCase();
-      while (ctx.measureText(orgText).width > W - 160 && orgFontSize > 22) {
-        orgFontSize -= 2;
-        ctx.font = `900 ${orgFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-      }
-      ctx.fillText(orgText, W / 2, 680);
-
-      ctx.beginPath();
-      ctx.moveTo(80, 720);
-      ctx.lineTo(W - 80, 720);
-      ctx.stroke();
-
-      // 6. QR Code Container Box
-      const qrBoxSize = 380;
-      const qrBoxX = W / 2 - qrBoxSize / 2;
-      const qrBoxY = 760;
-
-      roundRectPath(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 32);
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fill();
-
-      // 7. Render QR and Finish
       const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.in";
       const verifyUrl = `${siteOrigin}/api/verify-pass?id=${encodeURIComponent(ticketId)}&email=${encodeURIComponent(registration.email)}`;
+      const qrCanvasEl = document.getElementById("pass-qr-canvas") as HTMLCanvasElement | null;
 
-      const finishCanvas = () => {
-        // Label under QR Code
-        ctx.font = "bold 18px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+      if (isGuest) {
+        // ───────────────────────────────────────────────────────────────────
+        // SPECIAL GUEST PASS (1000 × 1600 LUXURY VIP BADGE)
+        // ───────────────────────────────────────────────────────────────────
+        const W = 1000;
+        const H = 1600;
+        const R = 70;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext("2d")!;
+
+        const roundRectPath = (x: number, y: number, w: number, h: number, r: number) => {
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.arcTo(x + w, y, x + w, y + h, r);
+          ctx.arcTo(x + w, y + h, x, y + h, r);
+          ctx.arcTo(x, y + h, x, y, r);
+          ctx.arcTo(x, y, x + w, y, r);
+          ctx.closePath();
+        };
+
+        // Clip outer rounded badge
+        ctx.save();
+        roundRectPath(0, 0, W, H, R);
+        ctx.clip();
+
+        // Deep Black Canvas Background
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, W, H);
+
+        // Top Red Header Banner
+        const headerH = 260;
+        ctx.fillStyle = "#EB0028";
+        ctx.fillRect(0, 0, W, headerH);
+
+        // Lanyard Notch (Capsule shape at top)
+        const slotW = 100;
+        const slotH = 34;
+        roundRectPath(W / 2 - slotW / 2, 38, slotW, slotH, 17);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Banner Logo: TEDxGCEM 2026
+        ctx.font = "italic 900 68px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        ctx.fillStyle = "#FFFFFF";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText("EVENT DAY CHECK-IN SCAN QR", W / 2, qrBoxY + qrBoxSize + 45);
+        ctx.fillText(`TEDxGCEM ${eventYear}`, W / 2, 160);
 
-        // Dashed Divider Line
-        ctx.setLineDash([12, 8]);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+        // Category Pill: SPECIAL GUEST PASS
+        const pillW = 340;
+        const pillH = 50;
+        const pillY = 300;
+        roundRectPath(W / 2 - pillW / 2, pillY, pillW, pillH, 25);
+        ctx.fillStyle = "rgba(235, 0, 40, 0.12)";
+        ctx.fill();
+        ctx.strokeStyle = "#EB0028";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.font = "bold 18px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+        ctx.fillStyle = "#EB0028";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("● SPECIAL GUEST PASS", W / 2, pillY + pillH / 2 + 1);
+
+        // Attendee Name
+        ctx.font = "bold 17px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.fillText("ATTENDEE NAME", W / 2, 415);
+
+        let nameFontSize = 64;
+        ctx.font = `900 ${nameFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+        ctx.fillStyle = "#FFFFFF";
+        const nameText = (registration.full_name || "SPECIAL GUEST").toUpperCase();
+        while (ctx.measureText(nameText).width > W - 140 && nameFontSize > 34) {
+          nameFontSize -= 4;
+          ctx.font = `900 ${nameFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+        }
+        ctx.fillText(nameText, W / 2, 485);
+
+        // Designation
+        ctx.font = "bold 22px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+        ctx.fillStyle = "#EB0028";
+        ctx.fillText("SPECIAL GUEST", W / 2, 545);
+
+        // Institution Section
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.moveTo(80, 1260);
-        ctx.lineTo(W - 80, 1260);
+        ctx.moveTo(80, 590);
+        ctx.lineTo(W - 80, 590);
+        ctx.stroke();
+
+        ctx.font = "bold 17px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.fillText("INSTITUTION", W / 2, 630);
+
+        ctx.font = "900 34px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+        ctx.fillText("GCEM SPECIAL GUEST", W / 2, 680);
+
+        ctx.beginPath();
+        ctx.moveTo(80, 720);
+        ctx.lineTo(W - 80, 720);
+        ctx.stroke();
+
+        // QR Code Box
+        const qrBoxSize = 380;
+        const qrBoxX = W / 2 - qrBoxSize / 2;
+        const qrBoxY = 760;
+
+        roundRectPath(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 32);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fill();
+
+        const finishGuestCanvas = () => {
+          ctx.font = "bold 18px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+          ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("EVENT DAY CHECK-IN SCAN QR", W / 2, qrBoxY + qrBoxSize + 45);
+
+          // Dashed Divider Line
+          ctx.setLineDash([12, 8]);
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(80, 1260);
+          ctx.lineTo(W - 80, 1260);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Pass ID text
+          ctx.font = "900 34px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+          ctx.fillStyle = "#EB0028";
+          ctx.fillText(ticketId, W / 2, 1330);
+
+          // Venue Subtitle
+          ctx.font = "bold 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+          ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+          ctx.fillText("VENUE: GCEM AUDITORIUM, BENGALURU", W / 2, 1380);
+
+          ctx.restore();
+
+          // Outer Crisp White Border
+          roundRectPath(3, 3, W - 6, H - 6, R);
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = 6;
+          ctx.stroke();
+
+          // Download
+          const link = document.createElement("a");
+          const safeName = (registration.full_name || "SpecialGuest").replace(/[^a-zA-Z0-9]/g, "_");
+          link.download = `TEDxGCEM_SpecialGuestPass_${safeName}.png`;
+          link.href = canvas.toDataURL("image/png", 1.0);
+          link.click();
+          trackPassDownload();
+          setIsDownloading(false);
+        };
+
+        const qrPadding = 30;
+        if (qrCanvasEl) {
+          ctx.drawImage(qrCanvasEl, qrBoxX + qrPadding, qrBoxY + qrPadding, qrBoxSize - qrPadding * 2, qrBoxSize - qrPadding * 2);
+          finishGuestCanvas();
+        } else {
+          const qrImg = new window.Image();
+          qrImg.crossOrigin = "anonymous";
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(verifyUrl)}&color=000000&bgcolor=ffffff`;
+          qrImg.onload = () => {
+            ctx.drawImage(qrImg, qrBoxX + qrPadding, qrBoxY + qrPadding, qrBoxSize - qrPadding * 2, qrBoxSize - qrPadding * 2);
+            finishGuestCanvas();
+          };
+          qrImg.onerror = () => {
+            ctx.font = "bold 16px monospace";
+            ctx.fillStyle = "#000000";
+            ctx.textAlign = "center";
+            ctx.fillText("QR SCAN CODE", W / 2, qrBoxY + qrBoxSize / 2);
+            finishGuestCanvas();
+          };
+        }
+      } else {
+        // ───────────────────────────────────────────────────────────────────
+        // REGISTERED DELEGATE PASS (ORIGINAL 800 × 1200 WITH BARCODE STRIP)
+        // ───────────────────────────────────────────────────────────────────
+        const W = 800;
+        const H = 1200;
+        const R = 36;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext("2d")!;
+
+        const roundRect = (x: number, y: number, w: number, h: number, r: number) => {
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.arcTo(x + w, y, x + w, y + h, r);
+          ctx.arcTo(x + w, y + h, x, y + h, r);
+          ctx.arcTo(x, y + h, x, y, r);
+          ctx.arcTo(x, y, x + w, y, r);
+          ctx.closePath();
+        };
+
+        // 1. Background
+        roundRect(0, 0, W, H, R);
+        ctx.fillStyle = "#09090b";
+        ctx.fill();
+
+        // 2. Outer White Border
+        roundRect(0, 0, W, H, R);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // 3. Top Red Accent Header Banner
+        roundRect(0, 0, W, 140, R);
+        ctx.fillStyle = "#EB0028";
+        ctx.fill();
+        ctx.fillRect(0, 70, W, 70);
+
+        // 4. Top Lanyard Slot Graphic (Mock Hole)
+        ctx.beginPath();
+        ctx.arc(W / 2, 35, 14, 0, Math.PI * 2);
+        ctx.fillStyle = "#09090b";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.4)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 5. Banner Text: TEDxGCEM 2026
+        ctx.font = "bold 44px Arial, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.fillText(`TEDxGCEM ${eventYear}`, W / 2, 105);
+
+        // 6. Subtitle below banner
+        ctx.font = "14px 'Courier New', monospace";
+        ctx.fillStyle = "rgba(255,255,255,0.45)";
+        ctx.fillText("x = independently organized TED event", W / 2, 175);
+
+        // 7. Category Pill: OFFICIAL DELEGATE PASS
+        ctx.fillStyle = "rgba(235, 0, 40, 0.15)";
+        roundRect(W / 2 - 130, 205, 260, 40, 20);
+        ctx.fill();
+        ctx.strokeStyle = "#EB0028";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.font = "bold 16px 'Courier New', monospace";
+        ctx.fillStyle = "#EB0028";
+        ctx.fillText("● OFFICIAL DELEGATE PASS", W / 2, 230);
+
+        // 8. ATTENDEE NAME
+        ctx.font = "13px 'Courier New', monospace";
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillText("ATTENDEE NAME", W / 2, 310);
+
+        ctx.font = "bold 56px Arial, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        let nameText = (registration.full_name || "DELEGATE").toUpperCase();
+        while (ctx.measureText(nameText).width > W - 100 && nameText.length > 0) {
+          nameText = nameText.slice(0, -1);
+        }
+        ctx.fillText(nameText, W / 2, 375);
+
+        // 9. Designation Role
+        if (registration.designation) {
+          ctx.font = "bold 20px 'Courier New', monospace";
+          ctx.fillStyle = "#EB0028";
+          ctx.fillText(registration.designation.toUpperCase(), W / 2, 420);
+        }
+
+        // 10. Institution / Organization
+        ctx.font = "13px 'Courier New', monospace";
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillText("INSTITUTION / ORGANIZATION", W / 2, 480);
+
+        ctx.font = "bold 26px Arial, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        let orgText = (registration.organization || "").toUpperCase();
+        while (ctx.measureText(orgText).width > W - 120 && orgText.length > 0) {
+          orgText = orgText.slice(0, -1);
+        }
+        ctx.fillText(orgText, W / 2, 520);
+
+        // 11. Divider Line
+        ctx.setLineDash([10, 6]);
+        ctx.strokeStyle = "rgba(255,255,255,0.2)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(60, 565);
+        ctx.lineTo(W - 60, 565);
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Pass ID text (Bright Red)
-        ctx.font = "900 34px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
-        ctx.fillStyle = "#EB0028";
-        ctx.fillText(ticketId, W / 2, 1330);
+        // 12. QR Code Container Box
+        const qrBoxSize = 250;
+        const qrBoxX = W / 2 - qrBoxSize / 2;
+        const qrBoxY = 600;
 
-        // Venue Subtitle
-        ctx.font = "bold 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
-        ctx.fillText("VENUE: GCEM AUDITORIUM, BENGALURU", W / 2, 1380);
+        ctx.fillStyle = "#ffffff";
+        roundRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 20);
+        ctx.fill();
 
-        // Restore clipping mask
-        ctx.restore();
-
-        // 8. Outer Crisp White Border
-        roundRectPath(3, 3, W - 6, H - 6, R);
-        ctx.strokeStyle = "#FFFFFF";
-        ctx.lineWidth = 6;
-        ctx.stroke();
-
-        // Download High-Res PNG Image
-        const link = document.createElement("a");
-        const safeName = (registration?.full_name || "Delegate").replace(/[^a-zA-Z0-9]/g, "_");
-        link.download = `TEDxGCEM_Pass_${safeName}.png`;
-        link.href = canvas.toDataURL("image/png", 1.0);
-        link.click();
-        setIsDownloading(false);
-      };
-
-      const qrPadding = 30;
-      const qrCanvasEl = document.getElementById("pass-qr-canvas") as HTMLCanvasElement | null;
-      if (qrCanvasEl) {
-        // Draw instantly from local client-side QR canvas (0 network requests, 0 origin transfer)
-        ctx.drawImage(qrCanvasEl, qrBoxX + qrPadding, qrBoxY + qrPadding, qrBoxSize - qrPadding * 2, qrBoxSize - qrPadding * 2);
-        finishCanvas();
-      } else {
-        // Non-blocking fallback
-        const qrImg = new window.Image();
-        qrImg.crossOrigin = "anonymous";
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(verifyUrl)}&color=000000&bgcolor=ffffff`;
-        qrImg.onload = () => {
-          ctx.drawImage(qrImg, qrBoxX + qrPadding, qrBoxY + qrPadding, qrBoxSize - qrPadding * 2, qrBoxSize - qrPadding * 2);
-          finishCanvas();
-        };
-        qrImg.onerror = () => {
-          ctx.font = "bold 16px monospace";
-          ctx.fillStyle = "#000000";
+        const finishDelegateCanvas = () => {
+          // Label under QR Code
+          ctx.font = "bold 13px 'Courier New', monospace";
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
           ctx.textAlign = "center";
-          ctx.fillText("QR SCAN CODE", W / 2, qrBoxY + qrBoxSize / 2);
-          finishCanvas();
+          ctx.fillText("EVENT DAY CHECK-IN SCAN QR", W / 2, qrBoxY + qrBoxSize + 30);
+
+          // 13. Barcode Strip
+          const bcY = 910;
+          const bcH = 100;
+          const barWidths = [3, 1, 2, 1, 4, 1, 2, 3, 1, 2, 1, 4, 2, 1, 3, 1, 2, 4, 1, 2, 3, 1, 1, 2, 4, 3, 1, 2, 1, 3, 1, 4, 2, 1, 2];
+          let totalW = 0;
+          barWidths.forEach((w) => (totalW += w * 5));
+          let bx = W / 2 - totalW / 2;
+
+          barWidths.forEach((w, i) => {
+            if (i % 2 === 0) {
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(bx, bcY, w * 5, bcH);
+            }
+            bx += w * 5;
+          });
+
+          // 14. Pass ID text
+          ctx.font = "bold 20px 'Courier New', monospace";
+          ctx.fillStyle = "#EB0028";
+          ctx.fillText(ticketId, W / 2, bcY + bcH + 35);
+
+          // 15. Bottom Footer Bar
+          ctx.fillStyle = "rgba(255,255,255,0.05)";
+          ctx.fillRect(0, H - 75, W, 75);
+
+          ctx.font = "14px 'Courier New', monospace";
+          ctx.fillStyle = "rgba(255,255,255,0.4)";
+          ctx.fillText("VENUE: GCEM AUDITORIUM, BENGALURU", W / 2, H - 32);
+
+          // 16. Download PNG Image
+          const link = document.createElement("a");
+          const safeName = (registration?.full_name || "Delegate").replace(/[^a-zA-Z0-9]/g, "_");
+          link.download = `TEDxGCEM_Pass_${safeName}.png`;
+          link.href = canvas.toDataURL("image/png", 1.0);
+          link.click();
+          trackPassDownload();
+          setIsDownloading(false);
         };
+
+        const qrPadding = 15;
+        if (qrCanvasEl) {
+          ctx.drawImage(qrCanvasEl, qrBoxX + qrPadding, qrBoxY + qrPadding, qrBoxSize - qrPadding * 2, qrBoxSize - qrPadding * 2);
+          finishDelegateCanvas();
+        } else {
+          const qrImg = new window.Image();
+          qrImg.crossOrigin = "anonymous";
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(verifyUrl)}&color=000000&bgcolor=ffffff`;
+          qrImg.onload = () => {
+            ctx.drawImage(qrImg, qrBoxX + qrPadding, qrBoxY + qrPadding, qrBoxSize - qrPadding * 2, qrBoxSize - qrPadding * 2);
+            finishDelegateCanvas();
+          };
+          qrImg.onerror = () => {
+            ctx.font = "12px monospace";
+            ctx.fillStyle = "#000000";
+            ctx.textAlign = "center";
+            ctx.fillText("QR SCAN CODE", W / 2, qrBoxY + 130);
+            finishDelegateCanvas();
+          };
+        }
       }
     } catch (err) {
       console.error("Failed to generate pass image:", err);
@@ -440,6 +628,13 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
                       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none justify-start sm:justify-center">
                         {registrations.map((pass, idx) => {
                           const isSelected = selectedIndex === idx;
+                          const isPassGuest =
+                            pass.pass_code?.startsWith("TEDX-GUEST-") ||
+                            pass.tier_name === "Special Guest Pass" ||
+                            pass.organization === "GCEM Special Guest";
+
+                          const firstName = (pass.full_name || "Delegate").trim().split(" ")[0];
+
                           return (
                             <button
                               key={pass.id}
@@ -451,7 +646,11 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
                                   : "bg-white/5 hover:bg-white/10 text-white/60 border border-white/10"
                               }`}
                             >
-                              <span>🎟️ {pass.full_name} (Pass #{idx + 1})</span>
+                              <span>
+                                {isPassGuest
+                                  ? `★ VIP Guest: ${firstName}`
+                                  : `🎟️ Pass #${idx + 1}: ${firstName}`}
+                              </span>
                             </button>
                           );
                         })}

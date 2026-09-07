@@ -2500,11 +2500,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       )}
 
       {/* Bento Grid Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div
           onClick={() => setActiveSubTab("approvals")}
           className={`border p-6 rounded-2xl cursor-pointer transition-all ${
-            pendingApprovals.length > 0
+            activeSubTab === "approvals"
+              ? "bg-amber-500/10 border-amber-500/60 shadow-[0_0_20px_rgba(245,158,11,0.2)]"
+              : pendingApprovals.length > 0
               ? "bg-amber-500/10 border-amber-500/40 hover:border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
               : "bg-ted-dark-gray/30 border-white/5 hover:border-white/10"
           }`}
@@ -2526,7 +2528,11 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         </div>
         <div
           onClick={() => setActiveSubTab("registrations")}
-          className="bg-ted-dark-gray/30 border border-white/5 hover:border-white/10 p-6 rounded-2xl cursor-pointer transition-all"
+          className={`border p-6 rounded-2xl cursor-pointer transition-all ${
+            activeSubTab === "registrations"
+              ? "bg-emerald-500/10 border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.15)]"
+              : "bg-ted-dark-gray/30 border-white/5 hover:border-white/10"
+          }`}
         >
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold block">
@@ -2539,8 +2545,30 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           </div>
         </div>
         <div
+          onClick={() => setActiveSubTab("special_guests")}
+          className={`border p-6 rounded-2xl cursor-pointer transition-all ${
+            activeSubTab === "special_guests"
+              ? "bg-ted-red/10 border-ted-red shadow-[0_0_20px_rgba(235,0,40,0.15)]"
+              : "bg-ted-dark-gray/30 border-white/5 hover:border-ted-red/40 hover:bg-white/[0.02]"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-mono tracking-widest text-ted-red uppercase font-bold block">
+              ★ Special Guest Passes
+            </span>
+          </div>
+          <span className="text-3xl font-black text-white">{complimentaryPasses.length}</span>
+          <div className="text-[10px] text-white/40 font-mono mt-1">
+            {complimentaryPasses.length} issued VIP {complimentaryPasses.length === 1 ? "invitee" : "invitees"}
+          </div>
+        </div>
+        <div
           onClick={() => setActiveSubTab("messages")}
-          className="bg-ted-dark-gray/30 border border-white/5 hover:border-white/10 p-6 rounded-2xl cursor-pointer transition-all"
+          className={`border p-6 rounded-2xl cursor-pointer transition-all ${
+            activeSubTab === "messages"
+              ? "bg-white/10 border-white/40 shadow-[0_0_20px_rgba(255,255,255,0.08)]"
+              : "bg-ted-dark-gray/30 border-white/5 hover:border-white/10"
+          }`}
         >
           <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">
             Total Inbox Messages
@@ -3517,16 +3545,33 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                             )}
                           </td>
                           <td className="py-4 px-4">
-                            {pass.email_status === "sent" ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] uppercase font-bold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                ✓ Sent
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] uppercase font-bold">
-                                ⚠️ Failed
-                              </span>
-                            )}
+                            <div className="flex flex-col gap-1.5 items-start">
+                              {/* Email Delivery */}
+                              {pass.email_status === "sent" ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] uppercase font-bold">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  ✓ Sent
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] uppercase font-bold">
+                                  ⚠️ Failed
+                                </span>
+                              )}
+
+                              {/* Pass Download Status */}
+                              {pass.download_count && pass.download_count > 0 ? (
+                                <span
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[9px] font-mono font-bold"
+                                  title={pass.downloaded_at ? `Downloaded: ${new Date(pass.downloaded_at).toLocaleString("en-IN")}` : "Pass Downloaded"}
+                                >
+                                  <span>📥</span> Downloaded ({pass.download_count}x)
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/40 text-[9px] font-mono">
+                                  <span>○</span> Not Downloaded
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-4 pl-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">

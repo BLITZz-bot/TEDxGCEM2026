@@ -837,7 +837,7 @@ function generateSpecialGuestEmailHtml(params: {
                     Click the <strong>&ldquo;Download Official Pass&rdquo;</strong> button to save your high-resolution digital pass badge to your phone or computer.
                   </li>
                   <li>
-                    <strong>At the Event:</strong> Simply present the downloaded pass (on your phone or printed) at the GCEM VIP registration desk for priority check-in.
+                    <strong>At the Event:</strong> Simply present the downloaded pass on the event day for seamless entry.
                   </li>
                 </ol>
               </div>

@@ -219,9 +219,9 @@ export async function GET() {
 
     // Check complimentary passes for the current user
     try {
-      const { findComplimentaryPassByEmail } = await import("@/lib/complimentary-service");
-      const compPass = await findComplimentaryPassByEmail(userEmail);
-      if (compPass) {
+      const { findComplimentaryPassesByEmail } = await import("@/lib/complimentary-service");
+      const compPasses = await findComplimentaryPassesByEmail(userEmail);
+      for (const compPass of compPasses) {
         virtualPasses.push({
           id: compPass.id,
           pass_code: compPass.pass_code,
