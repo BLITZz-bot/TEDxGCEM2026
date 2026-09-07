@@ -331,8 +331,14 @@ CREATE TABLE IF NOT EXISTS public.complimentary_passes (
     email TEXT NOT NULL,
     phone TEXT NOT NULL,
     note TEXT DEFAULT '',
-    email_status TEXT DEFAULT 'sent' NOT NULL
+    email_status TEXT DEFAULT 'sent' NOT NULL,
+    download_count INTEGER DEFAULT 0,
+    downloaded_at TIMESTAMPTZ
 );
+
+ALTER TABLE public.complimentary_passes 
+ADD COLUMN IF NOT EXISTS download_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS downloaded_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS idx_complimentary_passes_email ON public.complimentary_passes(email);
 CREATE INDEX IF NOT EXISTS idx_complimentary_passes_pass_code ON public.complimentary_passes(pass_code);
@@ -343,4 +349,21 @@ DROP POLICY IF EXISTS "Allow admin to manage complimentary passes" ON public.com
 CREATE POLICY "Allow admin to manage complimentary passes"
 ON public.complimentary_passes FOR ALL TO authenticated
 USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+
+DROP POLICY IF EXISTS "Allow users to view own complimentary pass" ON public.complimentary_passes;
+CREATE POLICY "Allow users to view own complimentary pass"
+ON public.complimentary_passes FOR SELECT TO authenticated
+USING (email ILIKE (auth.jwt() ->> 'email'));
+
+DROP POLICY IF EXISTS "Allow users to update own download status" ON public.complimentary_passes;
+CREATE POLICY "Allow users to update own download status"
+ON public.complimentary_passes FOR UPDATE TO authenticated
+USING (email ILIKE (auth.jwt() ->> 'email'))
+WITH CHECK (email ILIKE (auth.jwt() ->> 'email'));
+
+DROP POLICY IF EXISTS "Allow public verification of complimentary passes" ON public.complimentary_passes;
+CREATE POLICY "Allow public verification of complimentary passes"
+ON public.complimentary_passes FOR SELECT TO public
+USING (true);
+
 

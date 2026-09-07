@@ -15,6 +15,8 @@ export interface ComplimentaryPass {
   phone: string;
   note: string;
   email_status: "sent" | "failed" | "pending";
+  download_count?: number;
+  downloaded_at?: string | null;
   created_at: string;
   updated_at?: string;
 }
@@ -170,7 +172,7 @@ export async function deleteComplimentaryPass(id: string): Promise<boolean> {
   return true;
 }
 
-export async function findComplimentaryPassByEmail(email: string): Promise<ComplimentaryPass | null> {
+export async function findComplimentaryPassesByEmail(email: string): Promise<ComplimentaryPass[]> {
   const normEmail = email.trim().toLowerCase();
   try {
     const supabase = await createClient();
@@ -178,16 +180,89 @@ export async function findComplimentaryPassByEmail(email: string): Promise<Compl
       .from("complimentary_passes")
       .select("*")
       .ilike("email", normEmail)
-      .order("created_at", { ascending: false })
-      .limit(1);
+      .order("created_at", { ascending: false });
 
     if (!error && Array.isArray(data) && data.length > 0) {
-      return data[0];
+      return data;
     }
   } catch (err) {
     console.warn("[complimentary-service] Supabase lookup error:", err);
   }
 
   const local = readLocal();
-  return local.find((p) => p.email.toLowerCase() === normEmail) || null;
+  return local.filter((p) => p.email.toLowerCase() === normEmail);
 }
+
+export async function findComplimentaryPassByEmail(email: string): Promise<ComplimentaryPass | null> {
+  const passes = await findComplimentaryPassesByEmail(email);
+  return passes[0] || null;
+}
+
+export async function recordComplimentaryPassDownload(
+  identifier: string,
+  userEmail?: string
+): Promise<{ success: boolean; count: number }> {
+  const now = new Date().toISOString();
+  const trimmedId = identifier.trim();
+  const normEmail = (userEmail || "").trim().toLowerCase();
+
+  try {
+    const supabase = await createClient();
+
+    let query = supabase.from("complimentary_passes").select("id, pass_code, email, download_count");
+    if (trimmedId.startsWith("TEDX-GUEST-")) {
+      query = query.eq("pass_code", trimmedId);
+    } else if (normEmail) {
+      query = query.ilike("email", normEmail);
+    } else {
+      query = query.or(`pass_code.eq.${trimmedId},id.eq.${trimmedId}`);
+    }
+
+    const { data, error } = await query.limit(1);
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      const pass = data[0];
+      const newCount = (Number(pass.download_count) || 0) + 1;
+
+      const { error: updateError } = await supabase
+        .from("complimentary_passes")
+        .update({
+          download_count: newCount,
+          downloaded_at: now,
+          updated_at: now,
+        })
+        .eq("id", pass.id);
+
+      if (!updateError) {
+        const all = await getComplimentaryPasses();
+        await saveLocal(all);
+        return { success: true, count: newCount };
+      }
+    }
+  } catch (err) {
+    console.warn("[complimentary-service] Supabase download tracking error, updating local store:", err);
+  }
+
+  const local = readLocal();
+  const idx = local.findIndex(
+    (p) =>
+      p.pass_code === trimmedId ||
+      p.id === trimmedId ||
+      (normEmail && p.email.toLowerCase() === normEmail)
+  );
+
+  if (idx !== -1) {
+    const newCount = (local[idx].download_count || 0) + 1;
+    local[idx] = {
+      ...local[idx],
+      download_count: newCount,
+      downloaded_at: now,
+      updated_at: now,
+    };
+    await saveLocal(local);
+    return { success: true, count: newCount };
+  }
+
+  return { success: false, count: 0 };
+}
+
