@@ -150,7 +150,37 @@ export async function GET(request: Request) {
       }
     }
 
-    const isValid = matched && (matched.ticket_status === "confirmed" || matched.ticket_status === "approved" || matched.payment_id);
+    if (!matched) {
+      try {
+        const { getComplimentaryPasses } = await import("@/lib/complimentary-service");
+        const compPasses = await getComplimentaryPasses();
+        const found = compPasses.find((p) => {
+          if (id && p.pass_code.toLowerCase() === id.trim().toLowerCase()) return true;
+          if (cleanId && p.pass_code.toLowerCase().includes(cleanId)) return true;
+          if (cleanEmail && p.email.toLowerCase() === cleanEmail) return true;
+          return false;
+        });
+        if (found) {
+          matched = {
+            id: found.id,
+            full_name: found.full_name,
+            email: found.email,
+            organization: "GCEM Special Guest",
+            designation: "Special Guest",
+            ticket_status: "approved",
+            pass_code: found.pass_code,
+            tier_name: "Special Guest Pass",
+            amount_paid: 0,
+            created_at: found.created_at,
+          };
+        }
+      } catch {
+        // Non-blocking fallback
+      }
+    }
+
+    const isValid = matched && (matched.ticket_status === "confirmed" || matched.ticket_status === "approved" || matched.tier_name === "Special Guest Pass" || matched.payment_id);
+
 
     const htmlContent = `<!DOCTYPE html>
     <html lang="en">

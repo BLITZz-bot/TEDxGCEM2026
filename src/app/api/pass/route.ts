@@ -217,6 +217,31 @@ export async function GET() {
       }
     }
 
+    // Check complimentary passes for the current user
+    try {
+      const { findComplimentaryPassByEmail } = await import("@/lib/complimentary-service");
+      const compPass = await findComplimentaryPassByEmail(userEmail);
+      if (compPass) {
+        virtualPasses.push({
+          id: compPass.id,
+          pass_code: compPass.pass_code,
+          full_name: compPass.full_name,
+          email: compPass.email,
+          buyer_email: null,
+          phone: compPass.phone,
+          organization: "GCEM Special Guest",
+          designation: "Special Guest",
+          ticket_status: "approved",
+          tier_name: "Special Guest Pass",
+          amount_paid: 0,
+          unit_price: 0,
+          ticket_count: 1,
+        });
+      }
+    } catch {
+      // Non-blocking fallback
+    }
+
     return NextResponse.json({
       registration: virtualPasses[0] || null,
       registrations: virtualPasses,

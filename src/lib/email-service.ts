@@ -702,3 +702,251 @@ export async function sendRejectionEmail(params: RejectionEmailParams) {
   return { success: false, reason: "No email provider configured" };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SPECIAL GUEST PASS INVITATION EMAIL
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface SendSpecialGuestPassParams {
+  guestName: string;
+  guestEmail: string;
+  passCode: string;
+  eventDate?: string;
+  eventVenue?: string;
+}
+
+function generateSpecialGuestEmailHtml(params: {
+  guestName: string;
+  guestEmail: string;
+  passCode: string;
+  eventDate: string;
+  eventVenue: string;
+}): string {
+  const { guestName, guestEmail, passCode, eventDate, eventVenue } = params;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tedxgcem.in";
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Special Guest Pass for TEDxGCEM!</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #09090b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ffffff;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #09090b; padding: 30px 10px;">
+    <tr>
+      <td align="center">
+        <!-- Main Card Container -->
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #121215; border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+          
+          <!-- Top Red Header Bar -->
+          <tr>
+            <td style="background-color: #EB0028; padding: 28px 24px; text-align: center;">
+              <h1 style="margin: 0; font-size: 32px; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; color: #ffffff;">
+                TED<span style="font-size: 24px; text-transform: lowercase;">x</span>GCEM <span style="color: #000000; font-family: monospace; font-size: 24px;">2026</span>
+              </h1>
+              <p style="margin: 4px 0 0 0; font-size: 11px; font-family: monospace; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.85);">
+                x = independently organized TED event
+              </p>
+            </td>
+          </tr>
+
+          <!-- Main Email Content -->
+          <tr>
+            <td style="padding: 32px 28px;">
+              <!-- Greeting & Verification Pill -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td align="center">
+                    <span style="display: inline-block; padding: 6px 18px; border-radius: 50px; background-color: rgba(235,0,40,0.15); border: 1px solid #EB0028; color: #EB0028; font-size: 11px; font-family: monospace; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px;">
+                      ★ EXCLUSIVE INVITATION CONFIRMED
+                    </span>
+                  </td>
+                </tr>
+              </table>
+
+              <h2 style="margin: 0 0 12px 0; font-size: 22px; font-weight: 800; text-transform: uppercase; color: #ffffff; text-align: center;">
+                Dear ${guestName},
+              </h2>
+              <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.6; color: rgba(255,255,255,0.85); text-align: center;">
+                We are delighted to extend a special invitation to you for <strong>TEDxGCEM 2026</strong>. Your <strong>Special Guest Pass</strong> has been officially reserved and confirmed.
+              </p>
+              <p style="margin: 0 0 28px 0; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.65); text-align: center;">
+                We look forward to welcoming you to an inspiring day filled with groundbreaking ideas and meaningful conversations.
+              </p>
+
+              <!-- Pass Highlight Box -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #000000; border: 2px dashed #EB0028; border-radius: 18px; margin-bottom: 28px;">
+                <tr>
+                  <td style="padding: 22px; text-align: center;">
+                    <div style="font-size: 10px; font-family: monospace; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 4px;">
+                      PASS ID
+                    </div>
+                    <div style="font-size: 24px; font-family: monospace; font-weight: 900; letter-spacing: 2px; color: #EB0028; text-transform: uppercase;">
+                      ${passCode}
+                    </div>
+                    <div style="font-size: 11px; font-family: monospace; color: #4ade80; margin-top: 6px; font-weight: bold; text-transform: uppercase;">
+                      ● PASS TYPE: SPECIAL GUEST PASS
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Event Details Table -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; margin-bottom: 28px;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="padding: 6px 0; font-size: 12px; font-family: monospace; color: rgba(255,255,255,0.4); text-transform: uppercase;">Event Date:</td>
+                        <td style="padding: 6px 0; font-size: 13px; font-weight: bold; color: #ffffff; text-align: right;">${eventDate} | 09:00 AM</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; font-size: 12px; font-family: monospace; color: rgba(255,255,255,0.4); text-transform: uppercase;">Venue:</td>
+                        <td style="padding: 6px 0; font-size: 13px; font-weight: bold; color: #ffffff; text-align: right;">${eventVenue}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Direct Pass Action Button -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td align="center">
+                    <a href="${baseUrl}" target="_blank" style="display: inline-block; background-color: #EB0028; color: #ffffff; text-decoration: none; padding: 16px 36px; border-radius: 14px; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 25px rgba(235,0,40,0.45);">
+                      VIEW &amp; DOWNLOAD YOUR GUEST PASS →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Step-by-Step Download Instructions -->
+              <div style="padding: 20px; background-color: rgba(235,0,40,0.06); border: 1px solid rgba(235,0,40,0.25); border-radius: 16px; margin-bottom: 24px;">
+                <h4 style="margin: 0 0 12px 0; font-size: 13px; font-family: monospace; text-transform: uppercase; color: #EB0028; letter-spacing: 1px;">
+                  📌 How to Download &amp; Access Your Pass:
+                </h4>
+                <ol style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.8);">
+                  <li style="margin-bottom: 8px;">
+                    <strong>Click the button above</strong> (or visit the website at <a href="${baseUrl}" style="color: #EB0028; text-decoration: none;">tedxgcem.in</a>).
+                  </li>
+                  <li style="margin-bottom: 8px;">
+                    Go to the <strong>&ldquo;Get My Pass&rdquo;</strong> section and sign in using this email address (<strong style="color: #ffffff;">${guestEmail}</strong>).
+                  </li>
+                  <li style="margin-bottom: 8px;">
+                    Click the <strong>&ldquo;Download Official Pass&rdquo;</strong> button to save your high-resolution digital pass badge to your phone or computer.
+                  </li>
+                  <li>
+                    <strong>At the Event:</strong> Simply present the downloaded pass (on your phone or printed) at the GCEM VIP registration desk for priority check-in.
+                  </li>
+                </ol>
+              </div>
+
+              <!-- Support Note / Footer -->
+              <p style="margin: 0; font-size: 12px; text-align: center; color: rgba(255,255,255,0.45); line-height: 1.6;">
+                For any assistance or questions, please contact the organizing team at <a href="mailto:tedxgcem@gmail.com" style="color: #EB0028; text-decoration: none;">tedxgcem@gmail.com</a>.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px; background-color: #000000; text-align: center; border-top: 1px solid rgba(255,255,255,0.08);">
+              <p style="margin: 0; font-size: 10px; font-family: monospace; color: rgba(255,255,255,0.3); text-transform: uppercase;">
+                © 2026 TEDxGCEM. This independent TEDx event is operated under license from TED.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+export async function sendSpecialGuestPassEmail(params: SendSpecialGuestPassParams) {
+  const settings = await getSettings().catch(() => null);
+
+  const {
+    guestName,
+    guestEmail,
+    passCode,
+    eventDate = "September 26, 2026",
+    eventVenue = "GCEM Auditorium, Bengaluru",
+  } = params;
+
+  if (!guestEmail || !guestName) {
+    console.warn("[Email Service] Missing guestEmail or guestName. Skipping special guest pass email.");
+    return { success: false, reason: "Missing recipient details" };
+  }
+
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "team@tedxgcem.in";
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+
+  const emailSubject = "Special Guest Pass for TEDxGCEM!";
+  const html = generateSpecialGuestEmailHtml({
+    guestName,
+    guestEmail,
+    passCode,
+    eventDate: settings?.event_date || eventDate,
+    eventVenue,
+  });
+
+  // A. ATTEMPT TRANSMISSION VIA RESEND
+  if (resendApiKey) {
+    try {
+      const resend = new Resend(resendApiKey);
+      const sendResult = await resend.emails.send({
+        from: `TEDxGCEM <${fromEmail}>`,
+        to: guestEmail,
+        replyTo: "tedxgcem@gmail.com",
+        subject: emailSubject,
+        html,
+      });
+
+      if (sendResult.error) {
+        console.error(`[Email Service] Resend error sending special guest pass to ${guestEmail}:`, sendResult.error);
+      } else {
+        console.log(`[Email Service] Special guest pass sent via Resend to: ${guestEmail}, ID:`, sendResult.data?.id);
+        return { success: true, provider: "resend" };
+      }
+    } catch (resendError) {
+      console.error("[Email Service] Resend dispatch failed for special guest pass:", resendError);
+    }
+  }
+
+  // B. ATTEMPT TRANSMISSION VIA SMTP (Fallback)
+  if (smtpUser && smtpPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || "smtp.gmail.com",
+        port: parseInt(process.env.SMTP_PORT || "465"),
+        secure: true,
+        auth: { user: smtpUser, pass: smtpPass },
+        connectionTimeout: 5000,
+      });
+
+      await transporter.sendMail({
+        from: `"TEDxGCEM" <${smtpUser}>`,
+        to: guestEmail,
+        replyTo: "tedxgcem@gmail.com",
+        subject: emailSubject,
+        html,
+      });
+
+      console.log(`[Email Service] Special guest pass sent via SMTP to: ${guestEmail}`);
+      return { success: true, provider: "smtp" };
+    } catch (smtpError) {
+      console.error("[Email Service] SMTP dispatch failed for special guest pass:", smtpError);
+    }
+  }
+
+  return { success: false, reason: "No email provider configured" };
+}
+
+

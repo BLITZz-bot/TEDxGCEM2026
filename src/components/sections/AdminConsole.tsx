@@ -8,6 +8,7 @@ import { Partner } from "@/lib/partners-service";
 import { EventSettings } from "@/lib/settings-service";
 import { TicketTier } from "@/lib/ticket-service";
 import { PromoCoupon } from "@/lib/coupon-service";
+import { ComplimentaryPass } from "@/lib/complimentary-service";
 
 interface AdminRegistration {
   id: string;
@@ -100,6 +101,7 @@ interface AdminDataCache {
   partnersList: Partner[];
   ticketTiers: TicketTier[];
   couponsList: PromoCoupon[];
+  complimentaryPasses: ComplimentaryPass[];
   lastFetchedAt: number;
 }
 
@@ -121,9 +123,28 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [partnersList, setPartnersList] = useState<Partner[]>(() => globalAdminCache?.partnersList || []);
   const [ticketTiers, setTicketTiers] = useState<TicketTier[]>(() => globalAdminCache?.ticketTiers || []);
   const [couponsList, setCouponsList] = useState<PromoCoupon[]>(() => globalAdminCache?.couponsList || []);
+  const [complimentaryPasses, setComplimentaryPasses] = useState<ComplimentaryPass[]>(() => globalAdminCache?.complimentaryPasses || []);
   const [loading, setLoading] = useState(() => !globalAdminCache);
-  const [activeSubTab, setActiveSubTab] = useState<"approvals" | "registrations" | "rejected" | "tickets" | "coupons" | "messages" | "settings" | "team" | "speakers" | "partners" | "scanner">("approvals");
+  const [activeSubTab, setActiveSubTab] = useState<"approvals" | "registrations" | "rejected" | "special_guests" | "tickets" | "coupons" | "messages" | "settings" | "team" | "speakers" | "partners" | "scanner">("approvals");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Special Guest Pass management states
+  const [isIssueFormOpen, setIsIssueFormOpen] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+  const [guestNote, setGuestNote] = useState("");
+  const [isIssuingPass, setIsIssuingPass] = useState(false);
+  const [guestSearchQuery, setGuestSearchQuery] = useState("");
+  const [editingGuestPass, setEditingGuestPass] = useState<ComplimentaryPass | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editGuestName, setEditGuestName] = useState("");
+  const [editGuestEmail, setEditGuestEmail] = useState("");
+  const [editGuestPhone, setEditGuestPhone] = useState("");
+  const [editGuestNote, setEditGuestNote] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [resendingGuestId, setResendingGuestId] = useState<string | null>(null);
+  const [downloadingBadgeId, setDownloadingBadgeId] = useState<string | null>(null);
 
   // Expandable Co-Participants viewer state in registrations table
   const [expandedCoParticipantsId, setExpandedCoParticipantsId] = useState<string | null>(null);
@@ -508,7 +529,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     }
     setErrorMsg("");
     try {
-      const [regRes, msgRes, teamRes, speakersRes, partnersRes, tiersRes, couponsRes] = await Promise.allSettled([
+      const [regRes, msgRes, teamRes, speakersRes, partnersRes, tiersRes, couponsRes, compRes] = await Promise.allSettled([
         fetch("/api/admin/registrations"),
         fetch("/api/admin/messages"),
         fetch("/api/team"),
@@ -516,6 +537,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         fetch("/api/partners"),
         fetch("/api/admin/tickets"),
         fetch("/api/admin/coupons"),
+        fetch("/api/admin/complimentary-passes"),
       ]);
 
       let newRegs = globalAdminCache?.registrations || [];
@@ -525,6 +547,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       let newPartners = globalAdminCache?.partnersList || [];
       let newTiers = globalAdminCache?.ticketTiers || [];
       let newCoupons = globalAdminCache?.couponsList || [];
+      let newComp = globalAdminCache?.complimentaryPasses || [];
 
       if (regRes.status === "fulfilled" && regRes.value.ok) {
         const d = await regRes.value.json();
@@ -582,6 +605,14 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         }
       }
 
+      if (compRes.status === "fulfilled" && compRes.value.ok) {
+        const d = await compRes.value.json();
+        if (d.passes) {
+          newComp = d.passes;
+          setComplimentaryPasses(d.passes);
+        }
+      }
+
       // Update in-memory cache for instant subsequent tab switches
       updateGlobalAdminCache({
         registrations: newRegs,
@@ -591,6 +622,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         partnersList: newPartners,
         ticketTiers: newTiers,
         couponsList: newCoupons,
+        complimentaryPasses: newComp,
       });
     } catch (err: unknown) {
       console.error("Error loading admin records:", err);
@@ -1910,6 +1942,512 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     URL.revokeObjectURL(url);
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // SPECIAL GUEST PASS (COMPLIMENTARY PASS) HANDLERS
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const handleIssueSpecialGuestPass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guestName.trim() || !guestEmail.trim() || !guestPhone.trim()) {
+      alert("Please provide the guest's name, email, and phone number.");
+      return;
+    }
+
+    setIsIssuingPass(true);
+    try {
+      const res = await fetch("/api/admin/complimentary-passes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: guestName.trim(),
+          email: guestEmail.trim(),
+          phone: guestPhone.trim(),
+          note: guestNote.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to issue pass.");
+
+      setComplimentaryPasses((prev) => [data.pass, ...prev]);
+      setGuestName("");
+      setGuestEmail("");
+      setGuestPhone("");
+      setGuestNote("");
+      setIsIssueFormOpen(false);
+
+      const msg = data.emailSent
+        ? `✅ Special Guest Pass successfully issued and email invitation sent to ${data.pass.email}!`
+        : `⚠️ Special Guest Pass created (${data.pass.pass_code}), but email delivery could not complete. You can use the Resend button.`;
+      alert(msg);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to issue pass.";
+      alert("Error: " + errorMessage);
+    } finally {
+      setIsIssuingPass(false);
+    }
+  };
+
+  const handleOpenEditGuestPass = (pass: ComplimentaryPass) => {
+    setEditingGuestPass(pass);
+    setEditGuestName(pass.full_name);
+    setEditGuestEmail(pass.email);
+    setEditGuestPhone(pass.phone);
+    setEditGuestNote(pass.note || "");
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEditGuestPass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGuestPass) return;
+    if (!editGuestName.trim() || !editGuestEmail.trim() || !editGuestPhone.trim()) {
+      alert("Name, email, and phone cannot be empty.");
+      return;
+    }
+
+    setIsSavingEdit(true);
+    try {
+      const res = await fetch("/api/admin/complimentary-passes", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingGuestPass.id,
+          fullName: editGuestName.trim(),
+          email: editGuestEmail.trim(),
+          phone: editGuestPhone.trim(),
+          note: editGuestNote.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update pass.");
+
+      setComplimentaryPasses((prev) =>
+        prev.map((p) => (p.id === editingGuestPass.id ? data.pass : p))
+      );
+      setIsEditModalOpen(false);
+      setEditingGuestPass(null);
+      alert("✅ Special Guest Pass updated successfully.");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update record.";
+      alert("Error: " + errorMessage);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleDeleteSpecialGuestPass = async (id: string, passCode: string) => {
+    const password = window.prompt(
+      `🔒 ADMIN SECURITY CHECK:\nEnter the Admin Deletion Password to permanently delete this Special Guest Pass (${passCode}):`
+    );
+    if (password === null) return;
+    if (!password.trim()) {
+      alert("Admin password is required to delete a pass record.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/complimentary-passes?id=${id}`, {
+        method: "DELETE",
+        headers: {
+          "x-admin-delete-password": password.trim(),
+        },
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete record.");
+
+      setComplimentaryPasses((prev) => prev.filter((p) => p.id !== id));
+      alert("✅ Special Guest Pass deleted successfully.");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      alert("⛔ Deletion Denied: " + errorMessage);
+    }
+  };
+
+  const handleResendSpecialGuestPass = async (pass: ComplimentaryPass) => {
+    if (!window.confirm(`Resend Special Guest Pass invitation email to ${pass.email}?`)) return;
+
+    setResendingGuestId(pass.id);
+    try {
+      const res = await fetch("/api/admin/complimentary-passes/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: pass.id }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to resend email.");
+
+      if (data.pass) {
+        setComplimentaryPasses((prev) =>
+          prev.map((p) => (p.id === pass.id ? data.pass : p))
+        );
+      }
+      alert(`✅ Invitation email successfully resent to ${pass.email}!`);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to resend email.";
+      alert("Error: " + errorMessage);
+    } finally {
+      setResendingGuestId(null);
+    }
+  };
+
+  const handleDownloadSpecialGuestBadge = async (pass: ComplimentaryPass) => {
+    setDownloadingBadgeId(pass.id);
+    try {
+      const W = 1000;
+      const H = 1600;
+      const R = 70;
+      const canvas = document.createElement("canvas");
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas context unavailable.");
+
+      const roundRectPath = (x: number, y: number, w: number, h: number, r: number) => {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      };
+
+      ctx.save();
+      roundRectPath(0, 0, W, H, R);
+      ctx.clip();
+
+      // Deep Black Canvas Background
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, W, H);
+
+      // Top Red Header Banner
+      const headerH = 260;
+      ctx.fillStyle = "#EB0028";
+      ctx.fillRect(0, 0, W, headerH);
+
+      // Lanyard Notch (Capsule shape at top)
+      const slotW = 100;
+      const slotH = 34;
+      roundRectPath(W / 2 - slotW / 2, 38, slotW, slotH, 17);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Banner Logo: TEDxGCEM 2026
+      ctx.font = "italic 900 68px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("TEDxGCEM 2026", W / 2, 160);
+
+      // Category Pill: SPECIAL GUEST PASS
+      const pillW = 340;
+      const pillH = 50;
+      const pillY = 300;
+      roundRectPath(W / 2 - pillW / 2, pillY, pillW, pillH, 25);
+      ctx.fillStyle = "rgba(235, 0, 40, 0.12)";
+      ctx.fill();
+      ctx.strokeStyle = "#EB0028";
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      ctx.font = "bold 18px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+      ctx.fillStyle = "#EB0028";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("● SPECIAL GUEST PASS", W / 2, pillY + pillH / 2 + 1);
+
+      // Attendee Details
+      ctx.font = "bold 17px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+      ctx.fillText("ATTENDEE NAME", W / 2, 415);
+
+      let nameFontSize = 64;
+      ctx.font = `900 ${nameFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+      ctx.fillStyle = "#FFFFFF";
+      const nameText = (pass.full_name || "SPECIAL GUEST").toUpperCase();
+      while (ctx.measureText(nameText).width > W - 140 && nameFontSize > 34) {
+        nameFontSize -= 4;
+        ctx.font = `900 ${nameFontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+      }
+      ctx.fillText(nameText, W / 2, 485);
+
+      // Designation
+      ctx.font = "bold 22px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+      ctx.fillStyle = "#EB0028";
+      ctx.fillText("SPECIAL GUEST", W / 2, 545);
+
+      // Institution Section
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(80, 590);
+      ctx.lineTo(W - 80, 590);
+      ctx.stroke();
+
+      ctx.font = "bold 17px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+      ctx.fillText("INSTITUTION", W / 2, 630);
+
+      ctx.font = "900 32px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.fillText("GCEM SPECIAL GUEST", W / 2, 680);
+
+      ctx.beginPath();
+      ctx.moveTo(80, 720);
+      ctx.lineTo(W - 80, 720);
+      ctx.stroke();
+
+      // QR Code Box
+      const qrBoxSize = 380;
+      const qrBoxX = W / 2 - qrBoxSize / 2;
+      const qrBoxY = 760;
+
+      roundRectPath(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 32);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fill();
+
+      const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.in";
+      const verifyUrl = `${siteOrigin}/api/verify-pass?id=${encodeURIComponent(pass.pass_code)}&email=${encodeURIComponent(pass.email)}`;
+
+      const finishCanvasAndDownload = () => {
+        ctx.font = "bold 18px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("EVENT DAY CHECK-IN SCAN QR", W / 2, qrBoxY + qrBoxSize + 45);
+
+        // Dashed Divider Line
+        ctx.setLineDash([12, 8]);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(80, 1260);
+        ctx.lineTo(W - 80, 1260);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Pass ID text
+        ctx.font = "900 34px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+        ctx.fillStyle = "#EB0028";
+        ctx.fillText(pass.pass_code, W / 2, 1330);
+
+        // Venue Subtitle
+        ctx.font = "bold 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+        ctx.fillText("VENUE: GCEM AUDITORIUM, BENGALURU", W / 2, 1380);
+
+        ctx.restore();
+
+        // Outer Crisp White Border
+        roundRectPath(3, 3, W - 6, H - 6, R);
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = 6;
+        ctx.stroke();
+
+        const link = document.createElement("a");
+        const safeName = pass.full_name.replace(/[^a-zA-Z0-9]/g, "_");
+        link.download = `TEDxGCEM_SpecialGuestPass_${safeName}.png`;
+        link.href = canvas.toDataURL("image/png", 1.0);
+        link.click();
+        setDownloadingBadgeId(null);
+      };
+
+      const qrImg = new window.Image();
+      qrImg.crossOrigin = "anonymous";
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(verifyUrl)}&color=000000&bgcolor=ffffff`;
+      qrImg.onload = () => {
+        const qrPad = 30;
+        ctx.drawImage(qrImg, qrBoxX + qrPad, qrBoxY + qrPad, qrBoxSize - qrPad * 2, qrBoxSize - qrPad * 2);
+        finishCanvasAndDownload();
+      };
+      qrImg.onerror = () => {
+        ctx.font = "bold 16px monospace";
+        ctx.fillStyle = "#000000";
+        ctx.textAlign = "center";
+        ctx.fillText("QR SCAN CODE", W / 2, qrBoxY + qrBoxSize / 2);
+        finishCanvasAndDownload();
+      };
+    } catch (err) {
+      console.error("Failed to generate special guest badge:", err);
+      alert("Failed to download badge image.");
+      setDownloadingBadgeId(null);
+    }
+  };
+
+  const exportComplimentaryPassesToExcel = (format: "excel" | "csv" = "excel") => {
+    if (complimentaryPasses.length === 0) {
+      alert("No special guest passes recorded to export.");
+      return;
+    }
+
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    const formattedExportDate = now.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+    const formattedExportTime = now.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+
+    const escapeCSV = (value: unknown): string => {
+      if (value === null || value === undefined) return '""';
+      const str = String(value).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    if (format === "csv") {
+      const headers = [
+        "Sl No",
+        "Pass Code",
+        "Date Issued",
+        "Time Issued",
+        "Full Name",
+        "Email Address",
+        "Phone Number",
+        "Admin Note / Reason",
+        "Email Delivery Status",
+        "Database ID",
+      ];
+
+      const rows = complimentaryPasses.map((pass, idx) => {
+        const dateObj = pass.created_at ? new Date(pass.created_at) : null;
+        const formattedDate = dateObj
+          ? dateObj.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })
+          : "N/A";
+        const formattedTime = dateObj
+          ? dateObj.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
+          : "N/A";
+
+        return [
+          escapeCSV(idx + 1),
+          escapeCSV(pass.pass_code),
+          escapeCSV(formattedDate),
+          escapeCSV(formattedTime),
+          escapeCSV(pass.full_name),
+          escapeCSV(pass.email),
+          escapeCSV(pass.phone),
+          escapeCSV(pass.note || "None"),
+          escapeCSV(pass.email_status || "sent"),
+          escapeCSV(pass.id),
+        ].join(",");
+      });
+
+      const csvContent = "\uFEFF" + [headers.map(escapeCSV).join(","), ...rows].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `TEDxGCEM_Special_Guest_Passes_${timestamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    const rowsHtml = complimentaryPasses
+      .map((pass, idx) => {
+        const dateObj = pass.created_at ? new Date(pass.created_at) : null;
+        const formattedDate = dateObj
+          ? dateObj.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })
+          : "N/A";
+        const formattedTime = dateObj
+          ? dateObj.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
+          : "N/A";
+        const rowBg = idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
+
+        return `
+        <tr style="background-color: ${rowBg}; font-family: 'Bookman Antiqua', serif; font-size: 9pt;">
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #64748B; font-weight: bold;">${idx + 1}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; font-weight: bold; color: #EB0028; mso-number-format: '\\@';">${pass.pass_code}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; color: #475569;">${formattedDate} ${formattedTime}</td>
+          <td style="border: 1px solid #E2E8F0; font-weight: bold; color: #0F172A; text-transform: uppercase;">${pass.full_name}</td>
+          <td style="border: 1px solid #E2E8F0; color: #2563EB;">${pass.email}</td>
+          <td style="border: 1px solid #E2E8F0; color: #0F172A; mso-number-format: '\\@'; font-weight: bold;">${pass.phone}</td>
+          <td style="border: 1px solid #E2E8F0; color: #475569; font-style: italic;">${pass.note || "—"}</td>
+          <td style="text-align: center; border: 1px solid #E2E8F0; font-weight: bold; color: ${pass.email_status === "failed" ? "#EF4444" : "#10B981"}; text-transform: uppercase;">${pass.email_status || "sent"}</td>
+          <td style="border: 1px solid #E2E8F0; color: #94A3B8; font-size: 8pt; mso-number-format: '\\@';">${pass.id}</td>
+        </tr>`;
+      })
+      .join("");
+
+    const excelHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Special Guest Passes</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <style>
+          * { font-family: 'Bookman Antiqua', serif !important; font-size: 9pt; }
+          body { font-family: 'Bookman Antiqua', serif; font-size: 9pt; margin: 0; padding: 20px; }
+          table { border-collapse: collapse; width: 100%; }
+          th, td { vertical-align: middle; padding: 6px 10px; }
+          .banner-title { font-size: 13pt; font-weight: 900; color: #FFFFFF; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr style="background-color: #000000; height: 45px;">
+            <td colspan="9" style="background-color: #000000; border-top: 4px solid #EB0028; padding: 12px 16px;">
+              <div class="banner-title"><span style="color: #EB0028;">TEDx</span>GCEM 2026 — SPECIAL GUEST PASSES DIRECTORY</div>
+              <div style="color: #94A3B8; font-size: 9pt; margin-top: 3px;">
+                Total Special Guests: <strong>${complimentaryPasses.length} Passes Issued</strong> &nbsp;|&nbsp; Exported on: <strong>${formattedExportDate} at ${formattedExportTime}</strong>
+              </div>
+            </td>
+          </tr>
+          <tr style="height: 10px;"><td colspan="9" style="border: none;"></td></tr>
+          <tr style="background-color: #EB0028; height: 34px; color: #FFFFFF; font-weight: bold; text-transform: uppercase; font-size: 9pt;">
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 45px;">#</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 150px;">Pass Code</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 160px;">Date & Time Issued</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 200px;">Guest Name</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 220px;">Email Address</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 140px;">Phone Number</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 250px;">Admin Note / Reason</th>
+            <th style="border: 1px solid #B91C1C; text-align: center; width: 110px;">Email Status</th>
+            <th style="border: 1px solid #B91C1C; text-align: left; width: 150px;">Database ID</th>
+          </tr>
+          ${rowsHtml}
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([excelHtml], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `TEDxGCEM_Special_Guest_Passes_${timestamp}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -2052,6 +2590,15 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
         </button>
         <button
           type="button"
+          onClick={() => setActiveSubTab("special_guests")}
+          className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-2 ${
+            activeSubTab === "special_guests" ? "bg-ted-red text-white shadow-lg shadow-ted-red/20 font-black" : "bg-white/5 text-white/50 hover:bg-white/10"
+          }`}
+        >
+          <span>★</span> Special Guests ({complimentaryPasses.length})
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveSubTab("tickets")}
           className={`px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
             activeSubTab === "tickets" ? "bg-ted-red text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
@@ -2132,6 +2679,31 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                 type="button"
                 onClick={() => exportRegistrationsToExcel("csv")}
                 disabled={consolidatedRegistrations.length === 0}
+                title="Download plain raw CSV (.csv)"
+                className="px-2.5 py-2 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all text-xs font-mono uppercase tracking-widest font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                CSV
+              </button>
+            </div>
+          )}
+          {activeSubTab === "special_guests" && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => exportComplimentaryPassesToExcel("excel")}
+                disabled={complimentaryPasses.length === 0}
+                title="Download formatted executive Excel spreadsheet (.xls) of special guest passes"
+                className="px-4 py-2 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500 hover:text-black rounded-full transition-all text-xs font-mono uppercase tracking-wider font-bold flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                <span>Export Excel</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => exportComplimentaryPassesToExcel("csv")}
+                disabled={complimentaryPasses.length === 0}
                 title="Download plain raw CSV (.csv)"
                 className="px-2.5 py-2 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all text-xs font-mono uppercase tracking-widest font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -2703,6 +3275,420 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                 </table>
               )}
             </div>
+          </div>
+        ) : activeSubTab === "special_guests" ? (
+          /* SPECIAL GUEST PASSES DIRECTORY */
+          <div className="space-y-6">
+            {/* Top Info Banner & Action Controls */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-black/40 border border-white/10 font-mono">
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-ted-red uppercase tracking-wider flex items-center gap-2">
+                  <span>★</span> Special Guest Passes Directory ({complimentaryPasses.length} Issued)
+                </div>
+                <p className="text-[11px] text-white/60">
+                  Issue zero-price official passes for VIPs, faculty, and special invitees. Pass codes are generated automatically and invitation emails are dispatched instantly via Resend. The internal Note and Phone Number remain private to the admin.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                {/* Search Bar */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={guestSearchQuery}
+                    onChange={(e) => setGuestSearchQuery(e.target.value)}
+                    placeholder="Search guests, email, note..."
+                    className="w-48 sm:w-64 px-3 py-2 pl-8 rounded-full bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-ted-red transition-all"
+                  />
+                  <svg
+                    className="w-3.5 h-3.5 text-white/40 absolute left-3 top-2.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  {guestSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setGuestSearchQuery("")}
+                      className="absolute right-3 top-2.5 text-white/40 hover:text-white text-xs cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Toggle Issue Form Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsIssueFormOpen(!isIssueFormOpen)}
+                  className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                    isIssueFormOpen
+                      ? "bg-white/10 text-white hover:bg-white/20 border border-white/20"
+                      : "bg-ted-red text-white hover:bg-white hover:text-ted-red shadow-[0_0_20px_rgba(235,0,40,0.35)] font-black"
+                  }`}
+                >
+                  <span>{isIssueFormOpen ? "✕ Close Form" : "+ Issue Special Guest Pass"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Collapsible Issue Form */}
+            {isIssueFormOpen && (
+              <form
+                onSubmit={handleIssueSpecialGuestPass}
+                className="p-6 rounded-2xl bg-black/60 border-2 border-ted-red/40 shadow-[0_0_30px_rgba(235,0,40,0.15)] space-y-5"
+              >
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-ted-red text-lg">★</span>
+                    <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+                      Issue New Special Guest Pass
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
+                    Zero Price • Instant Email Delivery
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-mono text-white/60 uppercase tracking-wider mb-1.5 font-bold">
+                      Full Name <span className="text-ted-red">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      placeholder="e.g. Dr. Rajesh Kumar"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-ted-red transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono text-white/60 uppercase tracking-wider mb-1.5 font-bold">
+                      Email Address <span className="text-ted-red">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={guestEmail}
+                      onChange={(e) => setGuestEmail(e.target.value)}
+                      placeholder="e.g. rajesh@example.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-ted-red transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono text-white/60 uppercase tracking-wider mb-1.5 font-bold">
+                      Phone Number <span className="text-ted-red">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={guestPhone}
+                      onChange={(e) => setGuestPhone(e.target.value)}
+                      placeholder="e.g. +91 9876543210"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-ted-red transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-mono text-white/60 uppercase tracking-wider font-bold">
+                      Admin Note / Reason (Internal Reference Only)
+                    </label>
+                    <span className="text-[10px] font-mono text-amber-400">
+                      🔒 Private — not shared with recipient or printed on pass
+                    </span>
+                  </div>
+                  <textarea
+                    rows={2}
+                    value={guestNote}
+                    onChange={(e) => setGuestNote(e.target.value)}
+                    placeholder="e.g. Invited by Principal, Sponsor Executive VIP, Keynote Speaker Friend... (Free text note for your records)"
+                    className="w-full px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-ted-red transition-all resize-y"
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsIssueFormOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-mono uppercase tracking-wider transition-all cursor-pointer font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isIssuingPass}
+                    className="px-6 py-2.5 rounded-xl bg-ted-red hover:bg-white hover:text-ted-red text-white text-xs font-mono uppercase tracking-wider font-black transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-[0_0_20px_rgba(235,0,40,0.4)]"
+                  >
+                    {isIssuingPass ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Generating &amp; Dispatching Pass...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>★</span>
+                        <span>Generate &amp; Send Special Guest Pass</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Special Guest Passes Data Table */}
+            <div className="overflow-x-auto">
+              {(() => {
+                const query = guestSearchQuery.toLowerCase().trim();
+                const filtered = complimentaryPasses.filter((p) => {
+                  if (!query) return true;
+                  return (
+                    p.full_name.toLowerCase().includes(query) ||
+                    p.email.toLowerCase().includes(query) ||
+                    p.phone.toLowerCase().includes(query) ||
+                    p.pass_code.toLowerCase().includes(query) ||
+                    (p.note && p.note.toLowerCase().includes(query))
+                  );
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="text-center py-16 font-mono space-y-3">
+                      <div className="text-3xl">★</div>
+                      <p className="text-white/60 text-sm font-bold">
+                        {guestSearchQuery ? "No special guest passes matching your search." : "No special guest passes issued yet."}
+                      </p>
+                      <p className="text-white/30 text-xs">
+                        Click &ldquo;+ Issue Special Guest Pass&rdquo; above to generate and email your first guest invitation pass.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-white/10 text-white/40 font-mono uppercase tracking-wider">
+                        <th className="pb-4 pr-4">Pass ID / Date</th>
+                        <th className="pb-4 px-4">Guest Name</th>
+                        <th className="pb-4 px-4">Contact Info</th>
+                        <th className="pb-4 px-4">Admin Note / Reason (Private)</th>
+                        <th className="pb-4 px-4">Email Delivery</th>
+                        <th className="pb-4 pl-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {filtered.map((pass) => (
+                        <tr key={pass.id} className="hover:bg-white/[0.02] transition-colors align-top font-mono">
+                          <td className="py-4 pr-4">
+                            <div className="font-bold text-ted-red tracking-wider text-sm">{pass.pass_code}</div>
+                            <div className="text-[10px] text-white/40 mt-0.5">
+                              {pass.created_at ? new Date(pass.created_at).toLocaleString("en-IN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "N/A"}
+                            </div>
+                            <div className="text-[9px] text-white/20">UUID: {pass.id.slice(0, 8)}</div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="font-bold text-white uppercase tracking-wider text-sm">{pass.full_name}</div>
+                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-ted-red/10 border border-ted-red/30 text-ted-red text-[10px] uppercase font-bold mt-1">
+                              ● Special Guest
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 space-y-1">
+                            <div className="text-white/90">{pass.email}</div>
+                            <div className="text-ted-red font-bold text-[11px]">{pass.phone}</div>
+                          </td>
+                          <td className="py-4 px-4">
+                            {pass.note ? (
+                              <div className="p-2.5 rounded-xl bg-black/50 border border-white/10 max-w-xs text-white/80 text-[11px] leading-relaxed">
+                                <span className="text-amber-400 font-bold block text-[9px] uppercase tracking-wider mb-0.5">
+                                  🔒 Private Note:
+                                </span>
+                                {pass.note}
+                              </div>
+                            ) : (
+                              <span className="text-white/25 italic">No note added</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4">
+                            {pass.email_status === "sent" ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] uppercase font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                ✓ Sent
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] uppercase font-bold">
+                                ⚠️ Failed
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-4 pl-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* Download Badge */}
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadSpecialGuestBadge(pass)}
+                                disabled={downloadingBadgeId === pass.id}
+                                className="px-2.5 py-1.5 bg-white/5 hover:bg-white/15 text-white/80 hover:text-white rounded-lg transition-all text-[10px] uppercase font-bold cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                                title="Download 1000×1600 Ultra-HD Pass Badge (PNG)"
+                              >
+                                {downloadingBadgeId === pass.id ? (
+                                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                  <span>📥</span>
+                                )}
+                                <span>Badge</span>
+                              </button>
+
+                              {/* Resend Email */}
+                              <button
+                                type="button"
+                                onClick={() => handleResendSpecialGuestPass(pass)}
+                                disabled={resendingGuestId === pass.id}
+                                className="px-2.5 py-1.5 bg-white/5 hover:bg-blue-600/30 hover:text-blue-300 text-white/70 rounded-lg transition-all text-[10px] uppercase font-bold cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                                title="Resend invitation email"
+                              >
+                                {resendingGuestId === pass.id ? (
+                                  <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <span>🔄</span>
+                                )}
+                                <span>Resend</span>
+                              </button>
+
+                              {/* Edit */}
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditGuestPass(pass)}
+                                className="px-2.5 py-1.5 bg-white/5 hover:bg-amber-500/20 hover:text-amber-300 text-white/70 rounded-lg transition-all text-[10px] uppercase font-bold cursor-pointer"
+                                title="Edit guest details & note"
+                              >
+                                ✏️ Edit
+                              </button>
+
+                              {/* Delete */}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteSpecialGuestPass(pass.id, pass.pass_code)}
+                                className="px-2.5 py-1.5 bg-white/5 hover:bg-red-600 hover:text-white text-red-400/80 rounded-lg transition-all text-[10px] uppercase font-bold cursor-pointer"
+                                title="Delete pass (requires admin password)"
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </div>
+
+            {/* Edit Special Guest Pass Modal */}
+            {isEditModalOpen && editingGuestPass && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+                <div className="w-full max-w-lg bg-zinc-950 border-2 border-white/20 rounded-2xl p-6 shadow-2xl space-y-5 font-mono">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <div>
+                      <span className="text-[10px] text-ted-red uppercase tracking-widest font-black block">
+                        Edit Record
+                      </span>
+                      <h3 className="text-base font-bold text-white uppercase">
+                        {editingGuestPass.pass_code}
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditModalOpen(false)}
+                      className="text-white/40 hover:text-white text-sm cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveEditGuestPass} className="space-y-4">
+                    <div>
+                      <label className="block text-[11px] text-white/60 uppercase tracking-wider mb-1 font-bold">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editGuestName}
+                        onChange={(e) => setEditGuestName(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-ted-red transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-white/60 uppercase tracking-wider mb-1 font-bold">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={editGuestEmail}
+                        onChange={(e) => setEditGuestEmail(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-ted-red transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-white/60 uppercase tracking-wider mb-1 font-bold">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={editGuestPhone}
+                        onChange={(e) => setEditGuestPhone(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-ted-red transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-white/60 uppercase tracking-wider mb-1 font-bold">
+                        Admin Note / Reason (Private)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={editGuestNote}
+                        onChange={(e) => setEditGuestNote(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-ted-red transition-all resize-y"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditModalOpen(false)}
+                        className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-mono uppercase tracking-wider font-bold cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSavingEdit}
+                        className="px-6 py-2 rounded-xl bg-ted-red hover:bg-white hover:text-ted-red text-white text-xs font-mono uppercase tracking-wider font-bold transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-[0_0_15px_rgba(235,0,40,0.3)]"
+                      >
+                        {isSavingEdit ? (
+                          <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <span>Save Changes</span>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         ) : activeSubTab === "tickets" ? (
           !selectedCouponTierId ? (

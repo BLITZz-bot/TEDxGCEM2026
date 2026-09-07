@@ -29,6 +29,7 @@ interface Registration {
   payment_method?: string | null;
   amount_paid?: number;
   unit_price?: number;
+  tier_name?: string | null;
   delegate_index?: number;
   total_delegates?: number;
 }
@@ -161,8 +162,14 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
       ctx.textBaseline = "middle";
       ctx.fillText(`TEDxGCEM ${eventYear}`, W / 2, 160);
 
-      // 3. Category Pill: OFFICIAL DELEGATE PASS
-      const pillW = 380;
+      // 3. Category Pill: OFFICIAL DELEGATE PASS or SPECIAL GUEST PASS
+      const isGuest =
+        registration.pass_code?.startsWith("TEDX-GUEST-") ||
+        registration.tier_name === "Special Guest Pass" ||
+        registration.organization === "GCEM Special Guest";
+      const pillLabel = isGuest ? "● SPECIAL GUEST PASS" : "● OFFICIAL DELEGATE PASS";
+
+      const pillW = isGuest ? 340 : 380;
       const pillH = 50;
       const pillY = 300;
       roundRectPath(W / 2 - pillW / 2, pillY, pillW, pillH, 25);
@@ -176,7 +183,7 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
       ctx.fillStyle = "#EB0028";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("● OFFICIAL DELEGATE PASS", W / 2, pillY + pillH / 2 + 1);
+      ctx.fillText(pillLabel, W / 2, pillY + pillH / 2 + 1);
 
       // 4. Attendee Details
       ctx.font = "bold 17px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
@@ -484,9 +491,13 @@ export default function GetMyPass({ onTabChange, settings }: GetMyPassProps) {
 
                       {/* Card Body */}
                       <div className="p-6 w-full flex flex-col items-center space-y-5">
-                        {/* Delegate Pill */}
+                        {/* Delegate / Guest Pill */}
                         <span className="inline-block px-4 py-1 rounded-full bg-ted-red/10 border border-ted-red text-ted-red font-mono text-[10px] font-bold uppercase tracking-widest">
-                          ● OFFICIAL DELEGATE PASS
+                          {registration.pass_code?.startsWith("TEDX-GUEST-") ||
+                          registration.tier_name === "Special Guest Pass" ||
+                          registration.organization === "GCEM Special Guest"
+                            ? "● SPECIAL GUEST PASS"
+                            : "● OFFICIAL DELEGATE PASS"}
                         </span>
 
                         {/* Name */}

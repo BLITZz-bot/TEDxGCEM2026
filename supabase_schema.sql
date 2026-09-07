@@ -86,10 +86,10 @@ CREATE TABLE IF NOT EXISTS public.event_settings (
     reveal_theme BOOLEAN DEFAULT true NOT NULL,
     reveal_date BOOLEAN DEFAULT true NOT NULL,
     reveal_countdown BOOLEAN DEFAULT true NOT NULL,
-    event_date TEXT DEFAULT 'October 15, 2026' NOT NULL,
+    event_date TEXT DEFAULT 'September 26, 2026' NOT NULL,
     event_time TEXT DEFAULT '09:00 AM' NOT NULL,
-    event_day TEXT DEFAULT 'THURSDAY' NOT NULL,
-    countdown_target TEXT DEFAULT '2026-10-15T09:00:00' NOT NULL,
+    event_day TEXT DEFAULT 'SATURDAY' NOT NULL,
+    countdown_target TEXT DEFAULT '2026-09-26T09:00:00' NOT NULL,
     about_theme_name TEXT DEFAULT 'TRANSFORMING PERSPECTIVES' NOT NULL,
     about_theme_desc TEXT DEFAULT 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.' NOT NULL,
     reveal_about_theme BOOLEAN DEFAULT true NOT NULL,
@@ -116,8 +116,11 @@ ADD COLUMN IF NOT EXISTS reveal_schedule BOOLEAN DEFAULT true NOT NULL;
 
 -- Seed initial settings row
 INSERT INTO public.event_settings (id, theme_name, reveal_theme, reveal_date, reveal_countdown, event_date, event_time, event_day, countdown_target, about_theme_name, about_theme_desc, reveal_about_theme, reveal_team, reveal_speakers, reveal_partners, reveal_register, reveal_tickets, reveal_schedule)
-VALUES ('global', 'RIPPLE', true, true, true, 'October 15, 2026', '09:00 AM', 'THURSDAY', '2026-10-15T09:00:00', 'TRANSFORMING PERSPECTIVES', 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.', true, true, true, true, true, true, true)
-ON CONFLICT (id) DO NOTHING;
+VALUES ('global', 'RIPPLE', true, true, true, 'September 26, 2026', '09:00 AM', 'SATURDAY', '2026-09-26T09:00:00', 'TRANSFORMING PERSPECTIVES', 'This year, we invite speakers who challenge the baseline of conventional frameworks. We aim to print new concepts that reform how we think, react, and shape local infrastructure.', true, true, true, true, true, true, true)
+ON CONFLICT (id) DO UPDATE SET
+    event_date = 'September 26, 2026',
+    event_day = 'SATURDAY',
+    countdown_target = '2026-09-26T09:00:00';
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 4. TEAM MEMBERS TABLE
@@ -315,3 +318,29 @@ DROP POLICY IF EXISTS "Allow admin to manage coupons" ON public.coupons;
 CREATE POLICY "Allow admin to manage coupons"
 ON public.coupons FOR ALL TO authenticated
 USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 8. COMPLIMENTARY / SPECIAL GUEST PASSES TABLE & POLICIES
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.complimentary_passes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    pass_code TEXT UNIQUE NOT NULL,
+    full_name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    note TEXT DEFAULT '',
+    email_status TEXT DEFAULT 'sent' NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_complimentary_passes_email ON public.complimentary_passes(email);
+CREATE INDEX IF NOT EXISTS idx_complimentary_passes_pass_code ON public.complimentary_passes(pass_code);
+
+ALTER TABLE public.complimentary_passes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow admin to manage complimentary passes" ON public.complimentary_passes;
+CREATE POLICY "Allow admin to manage complimentary passes"
+ON public.complimentary_passes FOR ALL TO authenticated
+USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+
