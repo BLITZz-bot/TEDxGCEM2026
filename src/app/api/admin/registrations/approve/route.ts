@@ -7,6 +7,7 @@ import {
   EmailAttendee,
 } from "@/lib/email-service";
 import { getSettings } from "@/lib/settings-service";
+import { deleteCoupon } from "@/lib/coupon-service";
 
 export const dynamic = "force-dynamic";
 
@@ -180,6 +181,16 @@ export async function POST(request: Request) {
         });
       } catch (emailErr) {
         console.warn("[Reject] Rejection email dispatch warning:", emailErr);
+      }
+
+      // 3. Clean up / delete associated promo code if one was used
+      if (reg.coupon_code) {
+        await deleteCoupon(reg.coupon_code);
+      }
+      try {
+        await supabase.from("coupons").delete().eq("registration_id", id);
+      } catch {
+        // ignore
       }
 
       return NextResponse.json({

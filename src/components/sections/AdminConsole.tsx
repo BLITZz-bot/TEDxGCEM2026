@@ -1440,6 +1440,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
       setRegistrations(prev => prev.filter(r => r.id !== id));
       alert("✅ Registration successfully deleted.");
+      await fetchData(true);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
       alert("⛔ Deletion Denied: " + errorMessage);
@@ -4301,77 +4302,100 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
                 {/* REDEEMED / USED COUPONS TABLE */}
                 <div className="space-y-4 pt-6 border-t border-white/10">
-                  <div className="flex items-center justify-between font-mono">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                      <h4 className="text-sm font-bold text-white uppercase tracking-wider">Redeemed & Used Promo Codes</h4>
-                    </div>
-                    <span className="text-xs text-white/40">
-                      {couponsList.filter((c) => c.is_used).length} Redeemed
-                    </span>
-                  </div>
+                  {(() => {
+                    const redeemedCoupons = couponsList.filter((c) => {
+                      if (!c.is_used) return false;
+                      const linkedReg = registrations.find(
+                        (r) => r.id === c.registration_id || (r.coupon_code && r.coupon_code.toUpperCase() === c.code.toUpperCase())
+                      );
+                      if (linkedReg) {
+                        if (linkedReg.approval_status === "rejected" || linkedReg.ticket_status === "rejected") {
+                          return false;
+                        }
+                        // Only show once approved / confirmed
+                        return (
+                          linkedReg.approval_status === "approved" ||
+                          linkedReg.ticket_status === "confirmed" ||
+                          linkedReg.ticket_status === "approved"
+                        );
+                      }
+                      return true;
+                    });
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs font-mono">
-                      <thead>
-                        <tr className="border-b border-white/10 text-white/40 uppercase tracking-wider">
-                          <th className="pb-3 pr-4">Code</th>
-                          <th className="pb-3 px-4">Attendee Details</th>
-                          <th className="pb-3 px-4">Contact Info</th>
-                          <th className="pb-3 px-4">Institution</th>
-                          <th className="pb-3 px-4">Amount Paid</th>
-                          <th className="pb-3 px-4">Redeemed At</th>
-                          <th className="pb-3 pl-4 text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5">
-                        {couponsList.filter((c) => c.is_used).length === 0 ? (
-                          <tr>
-                            <td colSpan={7} className="py-8 text-center text-white/30 italic">
-                              No coupons redeemed yet. When attendees apply a coupon during registration, their record will appear here.
-                            </td>
-                          </tr>
-                        ) : (
-                          couponsList
-                            .filter((c) => c.is_used)
-                            .map((cpn) => (
-                              <tr key={cpn.id} className="hover:bg-white/[0.02] transition-colors">
-                                <td className="py-3.5 pr-4">
-                                  <span className="font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
-                                    {cpn.code}
-                                  </span>
-                                </td>
-                                <td className="py-3.5 px-4 font-sans">
-                                  <div className="font-bold text-white uppercase">{cpn.used_by_name || "N/A"}</div>
-                                  <div className="text-[10px] text-white/40 font-mono">{cpn.used_by_email || ""}</div>
-                                </td>
-                                <td className="py-3.5 px-4 font-mono text-emerald-400">
-                                  {cpn.used_by_phone || "N/A"}
-                                </td>
-                                <td className="py-3.5 px-4 text-white/70 uppercase">
-                                  {cpn.used_by_org || "-"}
-                                </td>
-                                <td className="py-3.5 px-4 font-bold text-emerald-400">
-                                  ₹{activeCouponTier.discount_price} ({activeCouponTier.name})
-                                </td>
-                                <td className="py-3.5 px-4 text-white/40 text-[11px]">
-                                  {cpn.used_at ? new Date(cpn.used_at).toLocaleString("en-IN") : "N/A"}
-                                </td>
-                                <td className="py-3.5 pl-4 text-right">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteCoupon(cpn.id)}
-                                    className="px-3 py-1 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white text-white/40 rounded-lg text-xs transition-all cursor-pointer"
-                                  >
-                                    Delete
-                                  </button>
-                                </td>
+                    return (
+                      <>
+                        <div className="flex items-center justify-between font-mono">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                            <h4 className="text-sm font-bold text-white uppercase tracking-wider">Redeemed & Used Promo Codes</h4>
+                          </div>
+                          <span className="text-xs text-white/40">
+                            {redeemedCoupons.length} Redeemed
+                          </span>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse text-xs font-mono">
+                            <thead>
+                              <tr className="border-b border-white/10 text-white/40 uppercase tracking-wider">
+                                <th className="pb-3 pr-4">Code</th>
+                                <th className="pb-3 px-4">Attendee Details</th>
+                                <th className="pb-3 px-4">Contact Info</th>
+                                <th className="pb-3 px-4">Institution</th>
+                                <th className="pb-3 px-4">Amount Paid</th>
+                                <th className="pb-3 px-4">Redeemed At</th>
+                                <th className="pb-3 pl-4 text-right">Action</th>
                               </tr>
-                            ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                              {redeemedCoupons.length === 0 ? (
+                                <tr>
+                                  <td colSpan={7} className="py-8 text-center text-white/30 italic">
+                                    No coupons redeemed yet. When attendees apply a coupon and their registration is approved, their record will appear here.
+                                  </td>
+                                </tr>
+                              ) : (
+                                redeemedCoupons.map((cpn) => (
+                                  <tr key={cpn.id} className="hover:bg-white/[0.02] transition-colors">
+                                    <td className="py-3.5 pr-4">
+                                      <span className="font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+                                        {cpn.code}
+                                      </span>
+                                    </td>
+                                    <td className="py-3.5 px-4 font-sans">
+                                      <div className="font-bold text-white uppercase">{cpn.used_by_name || "N/A"}</div>
+                                      <div className="text-[10px] text-white/40 font-mono">{cpn.used_by_email || ""}</div>
+                                    </td>
+                                    <td className="py-3.5 px-4 font-mono text-emerald-400">
+                                      {cpn.used_by_phone || "N/A"}
+                                    </td>
+                                    <td className="py-3.5 px-4 text-white/70 uppercase">
+                                      {cpn.used_by_org || "-"}
+                                    </td>
+                                    <td className="py-3.5 px-4 font-bold text-emerald-400">
+                                      ₹{activeCouponTier.discount_price} ({activeCouponTier.name})
+                                    </td>
+                                    <td className="py-3.5 px-4 text-white/40 text-[11px]">
+                                      {cpn.used_at ? new Date(cpn.used_at).toLocaleString("en-IN") : "N/A"}
+                                    </td>
+                                    <td className="py-3.5 pl-4 text-right">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteCoupon(cpn.id)}
+                                        className="px-3 py-1 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white text-white/40 rounded-lg text-xs transition-all cursor-pointer"
+                                      >
+                                        Delete
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             );
