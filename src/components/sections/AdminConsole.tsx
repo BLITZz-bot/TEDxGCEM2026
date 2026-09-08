@@ -4320,13 +4320,14 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                           <th className="pb-3 px-4">Contact Info</th>
                           <th className="pb-3 px-4">Institution</th>
                           <th className="pb-3 px-4">Amount Paid</th>
-                          <th className="pb-3 pl-4 text-right">Redeemed At</th>
+                          <th className="pb-3 px-4">Redeemed At</th>
+                          <th className="pb-3 pl-4 text-right">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
                         {couponsList.filter((c) => c.is_used).length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="py-8 text-center text-white/30 italic">
+                            <td colSpan={7} className="py-8 text-center text-white/30 italic">
                               No coupons redeemed yet. When attendees apply a coupon during registration, their record will appear here.
                             </td>
                           </tr>
@@ -4353,8 +4354,17 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                                 <td className="py-3.5 px-4 font-bold text-emerald-400">
                                   ₹{activeCouponTier.discount_price} ({activeCouponTier.name})
                                 </td>
-                                <td className="py-3.5 pl-4 text-right text-white/40 text-[11px]">
+                                <td className="py-3.5 px-4 text-white/40 text-[11px]">
                                   {cpn.used_at ? new Date(cpn.used_at).toLocaleString("en-IN") : "N/A"}
+                                </td>
+                                <td className="py-3.5 pl-4 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteCoupon(cpn.id)}
+                                    className="px-3 py-1 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white text-white/40 rounded-lg text-xs transition-all cursor-pointer"
+                                  >
+                                    Delete
+                                  </button>
                                 </td>
                               </tr>
                             ))

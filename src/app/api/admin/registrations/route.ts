@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { deleteCoupon } from "@/lib/coupon-service";
 
 export const dynamic = "force-dynamic";
 
@@ -92,12 +93,30 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Missing registration ID." }, { status: 400 });
     }
 
+    // 1. Check if the registration used a promo code
+    const { data: reg } = await supabase
+      .from("registrations")
+      .select("coupon_code")
+      .eq("id", id)
+      .maybeSingle();
+
+    // 2. Delete the registration
     const { error } = await supabase
       .from("registrations")
       .delete()
       .eq("id", id);
 
     if (error) throw error;
+
+    // 3. Clean up associated coupon/promo passcode record if present
+    if (reg?.coupon_code) {
+      await deleteCoupon(reg.coupon_code);
+    }
+    try {
+      await supabase.from("coupons").delete().eq("registration_id", id);
+    } catch {
+      // ignore
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
