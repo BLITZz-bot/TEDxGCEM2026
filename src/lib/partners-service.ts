@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
 // Proprietary and confidential. Unauthorized copying, modification, or
 // distribution of this file is strictly prohibited. See LICENSE for details.
 import path from "path";
@@ -65,7 +65,7 @@ export async function savePartnersLocalFallback(partners: Partner[]): Promise<vo
 }
 
 export async function addPartner(partner: Omit<Partner, "id">): Promise<boolean> {
-  let newId = Math.random().toString(36).substring(2, 9);
+  let newId = crypto.randomUUID();
 
   // 1. Persist to Supabase
   try {
