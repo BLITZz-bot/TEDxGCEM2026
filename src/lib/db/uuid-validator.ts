@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
+// Copyright (c) 2026 M M BHARATH — TEDxGCEM. All rights reserved.
 // Proprietary and confidential. Unauthorized copying, modification, or
 // distribution of this file is strictly prohibited. See LICENSE for details.
 /**
@@ -6,11 +6,9 @@
  *
  * Shared UUID validation utility.
  *
- * Supabase uses UUID v4 as primary keys. Local fallback records use short
- * random IDs (e.g., `Math.random().toString(36).substring(2, 9)`).
- *
- * This validator ensures we only attempt Supabase updates/deletes for records
- * that actually have a valid UUID primary key.
+ * Supabase uses UUID v4 as primary keys. Local fallback records also use UUID v4
+ * (via `crypto.randomUUID()`) so that all IDs are uniform and Supabase operations
+ * (update/delete) work correctly on all records, regardless of origin.
  */
 
 /** UUID v4 regex pattern */
