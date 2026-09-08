@@ -82,12 +82,13 @@ interface SpeakersProps {
   settings?: {
     reveal_speakers?: boolean;
   } | null;
+  onModalToggle?: (isOpen: boolean) => void;
 }
 
 // Module-level in-memory cache for instant tab switching (0ms delay)
 let globalSpeakersCache: Speaker[] | null = null;
 
-export default function Speakers({ settings }: SpeakersProps) {
+export default function Speakers({ settings, onModalToggle }: SpeakersProps) {
   
   const [speakers, setSpeakers] = useState<Speaker[]>(globalSpeakersCache || []);
   const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null);
@@ -158,7 +159,31 @@ export default function Speakers({ settings }: SpeakersProps) {
   const selectedSpeakerRef = useRef<typeof selectedSpeaker>(null);
   useEffect(() => {
     selectedSpeakerRef.current = selectedSpeaker;
+    onModalToggle?.(Boolean(selectedSpeaker));
+    if (selectedSpeaker) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [selectedSpeaker, onModalToggle]);
+
+  useEffect(() => {
+    if (!selectedSpeaker) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedSpeaker(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedSpeaker]);
+
+  useEffect(() => {
+    return () => {
+      onModalToggle?.(false);
+      document.body.style.overflow = "";
+    };
+  }, [onModalToggle]);
 
   // Dynamically calculate the maximum width of the grid based on the card width + gap (32px / 2rem)
   const gridMaxWidth = `calc((${BOX_SETTINGS.width} * 2) + 2rem)`;
@@ -187,7 +212,7 @@ export default function Speakers({ settings }: SpeakersProps) {
         {settings?.reveal_speakers !== false ? (
           speakers.length > 0 ? (
             <div 
-              className="grid grid-cols-1 sm:grid-cols-2 gap-8 mx-auto"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-8 mx-auto items-start"
               style={{ maxWidth: gridMaxWidth }}
             >
               {speakers.map((speaker, index) => {
@@ -205,23 +230,20 @@ export default function Speakers({ settings }: SpeakersProps) {
                         ? "border-ted-red/50 bg-white/[0.07] shadow-[0_0_25px_rgba(235,0,40,0.08)]"
                         : "border-white/15 bg-white/[0.04] hover:bg-white/[0.07] hover:border-ted-red/50"
                     }`}
-                    style={{ maxWidth: BOX_SETTINGS.width, height: BOX_SETTINGS.height }}
+                    style={{ maxWidth: BOX_SETTINGS.width, height: "auto" }}
                     data-index={index}
                   >
-                    {/* Asymmetric Polaroid Frame Container (Portrait Aspect Ratio) */}
-                    <div 
-                      className="relative w-full mb-4"
-                      style={{ aspectRatio: BOX_SETTINGS.aspectRatio }}
-                    >
-                      {/* Behind Shadow Layer */}
+                    {/* Fluid Image Frame Container - Auto-adjusts to image height */}
+                    <div className="relative w-full mb-4">
+                      {/* Behind Shadow Layer - Hugs exact dynamic image height */}
                       <div className={`absolute inset-0 bg-ted-red rounded-2xl transform transition-transform duration-300 ease-out z-0 ${
                         isCardHovered 
                           ? "translate-x-2.5 translate-y-2.5" 
                           : "translate-x-2.5 translate-y-2.5 md:translate-x-0 md:translate-y-0 md:group-hover:translate-x-2.5 md:group-hover:translate-y-2.5"
                       }`} />
                       
-                      {/* Front Image Frame */}
-                      <div className={`absolute inset-0 rounded-2xl overflow-hidden border bg-zinc-900 z-10 transition-[transform,border-color] duration-300 ease-out ${
+                      {/* Front Image Frame - Fits image tightly with zero letterboxing */}
+                      <div className={`relative rounded-2xl overflow-hidden border bg-zinc-950 z-10 transition-[transform,border-color] duration-300 ease-out ${
                         isCardHovered
                           ? "border-ted-red/30 -translate-x-1 -translate-y-1"
                           : "border-white/15 group-hover:border-ted-red/30 -translate-x-1 -translate-y-1 md:translate-x-0 md:translate-y-0 md:group-hover:-translate-x-1 md:group-hover:-translate-y-1"
@@ -229,7 +251,7 @@ export default function Speakers({ settings }: SpeakersProps) {
                         <img 
                           src={speaker.photo} 
                           alt={speaker.name} 
-                          className={`w-full h-full object-cover transition-[transform,filter] duration-300 ease-out transform-gpu [will-change:transform,filter] ${
+                          className={`w-full h-auto block object-contain transition-[transform,filter] duration-300 ease-out transform-gpu [will-change:transform,filter] ${
                             isCardHovered
                               ? "grayscale-0 scale-105"
                               : "grayscale-0 md:grayscale md:group-hover:grayscale-0 md:group-hover:scale-105"
@@ -309,137 +331,177 @@ export default function Speakers({ settings }: SpeakersProps) {
             exit={{ opacity: 0, pointerEvents: "none" }}
             transition={{ duration: 0.35, ease: "easeOut" }}
             onClick={() => setSelectedSpeaker(null)}
-            className="fixed inset-0 z-50 bg-black/90 flex flex-col md:flex-row cursor-pointer overflow-hidden"
+            className="fixed inset-0 z-[100] bg-[#070708] flex flex-col md:flex-row cursor-pointer overflow-hidden"
           >
+            {/* Unified Stage Spotlight & Dot Matrix Texture */}
+            <div 
+              className="absolute inset-0 pointer-events-none z-0"
+              style={{
+                background: "radial-gradient(circle at 40% 50%, rgba(235,0,40,0.15) 0%, transparent 70%)",
+              }}
+            />
+            <div 
+              className="absolute inset-0 pointer-events-none opacity-15 z-0"
+              style={{
+                backgroundImage: "radial-gradient(rgba(255,255,255,0.2) 1px, transparent 1px)",
+                backgroundSize: "22px 22px"
+              }}
+            />
+
             {/* Close Button - Fixed in the top-right corner of the screen */}
             <button 
-              onClick={() => setSelectedSpeaker(null)}
-              className="fixed top-4 right-4 md:top-6 md:right-6 text-white/70 hover:text-white transition-colors p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 z-50 border border-white/10 cursor-pointer"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedSpeaker(null);
+              }}
+              className="fixed top-5 right-5 md:top-6 md:right-8 text-white/80 hover:text-white transition-all p-3 rounded-full bg-black/70 backdrop-blur-md hover:bg-ted-red z-[110] border border-white/20 hover:border-ted-red cursor-pointer shadow-2xl group flex items-center justify-center"
+              aria-label="Close speaker specs"
             >
-              <X className="w-5 h-5 md:w-6 md:h-6" />
+              <X className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
             </button>
 
-            {/* Left Panel - Portrait & Info vignette */}
+            {/* Left Panel - Spotlight Presenter Display (Fixed & Pinned) */}
             <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full md:w-[45%] h-[38dvh] md:h-full relative overflow-hidden bg-black flex flex-col justify-end p-6 md:p-8 cursor-default shrink-0 [will-change:transform]"
+              className="w-full md:w-[48%] h-[42dvh] md:h-full relative overflow-hidden flex items-center justify-center p-6 sm:p-10 md:p-14 cursor-default shrink-0 border-b md:border-b-0 md:border-r border-white/10 z-10"
             >
-              {/* Border Frame Overlay */}
-              <div className="absolute inset-0 border-2 border-ted-red/40 pointer-events-none z-30 border-b-0 md:border-b-2 md:border-r-0" />
+              {/* Status pill tag at top left of photo area */}
+              <div className="absolute top-6 left-6 z-30 flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md">
+                <span className="w-2 h-2 rounded-full bg-ted-red animate-pulse" />
+                <span className="text-[10px] font-mono font-bold text-white/70 uppercase tracking-widest">
+                  TEDxGCEM 2026 Keynote
+                </span>
+              </div>
 
-              {/* Giant Presenter Portrait */}
-              <img 
-                src={selectedSpeaker.photo} 
-                alt={selectedSpeaker.name} 
-                className="absolute inset-0 w-full h-full object-cover filter contrast-125 brightness-90 saturate-75"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent pointer-events-none z-10" />
-              
-              {/* Tech Metadata Tags */}
-              <div className="relative z-20 font-mono text-[10px] text-ted-red tracking-widest uppercase flex flex-col gap-2">
-                <span className="bg-ted-red/20 border border-ted-red/40 px-3 py-1 rounded w-fit">
-                  [ TARGET: DETECTED ]
-                </span>
-                <span className="text-white/60">
-                  {"// LIVE DOSSIER STREAM"}
-                </span>
+              {/* Photo Frame Container with Tech Corner Brackets */}
+              <div className="relative z-20 w-full h-full max-h-[82vh] flex items-center justify-center">
+                {/* Tech Corner Brackets */}
+                <div className="absolute -top-3 -left-3 w-4 h-4 border-t-2 border-l-2 border-ted-red z-30" />
+                <div className="absolute -top-3 -right-3 w-4 h-4 border-t-2 border-r-2 border-ted-red z-30" />
+                <div className="absolute -bottom-3 -left-3 w-4 h-4 border-b-2 border-l-2 border-ted-red z-30" />
+                <div className="absolute -bottom-3 -right-3 w-4 h-4 border-b-2 border-r-2 border-ted-red z-30" />
+
+                <img 
+                  src={selectedSpeaker.photo} 
+                  alt={selectedSpeaker.name} 
+                  className="w-full h-full object-contain rounded-2xl filter drop-shadow-[0_15px_35px_rgba(0,0,0,0.9)]"
+                />
               </div>
             </motion.div>
 
-            {/* Right Panel - Terminal Dashboard */}
+            {/* Right Panel - Scrollable Editorial Dashboard */}
             <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full md:w-[55%] h-[62dvh] md:h-full bg-[#0a0a0a] flex flex-col justify-start md:justify-center p-6 sm:p-12 md:p-16 cursor-default relative overflow-y-auto shrink-0 [will-change:transform]"
+              className="w-full md:w-[52%] h-[58dvh] md:h-full flex flex-col justify-start p-6 sm:p-10 md:p-14 lg:p-16 cursor-default relative overflow-y-auto shrink-0 z-10 [scrollbar-width:thin] [scrollbar-color:rgba(235,0,40,0.4)_transparent]"
             >
-              {/* Border Frame Overlay */}
-              <div className="absolute inset-0 border-2 border-ted-red/40 pointer-events-none z-30" />
-
-              <div className="max-w-2xl w-full mx-auto space-y-4 md:space-y-8 text-left py-2 md:py-0">
-                {/* Speaker's name in giant italic typography */}
+              <div className="max-w-2xl w-full mx-auto space-y-6 md:space-y-8 text-left my-auto py-6 relative z-10">
+                {/* Speaker's name & badge */}
                 <div>
-                  <span className="text-ted-red text-[10px] font-bold uppercase tracking-[0.2em] font-mono block mb-2">
-                    {"// SPEAKER SPECS"}
-                  </span>
-                  <h3 className="text-3xl sm:text-5xl md:text-7xl font-black italic text-white tracking-tighter leading-none">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-ted-red text-[10px] font-bold uppercase tracking-[0.25em] font-mono">
+                      {"// OFFICIAL SPEAKER PROFILE"}
+                    </span>
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-[44px] font-black italic tracking-tighter leading-[1.08] text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/80 break-words">
                     {selectedSpeaker.name}
                   </h3>
-                  <p className="text-white/50 text-xs tracking-widest font-mono mt-2">
-                    {selectedSpeaker.designation}
-                  </p>
-                </div>
-
-
-
-                {/* Stylized biography quotes */}
-                <div className="space-y-2">
-                  <span className="text-white/30 text-[9px] uppercase font-mono tracking-widest block">Biography</span>
-                  <p className="text-white/90 text-xs sm:text-base leading-relaxed italic font-light">
-                    &ldquo;{selectedSpeaker.bio}&rdquo;
-                  </p>
-                </div>
-
-                {/* Qualifications & background details */}
-                <div className="space-y-2 border-t border-white/5 pt-4 md:pt-6">
-                  <span className="text-white/30 text-[9px] uppercase font-mono tracking-widest block">Credentials & details</span>
-                  <p className="text-white/60 text-[10px] sm:text-sm leading-relaxed font-light font-mono">
-                    {selectedSpeaker.details}
-                  </p>
-                </div>
-
-                {/* Full-width custom contact buttons */}
-                <div className="flex flex-row gap-2 pt-2 w-full">
-                  {selectedSpeaker.linkedin ? (
-                    <a 
-                      href={selectedSpeaker.linkedin} 
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-2.5 border border-white/10 hover:border-ted-red/40 bg-white/[0.02] hover:bg-ted-red/10 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white"
-                    >
-                      <Linkedin className="w-3.5 h-3.5 text-white/60" />
-                      <span>LinkedIn</span>
-                    </a>
-                  ) : (
-                    <div 
-                      className="flex-1 py-2.5 border border-white/5 bg-white/[0.01] rounded-xl flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white/20 cursor-not-allowed select-none"
-                    >
-                      <Linkedin className="w-3.5 h-3.5 text-white/10" />
-                      <span>LinkedIn</span>
+                  {selectedSpeaker.designation && (
+                    <div className="mt-2.5 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ted-red/10 border border-ted-red/30 text-ted-red text-xs font-mono font-bold uppercase tracking-wider">
+                      <span>🎤</span>
+                      <span>{selectedSpeaker.designation}</span>
                     </div>
                   )}
-                  {selectedSpeaker.instagram ? (
-                    <a 
-                      href={selectedSpeaker.instagram} 
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-2.5 border border-white/10 hover:border-ted-red/40 bg-white/[0.02] hover:bg-ted-red/10 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white"
-                    >
-                      <Instagram className="w-3.5 h-3.5 text-white/60" />
-                      <span>Instagram</span>
-                    </a>
-                  ) : (
-                    <div 
-                      className="flex-1 py-2.5 border border-white/5 bg-white/[0.01] rounded-xl flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white/20 cursor-not-allowed select-none"
-                    >
-                      <Instagram className="w-3.5 h-3.5 text-white/10" />
-                      <span>Instagram</span>
-                    </div>
-                  )}
-                  <a 
-                    href={`mailto:${selectedSpeaker.email || "speakers@tedxgcem.com"}`} 
-                    className="flex-1 py-2.5 border border-white/10 hover:border-ted-red/40 bg-white/[0.02] hover:bg-ted-red/10 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 font-bold uppercase tracking-wider text-[8px] sm:text-[10px] text-white"
-                  >
-                    <Mail className="w-3.5 h-3.5 text-white/60" />
-                    <span>Email PR</span>
-                  </a>
                 </div>
+
+                {/* Glassmorphic Biography - Frosted glass with red neon accent rail */}
+                {selectedSpeaker.bio && (
+                  <div className="relative rounded-2xl bg-gradient-to-br from-white/[0.08] via-white/[0.02] to-white/[0.04] border border-white/10 border-t-white/20 border-l-[3px] border-l-ted-red backdrop-blur-xl p-4 sm:p-5 space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.12)] transition-all">
+                    <div className="flex items-center justify-between">
+                      <span className="text-ted-red text-[10px] uppercase font-mono tracking-widest font-bold block">
+                        {"// BIOGRAPHY"}
+                      </span>
+                    </div>
+                    <p className="text-white/90 text-xs sm:text-sm md:text-[15px] leading-relaxed italic font-light whitespace-pre-line">
+                      &ldquo;{selectedSpeaker.bio}&rdquo;
+                    </p>
+                  </div>
+                )}
+
+                {/* Glassmorphic Background - Cohesive frosted panel */}
+                {selectedSpeaker.details && (
+                  <div className="relative rounded-2xl bg-gradient-to-br from-white/[0.05] via-white/[0.01] to-white/[0.03] border border-white/10 border-t-white/15 backdrop-blur-xl p-4 sm:p-5 space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.08)]">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-ted-red" />
+                      <span className="text-white/50 text-[10px] uppercase font-mono tracking-widest font-bold">
+                        Background
+                      </span>
+                    </div>
+                    <p className="text-white/75 text-xs sm:text-[13px] md:text-sm leading-relaxed font-light pl-3.5 whitespace-pre-line">
+                      {selectedSpeaker.details}
+                    </p>
+                  </div>
+                )}
+
+                {/* Full-width custom contact buttons (only rendered if links exist) */}
+                {(() => {
+                  const hasLinkedin = Boolean(selectedSpeaker.linkedin && selectedSpeaker.linkedin.trim());
+                  const hasInstagram = Boolean(selectedSpeaker.instagram && selectedSpeaker.instagram.trim());
+                  const hasEmail = Boolean(selectedSpeaker.email && selectedSpeaker.email.trim());
+
+                  if (!hasLinkedin && !hasInstagram && !hasEmail) return null;
+
+                  const linkedinUrl = selectedSpeaker.linkedin?.trim().startsWith("http")
+                    ? selectedSpeaker.linkedin.trim()
+                    : `https://${selectedSpeaker.linkedin?.trim()}`;
+
+                  const rawInsta = selectedSpeaker.instagram?.trim().replace(/^@/, "");
+                  const instaUrl = rawInsta?.startsWith("http") ? rawInsta : `https://instagram.com/${rawInsta}`;
+
+                  return (
+                    <div className="flex flex-row flex-wrap gap-2.5 pt-2 w-full">
+                      {hasLinkedin && (
+                        <a 
+                          href={linkedinUrl} 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 min-w-[120px] py-3 px-4 border border-white/10 hover:border-blue-500/50 bg-white/[0.03] hover:bg-blue-500/10 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 font-bold uppercase tracking-wider text-[9px] sm:text-[11px] text-white shadow-lg"
+                        >
+                          <Linkedin className="w-4 h-4 text-blue-400" />
+                          <span>LinkedIn</span>
+                        </a>
+                      )}
+                      {hasInstagram && (
+                        <a 
+                          href={instaUrl} 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 min-w-[120px] py-3 px-4 border border-white/10 hover:border-pink-500/50 bg-white/[0.03] hover:bg-pink-500/10 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 font-bold uppercase tracking-wider text-[9px] sm:text-[11px] text-white shadow-lg"
+                        >
+                          <Instagram className="w-4 h-4 text-pink-400" />
+                          <span>Instagram</span>
+                        </a>
+                      )}
+                      {hasEmail && (
+                        <a 
+                          href={`mailto:${selectedSpeaker.email?.trim()}`} 
+                          className="flex-1 min-w-[120px] py-3 px-4 border border-white/10 hover:border-ted-red bg-white/[0.03] hover:bg-ted-red/15 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 font-bold uppercase tracking-wider text-[9px] sm:text-[11px] text-white shadow-lg"
+                        >
+                          <Mail className="w-4 h-4 text-ted-red" />
+                          <span>Email PR</span>
+                        </a>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </motion.div>
           </motion.div>

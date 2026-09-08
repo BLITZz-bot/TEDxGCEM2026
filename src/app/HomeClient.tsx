@@ -64,6 +64,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isMobile, setIsMobile] = useState(false);
   const [settings, setSettings] = useState<EventSettings | null>(initialSettings);
+  const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
 
   // Track whether a tab change was initiated by a user click (vs. scroll)
   const scrollInitiatedRef = React.useRef(false);
@@ -188,6 +189,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
   // â”€â”€â”€ Tab change handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const handleTabChange = (id: TabId) => {
+    setIsSpeakerModalOpen(false);
     if (id === activeTab) {
       if (id === "register") {
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -236,7 +238,7 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
       case "about":
         return <About key="about" settings={settings} />;
       case "speakers":
-        return <Speakers key="speakers" settings={settings} />;
+        return <Speakers key="speakers" settings={settings} onModalToggle={setIsSpeakerModalOpen} />;
       case "team":
         return <Team key="team" settings={settings} />;
       case "schedule":
@@ -324,7 +326,12 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
         />
 
         {/* Navigation */}
-        <TabNav activeTab={activeTab} onTabChange={handleTabChange} settings={settings} />
+        <TabNav 
+          activeTab={activeTab} 
+          onTabChange={handleTabChange} 
+          settings={settings} 
+          hidden={isSpeakerModalOpen} 
+        />
 
         {/* Main content with animated transitions */}
         <div className="relative z-20">

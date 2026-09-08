@@ -371,6 +371,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
 
   // Coupon Generator States
   const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [couponDurationPreset, setCouponDurationPreset] = useState<string>("10");
+  const [couponCustomDuration, setCouponCustomDuration] = useState<string>("10m");
   const [isGeneratingCoupon, setIsGeneratingCoupon] = useState(false);
   const [couponSuccessNotice, setCouponSuccessNotice] = useState<string | null>(null);
   const [selectedCouponTierId, setSelectedCouponTierId] = useState<string | null>(null);
@@ -732,24 +734,51 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     }
   };
 
+  // Helper to parse human inputs like "10m", "10 minute", "1h", "2 hours", "1d", or plain numbers
+  const parseDurationInput = (val: string): number => {
+    const cleaned = val.trim().toLowerCase();
+    const dayMatch = cleaned.match(/^(\d+(?:\.\d+)?)\s*(d|day|days)$/);
+    if (dayMatch) return Math.max(1, Math.round(parseFloat(dayMatch[1]) * 1440));
+
+    const hrMatch = cleaned.match(/^(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours)$/);
+    if (hrMatch) return Math.max(1, Math.round(parseFloat(hrMatch[1]) * 60));
+
+    const minMatch = cleaned.match(/^(\d+(?:\.\d+)?)\s*(m|min|mins|minute|minutes)?$/);
+    if (minMatch) return Math.max(1, Math.round(parseFloat(minMatch[1])));
+
+    return Math.max(1, parseInt(cleaned, 10) || 10);
+  };
+
   // Create or Auto-Generate Coupon
   const handleCreateCoupon = async (autoGen = false) => {
     setIsGeneratingCoupon(true);
     setCouponSuccessNotice(null);
     try {
+      const resolvedDuration =
+        couponDurationPreset === "custom"
+          ? parseDurationInput(couponCustomDuration)
+          : parseInt(couponDurationPreset, 10) || 10;
+
       const res = await fetch("/api/admin/coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customCode: autoGen ? "" : couponCodeInput,
-          durationMinutes: 10,
+          durationMinutes: resolvedDuration,
           autoGenerate: autoGen,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.coupon) {
-        setCouponSuccessNotice(`✅ 10-Minute Promo Passcode "${data.coupon.code}" created! Direct tier rate applies automatically.`);
+        const durationText =
+          resolvedDuration >= 1440
+            ? `${Math.round(resolvedDuration / 1440)}-Day`
+            : resolvedDuration >= 60
+            ? `${Math.round(resolvedDuration / 60)}-Hour`
+            : `${resolvedDuration}-Minute`;
+
+        setCouponSuccessNotice(`✅ ${durationText} Promo Passcode "${data.coupon.code}" created! Direct tier rate applies automatically.`);
         setCouponCodeInput("");
         if (data.coupons) {
           setCouponsList(data.coupons);
@@ -4067,13 +4096,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                 <div className="border border-white/10 p-6 md:p-8 rounded-2xl bg-black/40 space-y-6">
                   <div>
                     <span className="text-[10px] text-emerald-400 uppercase tracking-widest font-black font-mono block">
-                      {"// " + activeCouponTier.name.toUpperCase() + " 10-MINUTE PROMO PASSCODE ENGINE"}
+                      {"// " + activeCouponTier.name.toUpperCase() + " PROMO PASSCODE ENGINE"}
                     </span>
                     <h3 className="text-xl font-black text-white uppercase tracking-wider mt-1">
                       {activeCouponTier.name} Exclusive Passcode Window
                     </h3>
                     <p className="text-xs text-white/50 font-mono mt-1 leading-relaxed">
-                      Generated promo codes expire automatically <strong>10 minutes</strong> after creation. Standard price for {activeCouponTier.name} is <strong className="text-white">₹{activeCouponTier.price}</strong>. Applying a code unlocks the direct rate of <strong className="text-emerald-400 font-bold">₹{activeCouponTier.discount_price}</strong> ({discountPercent}% OFF), and deducts directly from {activeCouponTier.name}&apos;s capacity.
+                      Generated promo codes expire automatically based on your selected validity window. Standard price for {activeCouponTier.name} is <strong className="text-white">₹{activeCouponTier.price}</strong>. Applying a code unlocks the direct rate of <strong className="text-emerald-400 font-bold">₹{activeCouponTier.discount_price}</strong> ({discountPercent}% OFF), and deducts directly from {activeCouponTier.name}&apos;s capacity.
                     </p>
                   </div>
 
@@ -4091,8 +4120,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                   )}
 
                   {/* Generator Form */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end font-mono pt-2 border-t border-white/10">
-                    <div className="md:col-span-1">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end font-mono pt-2 border-t border-white/10">
+                    <div className="md:col-span-4">
                       <label className="text-[10px] text-white/40 uppercase tracking-widest block mb-2 font-bold">
                         Custom Passcode (Optional)
                       </label>
@@ -4100,29 +4129,61 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                         type="text"
                         value={couponCodeInput}
                         onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
-                        placeholder="Leave empty or enter code..."
+                        placeholder="Leave empty for auto..."
                         className="w-full bg-white/5 border border-white/10 p-3.5 rounded-xl text-white text-xs font-bold uppercase tracking-wider focus:outline-none focus:border-emerald-500"
                       />
                     </div>
 
-                    <div className="md:col-span-2 flex flex-col sm:flex-row gap-2">
+                    <div className="md:col-span-4">
+                      <label className="text-[10px] text-white/40 uppercase tracking-widest block mb-2 font-bold">
+                        Expiry Duration
+                      </label>
+                      <div className="flex gap-2">
+                        <select
+                          value={couponDurationPreset}
+                          onChange={(e) => setCouponDurationPreset(e.target.value)}
+                          className="flex-1 bg-white/5 border border-white/10 p-3.5 rounded-xl text-white text-xs font-bold focus:outline-none focus:border-emerald-500 cursor-pointer"
+                        >
+                          <option value="10" className="bg-[#18181b] text-white">10 Minutes (Default)</option>
+                          <option value="30" className="bg-[#18181b] text-white">30 Minutes</option>
+                          <option value="60" className="bg-[#18181b] text-white">1 Hour</option>
+                          <option value="360" className="bg-[#18181b] text-white">6 Hours</option>
+                          <option value="1440" className="bg-[#18181b] text-white">24 Hours (1 Day)</option>
+                          <option value="custom" className="bg-[#18181b] text-white">Custom Duration...</option>
+                        </select>
+                        {couponDurationPreset === "custom" && (
+                          <div className="w-28 shrink-0">
+                            <input
+                              type="text"
+                              value={couponCustomDuration}
+                              onChange={(e) => setCouponCustomDuration(e.target.value)}
+                              placeholder="e.g. 10m, 1h"
+                              className="w-full bg-white/5 border border-emerald-500/50 p-3.5 rounded-xl text-emerald-400 text-xs font-bold text-center focus:outline-none focus:border-emerald-500"
+                              title="Enter duration like 10m, 10 minutes, 1h, 2 hours, 1d, or plain number"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-4 flex flex-col sm:flex-row gap-2">
                       <button
                         type="button"
                         onClick={() => handleCreateCoupon(true)}
                         disabled={isGeneratingCoupon}
-                        className="flex-1 py-3.5 px-6 bg-emerald-500 hover:bg-white hover:text-emerald-700 text-black text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-50 shadow-[0_0_20px_rgba(16,185,129,0.25)] flex items-center justify-center gap-2"
+                        className="flex-1 py-3.5 px-4 bg-emerald-500 hover:bg-white hover:text-emerald-700 text-black text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-50 shadow-[0_0_20px_rgba(16,185,129,0.25)] flex items-center justify-center gap-2"
                       >
                         <span>⚡</span>
-                        <span>{isGeneratingCoupon ? "Generating..." : `Auto-Generate 10-Min Passcode for ${activeCouponTier.name}`}</span>
+                        <span>{isGeneratingCoupon ? "Generating..." : `Auto-Generate Passcode`}</span>
                       </button>
                       {couponCodeInput.trim() && (
                         <button
                           type="button"
                           onClick={() => handleCreateCoupon(false)}
                           disabled={isGeneratingCoupon}
-                          className="py-3.5 px-6 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                          className="py-3.5 px-4 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-50 shrink-0"
                         >
-                          Create Custom Code
+                          Create Custom
                         </button>
                       )}
                     </div>
@@ -4157,7 +4218,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                         {couponsList.filter((c) => !c.is_used).length === 0 ? (
                           <tr>
                             <td colSpan={6} className="py-8 text-center text-white/30 italic">
-                              No active unused promo codes. Click &quot;Auto-Generate 10-Min Passcode&quot; above to create one.
+                              No active unused promo codes. Click &quot;Auto-Generate Passcode&quot; above to create one.
                             </td>
                           </tr>
                         ) : (
@@ -4167,9 +4228,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                               const expiryMs = new Date(cpn.expires_at).getTime();
                               const diffSec = Math.max(0, Math.floor((expiryMs - nowTimestamp) / 1000));
                               const isExpired = diffSec <= 0;
-                              const mins = Math.floor(diffSec / 60);
+                              const hours = Math.floor(diffSec / 3600);
+                              const mins = Math.floor((diffSec % 3600) / 60);
                               const secs = diffSec % 60;
-                              const formattedRemaining = `${String(mins).padStart(2, "0")}m ${String(secs).padStart(2, "0")}s`;
+                              const formattedRemaining =
+                                hours > 0
+                                  ? `${hours}h ${String(mins).padStart(2, "0")}m ${String(secs).padStart(2, "0")}s`
+                                  : `${String(mins).padStart(2, "0")}m ${String(secs).padStart(2, "0")}s`;
 
                               return (
                                 <tr key={cpn.id} className="hover:bg-white/[0.02] transition-colors">
@@ -4205,7 +4270,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                                       </span>
                                     ) : (
                                       <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-[10px] uppercase">
-                                        Expired (10m passed)
+                                        Expired
                                       </span>
                                     )}
                                   </td>

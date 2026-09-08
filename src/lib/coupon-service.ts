@@ -177,7 +177,7 @@ export async function validateCoupon(
   if (now > expiresAt) {
     return {
       valid: false,
-      error: "This promo code has expired. Promo codes are valid for 10 minutes from generation.",
+      error: "This promo code has expired. Please request an active promo code.",
     };
   }
 
