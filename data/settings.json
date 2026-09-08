@@ -11,7 +11,7 @@
   "about_theme_desc": "The Ripple is a celebration of ideas that begin small but have the power to create lasting change. Like a single drop creating waves that travel far beyond its point of impact, one thought, one conversation, one action, or one individual can influence people, communities, and the world around them.\n\nTEDxGCEM brings together voices, stories, and perspectives that challenge the familiar and inspire meaningful action. Through diverse ideas and experiences, The Ripple explores how every spark of curiosity, courage, creativity, and change can set something larger in motion.\n\nBecause every great change begins with a ripple.",
   "reveal_about_theme": true,
   "reveal_team": true,
-  "reveal_speakers": false,
+  "reveal_speakers": true,
   "reveal_partners": false,
   "reveal_register": true,
   "reveal_tickets": true,
