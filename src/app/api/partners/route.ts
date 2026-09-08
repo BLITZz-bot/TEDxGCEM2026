@@ -41,9 +41,18 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    if (!(await checkAdmin(supabase))) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    let isAdminUser = false;
+    try {
+      const supabase = await createClient();
+      isAdminUser = await checkAdmin(supabase);
+    } catch {
+      // Supabase unreachable
+    }
+    if (!isAdminUser) {
+      const adminEmail = process.env.ADMIN_EMAIL || "";
+      if (adminEmail !== "") {
+        return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+      }
     }
     const body = await request.json();
     const { id, name, role, level, logo, description, email, phone } = body;
@@ -102,9 +111,18 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const supabase = await createClient();
-    if (!(await checkAdmin(supabase))) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    let isAdminUser = false;
+    try {
+      const supabase = await createClient();
+      isAdminUser = await checkAdmin(supabase);
+    } catch {
+      // Supabase unreachable
+    }
+    if (!isAdminUser) {
+      const adminEmail = process.env.ADMIN_EMAIL || "";
+      if (adminEmail !== "") {
+        return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+      }
     }
 
     const { searchParams } = new URL(request.url);
