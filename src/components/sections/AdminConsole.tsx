@@ -887,10 +887,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       handleResetMemberForm();
       
       // Reload team members list
-      const teamRes = await fetch("/api/team");
+      const teamRes = await fetch("/api/team", { cache: "no-store" });
       const teamData = await teamRes.json();
       if (teamRes.ok && teamData.team) {
         setTeamMembers(teamData.team);
+        if (globalAdminCache) {
+          globalAdminCache.teamMembers = teamData.team;
+        }
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to save member.";
@@ -920,7 +923,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to delete team member.");
 
-      setTeamMembers(prev => prev.filter(m => m.id !== id));
+      setTeamMembers(prev => {
+        const next = prev.filter(m => m.id !== id);
+        if (globalAdminCache) {
+          globalAdminCache.teamMembers = next;
+        }
+        return next;
+      });
       alert("Team member deleted successfully!");
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
@@ -1067,10 +1076,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       handleResetSpeakerForm();
       
       // Reload speakers list
-      const speakersRes = await fetch("/api/speakers");
+      const speakersRes = await fetch("/api/speakers", { cache: "no-store" });
       const speakersData = await speakersRes.json();
       if (speakersRes.ok && speakersData.speakers) {
         setSpeakersList(speakersData.speakers);
+        if (globalAdminCache) {
+          globalAdminCache.speakersList = speakersData.speakers;
+        }
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to save speaker.";
@@ -1102,7 +1114,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to delete speaker.");
 
-      setSpeakersList(prev => prev.filter(s => s.id !== id));
+      setSpeakersList(prev => {
+        const next = prev.filter(s => s.id !== id);
+        if (globalAdminCache) {
+          globalAdminCache.speakersList = next;
+        }
+        return next;
+      });
       alert("Speaker deleted successfully!");
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
@@ -1328,10 +1346,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       handleResetPartnerForm();
       
       // Reload partners list
-      const partnersRes = await fetch("/api/partners");
+      const partnersRes = await fetch("/api/partners", { cache: "no-store" });
       const partnersData = await partnersRes.json();
       if (partnersRes.ok && partnersData.partners) {
         setPartnersList(partnersData.partners);
+        if (globalAdminCache) {
+          globalAdminCache.partnersList = partnersData.partners;
+        }
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to save partner.";
@@ -1362,7 +1383,13 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to delete partner.");
 
-      setPartnersList(prev => prev.filter(p => p.id !== id));
+      setPartnersList(prev => {
+        const next = prev.filter(p => p.id !== id);
+        if (globalAdminCache) {
+          globalAdminCache.partnersList = next;
+        }
+        return next;
+      });
       alert("Partner deleted successfully!");
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
