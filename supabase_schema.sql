@@ -393,13 +393,13 @@ USING (auth.uid() = user_id OR (auth.jwt() ->> 'email') ILIKE email OR (auth.jwt
 DROP POLICY IF EXISTS "Allow admin to manage all registrations" ON public.registrations;
 CREATE POLICY "Allow admin to manage all registrations" 
 ON public.registrations FOR ALL TO authenticated 
-USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+USING (auth.jwt() ->> 'email' = 'admin@gmail.com');
 
 -- 12.2. Special Guest / Complimentary Passes Policies
 DROP POLICY IF EXISTS "Allow admin to manage complimentary passes" ON public.complimentary_passes;
 CREATE POLICY "Allow admin to manage complimentary passes"
 ON public.complimentary_passes FOR ALL TO authenticated
-USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+USING (auth.jwt() ->> 'email' = 'admin@gmail.com');
 
 DROP POLICY IF EXISTS "Allow users to view own complimentary pass" ON public.complimentary_passes;
 CREATE POLICY "Allow users to view own complimentary pass"
@@ -448,7 +448,7 @@ ON public.event_settings FOR SELECT TO public USING (true);
 DROP POLICY IF EXISTS "Allow admin to manage event settings" ON public.event_settings;
 CREATE POLICY "Allow admin to manage event settings"
 ON public.event_settings FOR ALL TO authenticated
-USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+USING (auth.jwt() ->> 'email' = 'admin@gmail.com');
 
 -- 12.7. Team Members Policies
 DROP POLICY IF EXISTS "Allow public read access to team members" ON public.team_members;
@@ -458,7 +458,7 @@ ON public.team_members FOR SELECT TO public USING (true);
 DROP POLICY IF EXISTS "Allow admin to manage team members" ON public.team_members;
 CREATE POLICY "Allow admin to manage team members"
 ON public.team_members FOR ALL TO authenticated
-USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+USING (auth.jwt() ->> 'email' = 'admin@gmail.com');
 
 -- 12.8. Speakers Policies
 DROP POLICY IF EXISTS "Allow public read access to speakers" ON public.speakers;
@@ -468,7 +468,7 @@ ON public.speakers FOR SELECT TO public USING (true);
 DROP POLICY IF EXISTS "Allow admin to manage speakers" ON public.speakers;
 CREATE POLICY "Allow admin to manage speakers"
 ON public.speakers FOR ALL TO authenticated
-USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+USING (auth.jwt() ->> 'email' = 'admin@gmail.com');
 
 -- 12.9. Partners Policies
 DROP POLICY IF EXISTS "Allow public read access to partners" ON public.partners;
@@ -478,7 +478,7 @@ ON public.partners FOR SELECT TO public USING (true);
 DROP POLICY IF EXISTS "Allow admin to manage partners" ON public.partners;
 CREATE POLICY "Allow admin to manage partners"
 ON public.partners FOR ALL TO authenticated
-USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+USING (auth.jwt() ->> 'email' = 'admin@gmail.com');
 
 -- 12.10. Messages Policies
 DROP POLICY IF EXISTS "Allow authenticated users to insert contact messages" ON public.messages;
@@ -492,4 +492,4 @@ ON public.messages FOR INSERT TO anon WITH CHECK (true);
 DROP POLICY IF EXISTS "Allow admin to select and manage contact messages" ON public.messages;
 CREATE POLICY "Allow admin to select and manage contact messages" 
 ON public.messages FOR ALL TO authenticated 
-USING (auth.jwt() ->> 'email' = 'tedxgcem@gmail.com');
+USING (auth.jwt() ->> 'email' = 'admin@gmail.com');
