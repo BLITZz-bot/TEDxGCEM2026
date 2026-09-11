@@ -91,6 +91,7 @@ let globalSpeakersCache: Speaker[] | null = null;
 export default function Speakers({ settings, onModalToggle }: SpeakersProps) {
   
   const [speakers, setSpeakers] = useState<Speaker[]>(globalSpeakersCache || []);
+  const [isLoading, setIsLoading] = useState<boolean>(!globalSpeakersCache);
   const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null);
 
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
@@ -116,7 +117,10 @@ export default function Speakers({ settings, onModalToggle }: SpeakersProps) {
           setSpeakers(formatted);
         }
       })
-      .catch((err) => console.error("Error loading dynamic speakers:", err));
+      .catch((err) => console.error("Error loading dynamic speakers:", err))
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -210,7 +214,62 @@ export default function Speakers({ settings, onModalToggle }: SpeakersProps) {
 
         {/* Speakers Grid - 2 per row, compact size, centered */}
         {settings?.reveal_speakers !== false ? (
-          speakers.length > 0 ? (
+          isLoading ? (
+            <div 
+              className="grid grid-cols-1 sm:grid-cols-2 gap-8 mx-auto items-start"
+              style={{ maxWidth: `calc(${BOX_SETTINGS.width} * 2 + 2rem)` }}
+            >
+              {[0, 1].map((idx) => (
+                <div
+                  key={idx}
+                  className="relative border border-white/15 bg-white/[0.04] rounded-3xl p-4 sm:p-5 flex flex-col justify-between select-none w-full mx-auto backdrop-blur-md overflow-hidden"
+                  style={{ maxWidth: BOX_SETTINGS.width, height: "auto" }}
+                >
+                  {/* Subtle flowing diagonal shimmer light effect */}
+                  <motion.div
+                    className="absolute -inset-full w-[300%] h-[300%] bg-gradient-to-r from-transparent via-ted-red/[0.08] to-transparent -rotate-45 pointer-events-none"
+                    animate={{ x: ["-100%", "100%"] }}
+                    transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
+                  />
+
+                  {/* Photo frame: dark zinc square with TEDx red corner brackets */}
+                  <div className="relative w-full mb-4">
+                    {/* Behind shadow layer */}
+                    <div className="absolute inset-0 bg-ted-red/25 rounded-2xl translate-x-2.5 translate-y-2.5" />
+
+                    {/* Front photo frame */}
+                    <div className="relative rounded-2xl overflow-hidden border border-white/15 bg-zinc-950 aspect-[4/3] sm:aspect-[1.5] flex items-center justify-center -translate-x-1 -translate-y-1">
+                      {/* Tech Corner Brackets in TED-red */}
+                      <div className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-ted-red z-20" />
+                      <div className="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-ted-red z-20" />
+                      <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-ted-red z-20" />
+                      <div className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-ted-red z-20" />
+
+                      {/* Center subtle status pill */}
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-white/10 backdrop-blur-md">
+                        <span className="w-1.5 h-1.5 rounded-full bg-ted-red animate-pulse" />
+                        <span className="text-[10px] font-mono font-bold tracking-widest text-white/50 uppercase">
+                          LOADING DOSSIER...
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Text Placeholders: Pulsing rounded bars + glowing red dash line */}
+                  <div className="text-left mt-auto pt-2 space-y-3">
+                    {/* Speaker name bar */}
+                    <div className="h-6 sm:h-7 w-3/4 bg-white/10 rounded-lg animate-pulse" />
+
+                    {/* Designation bar */}
+                    <div className="h-3.5 sm:h-4 w-1/2 bg-white/5 rounded-md animate-pulse" />
+
+                    {/* Glowing red dash line */}
+                    <div className="h-[2px] w-12 bg-ted-red animate-pulse mt-4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : speakers.length > 0 ? (
             <div 
               className="grid grid-cols-1 sm:grid-cols-2 gap-8 mx-auto items-start"
               style={{ maxWidth: gridMaxWidth }}
