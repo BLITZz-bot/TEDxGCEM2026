@@ -1065,7 +1065,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           linkedin: speakerLinkedin,
           instagram: speakerInstagram,
           bio: speakerBio,
-          details: speakerDetails,
+          details: speakerDetails.trim(),
         }),
       });
 
@@ -1101,7 +1101,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     setSpeakerLinkedin(speaker.linkedin || "");
     setSpeakerInstagram(speaker.instagram || "");
     setSpeakerBio(speaker.bio);
-    setSpeakerDetails(speaker.details);
+    setSpeakerDetails(speaker.details || "");
   };
 
   const handleDeleteSpeaker = async (id: string) => {
@@ -5166,13 +5166,12 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs text-white/50 uppercase tracking-wider block">Detailed Credentials / Background</label>
+                  <label className="text-xs text-white/50 uppercase tracking-wider block">Detailed Credentials / Background <span className="text-white/30 text-[10px] lowercase font-normal">(optional)</span></label>
                   <textarea
                     value={speakerDetails}
                     onChange={(e) => setSpeakerDetails(e.target.value)}
-                    placeholder="Provide detailed background, achievements, and credentials..."
+                    placeholder="Provide detailed background, achievements, and credentials (optional)..."
                     className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-sans h-20 resize-y leading-relaxed"
-                    required
                   />
                 </div>
 

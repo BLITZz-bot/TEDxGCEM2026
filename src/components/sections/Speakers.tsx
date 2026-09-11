@@ -59,7 +59,7 @@ interface Speaker {
   name: string;
   designation?: string;
   bio: string;
-  details: string;
+  details?: string;
   photo: string;
   email?: string;
   linkedin?: string;
@@ -71,7 +71,7 @@ interface DBSpeaker {
   name: string;
   designation: string;
   bio: string;
-  details: string;
+  details?: string;
   image_url?: string;
   email?: string;
   linkedin?: string;
@@ -106,7 +106,7 @@ export default function Speakers({ settings, onModalToggle }: SpeakersProps) {
             name: s.name,
             designation: s.designation,
             bio: s.bio,
-            details: s.details,
+            details: s.details || "",
             photo: s.image_url || slImg.src,
             email: s.email,
             linkedin: s.linkedin,
@@ -403,7 +403,7 @@ export default function Speakers({ settings, onModalToggle }: SpeakersProps) {
               onClick={(e) => e.stopPropagation()}
               className="w-full md:w-[52%] h-[58dvh] md:h-full flex flex-col justify-start p-6 sm:p-10 md:p-14 lg:p-16 cursor-default relative overflow-y-auto shrink-0 z-10 [scrollbar-width:thin] [scrollbar-color:rgba(235,0,40,0.4)_transparent]"
             >
-              <div className="max-w-2xl w-full mx-auto space-y-6 md:space-y-8 text-left my-auto py-6 relative z-10">
+              <div className="max-w-2xl w-full mx-auto space-y-6 md:space-y-8 text-left py-6 relative z-10">
                 {/* Speaker's name & badge */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
@@ -437,7 +437,7 @@ export default function Speakers({ settings, onModalToggle }: SpeakersProps) {
                 )}
 
                 {/* Glassmorphic Background - Cohesive frosted panel */}
-                {selectedSpeaker.details && (
+                {selectedSpeaker.details && selectedSpeaker.details.trim().length > 0 ? (
                   <div className="relative rounded-2xl bg-gradient-to-br from-white/[0.05] via-white/[0.01] to-white/[0.03] border border-white/10 border-t-white/15 backdrop-blur-xl p-4 sm:p-5 space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.08)]">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-ted-red" />
@@ -446,10 +446,10 @@ export default function Speakers({ settings, onModalToggle }: SpeakersProps) {
                       </span>
                     </div>
                     <p className="text-white/75 text-xs sm:text-[13px] md:text-sm leading-relaxed font-light pl-3.5 whitespace-pre-line">
-                      {selectedSpeaker.details}
+                      {selectedSpeaker.details.trim()}
                     </p>
                   </div>
-                )}
+                ) : null}
 
                 {/* Full-width custom contact buttons (only rendered if links exist) */}
                 {(() => {
