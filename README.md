@@ -7,6 +7,8 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase_PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![Three.js](https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=three.js&logoColor=white)
 ![UPI QR](https://img.shields.io/badge/UPI_QR_Payments-0074E4?style=for-the-badge&logo=google-pay&logoColor=white)
 ![Razorpay](https://img.shields.io/badge/Razorpay_Payments-02042B?style=for-the-badge&logo=razorpay&logoColor=3395FF)
 ![Resend](https://img.shields.io/badge/Resend_Email_API-000000?style=for-the-badge&logo=resend&logoColor=white)
@@ -143,16 +145,18 @@ To run, simply paste the contents of `supabase_schema.sql` into your **Supabase 
 * **Framework:** Next.js (App Router Architecture)
 * **Core & Logic:** React & TypeScript
 * **Styling & Theme:** Tailwind CSS (Custom HSL Dark Mode & Cyber-Brutalist Aesthetic)
-* **Animation Engine:** Framer Motion (3D interactive card tilts, smooth tab switches, entrance reveals)
-* **Graphics & Simulation:** HTML5 Canvas API (Real-time physics vector constellation backgrounds)
-* **QR Codes:** Local client-side canvas generation (`qrcode.react`)
+* **3D Visuals & Graphics:** Three.js & React Three Fiber (`@react-three/fiber`, `@react-three/drei`) alongside HTML5 Canvas physics constellation backgrounds
+* **Animation & Motion:** GSAP & Framer Motion (interactive card tilts, smooth tab switches, entrance reveals)
+* **QR Codes:** Local client-side canvas generation (`qrcode.react`) & camera scanning (`html5-qrcode`)
 
 ### Backend, Database & Infrastructure
-* **Database:** Supabase (PostgreSQL with Row Level Security - RLS)
-* **Authentication:** Supabase Auth with Google OAuth 2.0
+* **Databases:** 
+  * Supabase (PostgreSQL with Row Level Security - RLS) for ticketing, registrations, payments & drafts
+  * Neon PostgreSQL via Prisma ORM for team directories, scan events, and telemetry
+* **Authentication:** Supabase Auth with Google OAuth 2.0 & Session Security
 * **Storage Bucket:** Supabase Storage (`payment-proofs` bucket for receipts)
 * **Security & Bot Protection:** Cloudflare Turnstile
-* **Transactional Emails:** Resend Email API
+* **Transactional Emails:** Resend Email API & Nodemailer
 * **Hosting & CDN:** Vercel Edge Serverless Infrastructure
 
 ---
@@ -163,24 +167,30 @@ Create a `.env.local` file in your root directory based on `.env.example`:
 
 ### For `v2-upi-payments` Branch:
 ```env
-# 1. Supabase Database, Auth & Storage
+# 1. Neon PostgreSQL & Prisma (Team Members & QR Scan Tracking)
+DATABASE_URL=postgresql://user:password@ep-xyz-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
+TEAM_ADMIN_EMAIL=admin@example.com
+TEAM_ADMIN_PASSWORD=your_secure_team_admin_password
+NEXTAUTH_SECRET=your_long_random_session_secret_key
+
+# 2. Supabase Database, Auth & Storage
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
-# 2. UPI QR Code Configuration (Safe placeholders — configure privately in .env.local)
+# 3. UPI QR Code Configuration (Safe placeholders — configure privately in .env.local)
 NEXT_PUBLIC_UPI_ID=your_merchant_vpa@bank
 NEXT_PUBLIC_UPI_NAME=Your Organization / Event Name
 
-# 3. Security & Anti-Bot Protection
+# 4. Security & Anti-Bot Protection
 TURNSTILE_SECRET_KEY=0x4AAAAAAA...
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAA...
 
-# 4. Administrator Access & Security
+# 5. Administrator Access & Security
 ADMIN_EMAIL=your-admin-email@example.com
 ADMIN_DELETE_PASSWORD=your_secure_admin_deletion_password
 
-# 5. Resend Email Delivery
+# 6. Resend Email Delivery
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
 RESEND_FROM_EMAIL=team@yourdomain.com
 NEXT_PUBLIC_SITE_URL=https://tedxgcem.in
@@ -188,20 +198,26 @@ NEXT_PUBLIC_SITE_URL=https://tedxgcem.in
 
 ### For `dev` Branch (Razorpay):
 ```env
-# 1. Supabase Database & Auth
+# 1. Neon PostgreSQL & Prisma (Team Members & QR Scan Tracking)
+DATABASE_URL=postgresql://user:password@ep-xyz-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
+TEAM_ADMIN_EMAIL=admin@example.com
+TEAM_ADMIN_PASSWORD=your_secure_team_admin_password
+NEXTAUTH_SECRET=your_long_random_session_secret_key
+
+# 2. Supabase Database & Auth
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=your-supabase-anon-key
 
-# 2. Administrator Access & Security
+# 3. Administrator Access & Security
 ADMIN_EMAIL=your-admin-email@example.com
 ADMIN_DELETE_PASSWORD=your_secure_admin_deletion_password
 
-# 3. Resend Email Delivery
+# 4. Resend Email Delivery
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
 RESEND_FROM_EMAIL=team@yourdomain.com
 NEXT_PUBLIC_SITE_URL=https://tedxgcem.in
 
-# 4. Razorpay Gateway API Keys
+# 5. Razorpay Gateway API Keys
 RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxxxxxxxxx
 RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
 NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxxxxxxxxx
@@ -215,10 +231,14 @@ NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxxxxxxxxx
 # 1. Install dependencies
 npm install
 
-# 2. Start development server
+# 2. Synchronize database schema & seed initial data (Optional)
+npm run db:push
+npm run db:seed
+
+# 3. Start development server
 npm run dev
 
-# 3. Run typecheck & production build
+# 4. Run typecheck & production build
 npm run build
 ```
 
