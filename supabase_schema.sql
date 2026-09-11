@@ -320,7 +320,7 @@ CREATE TABLE IF NOT EXISTS public.speakers (
     name TEXT NOT NULL,
     designation TEXT DEFAULT 'Featured Speaker' NOT NULL,
     bio TEXT NOT NULL,
-    details TEXT NOT NULL,
+    details TEXT DEFAULT '',
     image_url TEXT NOT NULL,
     email TEXT,
     linkedin TEXT,
@@ -329,6 +329,9 @@ CREATE TABLE IF NOT EXISTS public.speakers (
 
 ALTER TABLE public.speakers 
     ADD COLUMN IF NOT EXISTS designation TEXT DEFAULT 'Featured Speaker' NOT NULL;
+
+ALTER TABLE public.speakers 
+    ALTER COLUMN details DROP NOT NULL;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────

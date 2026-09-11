@@ -65,13 +65,15 @@ export async function POST(request: Request) {
       typeof designation !== "string" ||
       typeof image_url !== "string" ||
       typeof bio !== "string" ||
-      typeof details !== "string" ||
+      (details !== undefined && details !== null && typeof details !== "string") ||
       (email !== undefined && email !== null && typeof email !== "string") ||
       (linkedin !== undefined && linkedin !== null && typeof linkedin !== "string") ||
       (instagram !== undefined && instagram !== null && typeof instagram !== "string")
     ) {
       return NextResponse.json({ error: "Invalid parameters." }, { status: 400 });
     }
+
+    const speakerDetails = typeof details === "string" ? details.trim() : "";
 
     let success = false;
     if (id) {
@@ -85,7 +87,7 @@ export async function POST(request: Request) {
         linkedin: linkedin || "",
         instagram: instagram || "",
         bio,
-        details
+        details: speakerDetails
       };
       success = await updateSpeaker(speakerToUpdate);
     } else {
@@ -98,7 +100,7 @@ export async function POST(request: Request) {
         linkedin: linkedin || "",
         instagram: instagram || "",
         bio,
-        details
+        details: speakerDetails
       };
       success = await addSpeaker(speakerToAdd);
     }

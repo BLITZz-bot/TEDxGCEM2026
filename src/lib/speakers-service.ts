@@ -19,7 +19,7 @@ export interface Speaker {
   linkedin?: string;
   instagram?: string;
   bio: string;
-  details: string;
+  details?: string;
 }
 
 // â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -109,7 +109,7 @@ export async function updateSpeaker(speaker: Speaker): Promise<boolean> {
           linkedin: speaker.linkedin,
           instagram: speaker.instagram,
           bio: speaker.bio,
-          details: speaker.details,
+          details: speaker.details || "",
         })
         .eq("id", speaker.id);
 
