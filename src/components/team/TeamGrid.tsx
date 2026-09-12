@@ -110,7 +110,11 @@ export function TeamGrid({ members }: { members: GridMember[] }) {
                       fill
                       onError={() => setFailedImages((prev) => ({ ...prev, [member.slug]: true }))}
                       sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
-                      className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                      className={`transition-transform duration-500 group-hover:scale-105 ${
+                        imageSrc.includes('tedxgcem') || imageSrc.includes('logo')
+                          ? 'object-contain p-8 bg-black/90'
+                          : 'object-cover object-center'
+                      }`}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90" />
 

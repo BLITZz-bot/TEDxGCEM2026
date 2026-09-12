@@ -112,7 +112,7 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
   const [imageSrc, setImageSrc] = useState(() => getValidPhotoUrl(member.photoUrl));
   const photoContainerRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
-  const isSingleLineName = member.slug === 'bharatha01' || member.slug === 'nivet.2006';
+  const isSingleLineName = member.slug === 'bharatha01' || member.slug === 'nivet.2006' || member.slug === 'manoj-challa';
 
   const nameFormatted = React.useMemo(() => {
     return formatName(member.name);
@@ -287,7 +287,11 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
                     priority
                     onError={() => setImageSrc(FALLBACK_PHOTO)}
                     sizes="(max-width: 768px) 95vw, 40vw"
-                    className="object-cover object-center grayscale hover:grayscale-0 transition-all duration-1000 ease-out group-hover:scale-105"
+                    className={`transition-all duration-1000 ease-out group-hover:scale-105 ${
+                      imageSrc.includes('tedxgcem') || imageSrc.includes('logo')
+                        ? 'object-contain p-10 bg-black/90'
+                        : 'object-cover object-center grayscale hover:grayscale-0'
+                    }`}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 

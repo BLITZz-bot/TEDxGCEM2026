@@ -34,6 +34,18 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     linkedin: 'https://www.linkedin.com/in/kartheek-g-c-r-98090339/',
   },
   {
+    slug: 'manoj-challa',
+    name: 'Dr. Manoj Challa',
+    role: 'Mentor, TEDxGCEM',
+    team: 'leadership',
+    oneLiner: 'Faculty Mentor, Strategic Advisor, and Institutional Pillar behind TEDxGCEM 2026.',
+    bio: 'Dr. Manoj Challa serves as the Faculty Mentor and Strategic Advisor for TEDxGCEM 2026. Providing institutional guidance, academic leadership, and mentorship to the organizing team, he ensures the event achieves excellence and aligns with TED standards.',
+    contribution: 'Faculty mentorship, institutional guidance, strategic oversight, and advising executive leadership.',
+    interests: ['Academic Leadership', 'Mentorship', 'Institutional Strategy', 'TEDx Stewardship'],
+    photoUrl: '/members/placeholder.png',
+    linkedin: 'https://www.linkedin.com/in/dr-manoj-challa-9237a812/',
+  },
+  {
     slug: 'bharatha01',
     name: 'M M Bharath',
     role: 'Executive Producer',
