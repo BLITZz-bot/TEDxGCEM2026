@@ -9,23 +9,15 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
-    "postinstall": "prisma generate",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "db:seed": "node prisma/seed.cjs",
-    "db:push": "dotenv -e .env.local -- npx prisma db push"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.cjs"
+    "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^5.22.0",
-    "@prisma/client": "^5.22.0",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
     "@supabase/ssr": "^0.12.0",
@@ -61,13 +53,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "prettier": "^3.9.6",
-    "prisma": "^5.22.0",
     "tailwindcss": "^4",
     "typescript": "^5"
-  },
-  "allowScripts": {
-    "prisma@5.22.0": true,
-    "@prisma/client@5.22.0": true,
-    "@prisma/engines@5.22.0": true
   }
 }
