@@ -199,7 +199,7 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
           </Link>
 
           <Link
-            href="/"
+            href="/?tab=team"
             className="group flex items-center gap-2 text-[11px] font-medium tracking-[0.2em] uppercase text-neutral-400 hover:text-white transition-colors duration-300"
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform duration-300 group-hover:-translate-x-1" />
