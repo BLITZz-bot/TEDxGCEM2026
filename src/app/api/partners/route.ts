@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       }
     }
     const body = await request.json();
-    const { id, name, role, level, logo, description, email, phone } = body;
+    const { id, name, role, level, logo, description, email, phone, instagram, linkedin } = body;
 
     // Validation
     if (
@@ -65,7 +65,9 @@ export async function POST(request: Request) {
       typeof description !== "string" ||
       (level !== undefined && level !== null && typeof level !== "string") ||
       (email !== undefined && email !== null && typeof email !== "string") ||
-      (phone !== undefined && phone !== null && typeof phone !== "string")
+      (phone !== undefined && phone !== null && typeof phone !== "string") ||
+      (instagram !== undefined && instagram !== null && typeof instagram !== "string") ||
+      (linkedin !== undefined && linkedin !== null && typeof linkedin !== "string")
     ) {
       return NextResponse.json({ error: "Invalid parameters." }, { status: 400 });
     }
@@ -81,7 +83,9 @@ export async function POST(request: Request) {
         logo,
         description,
         email: email || "",
-        phone: phone || ""
+        phone: phone || "",
+        instagram: instagram || "",
+        linkedin: linkedin || "",
       };
       success = await updatePartner(partnerToUpdate);
     } else {
@@ -93,7 +97,9 @@ export async function POST(request: Request) {
         logo,
         description,
         email: email || "",
-        phone: phone || ""
+        phone: phone || "",
+        instagram: instagram || "",
+        linkedin: linkedin || "",
       };
       success = await addPartner(partnerToAdd);
     }

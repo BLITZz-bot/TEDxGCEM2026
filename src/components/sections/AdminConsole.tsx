@@ -500,6 +500,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [partnerDescription, setPartnerDescription] = useState("");
   const [partnerEmail, setPartnerEmail] = useState("");
   const [partnerPhone, setPartnerPhone] = useState("");
+  const [partnerInstagram, setPartnerInstagram] = useState("");
+  const [partnerLinkedin, setPartnerLinkedin] = useState("");
   const [savingPartner, setSavingPartner] = useState(false);
 
   useEffect(() => {
@@ -1336,6 +1338,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
           description: partnerDescription,
           email: partnerEmail,
           phone: partnerPhone,
+          instagram: partnerInstagram,
+          linkedin: partnerLinkedin,
         }),
       });
 
@@ -1371,6 +1375,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     setPartnerDescription(partner.description || "");
     setPartnerEmail(partner.email || "");
     setPartnerPhone(partner.phone || "");
+    setPartnerInstagram(partner.instagram || "");
+    setPartnerLinkedin(partner.linkedin || "");
   };
 
   const handleDeletePartner = async (id: string) => {
@@ -1406,6 +1412,8 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     setPartnerDescription("");
     setPartnerEmail("");
     setPartnerPhone("");
+    setPartnerInstagram("");
+    setPartnerLinkedin("");
   };
 
   const handlePartnerLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -5421,6 +5429,29 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                   />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">Instagram URL (Optional)</label>
+                    <input
+                      type="url"
+                      value={partnerInstagram}
+                      onChange={(e) => setPartnerInstagram(e.target.value)}
+                      placeholder="e.g. https://instagram.com/company"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider block">LinkedIn URL (Optional)</label>
+                    <input
+                      type="url"
+                      value={partnerLinkedin}
+                      onChange={(e) => setPartnerLinkedin(e.target.value)}
+                      placeholder="e.g. https://linkedin.com/company/partner"
+                      className="w-full bg-white/5 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-ted-red transition-colors rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-2">
                   <div className="space-y-2">
                     <label className="text-xs text-white/50 uppercase tracking-wider block">Upload Partner Logo</label>
@@ -5528,6 +5559,28 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                             <span className="text-[9px] text-white/20 bg-white/[0.02] px-2 py-0.5 rounded font-mono line-through">
                               📞 Phone
                             </span>
+                          )}
+                          {partner.linkedin && (
+                            <a
+                              href={partner.linkedin.trim().startsWith("http") ? partner.linkedin.trim() : `https://${partner.linkedin.trim()}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[9px] text-[#0077B5] bg-[#0077B5]/10 hover:bg-[#0077B5]/20 px-2 py-0.5 rounded font-mono"
+                              title={partner.linkedin}
+                            >
+                              LinkedIn ↗
+                            </a>
+                          )}
+                          {partner.instagram && (
+                            <a
+                              href={partner.instagram.trim().startsWith("http") ? partner.instagram.trim() : `https://${partner.instagram.trim()}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[9px] text-[#E4405F] bg-[#E4405F]/10 hover:bg-[#E4405F]/20 px-2 py-0.5 rounded font-mono"
+                              title={partner.instagram}
+                            >
+                              Instagram ↗
+                            </a>
                           )}
                         </div>
 

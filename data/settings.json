@@ -12,7 +12,7 @@
   "reveal_about_theme": true,
   "reveal_team": true,
   "reveal_speakers": true,
-  "reveal_partners": false,
+  "reveal_partners": true,
   "reveal_register": true,
   "reveal_tickets": true,
   "reveal_schedule": false

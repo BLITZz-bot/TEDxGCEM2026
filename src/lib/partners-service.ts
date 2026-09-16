@@ -20,6 +20,8 @@ export interface Partner {
   description: string;
   email?: string;
   phone?: string;
+  instagram?: string;
+  linkedin?: string;
 }
 
 // â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -108,6 +110,8 @@ export async function updatePartner(partner: Partner): Promise<boolean> {
           description: partner.description,
           email: partner.email,
           phone: partner.phone,
+          instagram: partner.instagram,
+          linkedin: partner.linkedin,
         })
         .eq("id", partner.id);
 
