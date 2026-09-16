@@ -8,6 +8,38 @@ import { getEventYear } from "@/lib/utils";
 // Module-level in-memory cache for instant tab switching (0ms delay)
 let globalPartnersCache: Partner[] | null = null;
 
+const LinkedinIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect x="2" y="9" width="4" height="12" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
+
+const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+);
+
 export default function Partners({ settings }: { settings?: EventSettings | null }) {
   const [partnersList, setPartnersList] = useState<Partner[]>(globalPartnersCache || []);
   const [activePartner, setActivePartner] = useState<Partner | null>(null);
@@ -242,40 +274,73 @@ export default function Partners({ settings }: { settings?: EventSettings | null
                 {activePartner.description}
               </p>
 
-              {/* Divider */}
-              <div className="w-full h-[1.5px] bg-white/5 my-6" />
-
-              {/* Contact Info Footer Grid */}
-              <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 text-left text-xs font-mono mb-8">
-                {activePartner.email && (
-                  <a 
-                    href={`mailto:${activePartner.email}`}
-                    className="flex items-center gap-2.5 px-4 py-3 border border-white/5 bg-white/[0.01] hover:bg-ted-red/5 hover:border-ted-red/30 transition-all duration-150 rounded-xl group text-white/70 hover:text-white"
-                  >
-                    <svg className="w-4.5 h-4.5 text-ted-red transition-transform duration-150 group-hover:scale-110 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <div className="min-w-0 flex-1">
-                      <span className="text-[9px] uppercase tracking-widest text-white/30 block mb-0.5 font-bold font-mono">Email</span>
-                      <span className="truncate block text-white/90 group-hover:text-white transition-colors">{activePartner.email}</span>
-                    </div>
-                  </a>
-                )}
-                {activePartner.phone && (
-                  <a 
-                    href={`tel:${activePartner.phone}`}
-                    className="flex items-center gap-2.5 px-4 py-3 border border-white/5 bg-white/[0.01] hover:bg-ted-red/5 hover:border-ted-red/30 transition-all duration-150 rounded-xl group text-white/70 hover:text-white"
-                  >
-                    <svg className="w-4.5 h-4.5 text-ted-red transition-transform duration-150 group-hover:scale-110 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    <div className="min-w-0 flex-1">
-                      <span className="text-[9px] uppercase tracking-widest text-white/30 block mb-0.5 font-bold font-mono">Phone</span>
-                      <span className="block text-white/90 group-hover:text-white transition-colors">{activePartner.phone}</span>
-                    </div>
-                  </a>
-                )}
-              </div>
+              {/* Contact & Social Links Grid (Only rendered if at least one contact/social link exists) */}
+              {(Boolean(activePartner.email) ||
+                Boolean(activePartner.phone) ||
+                Boolean(activePartner.linkedin && activePartner.linkedin.trim()) ||
+                Boolean(activePartner.instagram && activePartner.instagram.trim())) && (
+                <>
+                  <div className="w-full h-[1.5px] bg-white/5 my-6" />
+                  <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-left text-xs font-mono mb-8">
+                    {activePartner.email && (
+                      <a 
+                        href={`mailto:${activePartner.email}`}
+                        className="flex items-center gap-2.5 px-4 py-3 border border-white/5 bg-white/[0.01] hover:bg-ted-red/5 hover:border-ted-red/30 transition-all duration-150 rounded-xl group text-white/70 hover:text-white"
+                      >
+                        <svg className="w-4.5 h-4.5 text-ted-red transition-transform duration-150 group-hover:scale-110 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[9px] uppercase tracking-widest text-white/30 block mb-0.5 font-bold font-mono">Email</span>
+                          <span className="truncate block text-white/90 group-hover:text-white transition-colors">{activePartner.email}</span>
+                        </div>
+                      </a>
+                    )}
+                    {activePartner.phone && (
+                      <a 
+                        href={`tel:${activePartner.phone}`}
+                        className="flex items-center gap-2.5 px-4 py-3 border border-white/5 bg-white/[0.01] hover:bg-ted-red/5 hover:border-ted-red/30 transition-all duration-150 rounded-xl group text-white/70 hover:text-white"
+                      >
+                        <svg className="w-4.5 h-4.5 text-ted-red transition-transform duration-150 group-hover:scale-110 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[9px] uppercase tracking-widest text-white/30 block mb-0.5 font-bold font-mono">Phone</span>
+                          <span className="block text-white/90 group-hover:text-white transition-colors">{activePartner.phone}</span>
+                        </div>
+                      </a>
+                    )}
+                    {activePartner.linkedin && activePartner.linkedin.trim() && (
+                      <a 
+                        href={activePartner.linkedin.trim().startsWith("http") ? activePartner.linkedin.trim() : `https://${activePartner.linkedin.trim()}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2.5 px-4 py-3 border border-white/5 bg-white/[0.01] hover:bg-[#0077B5]/10 hover:border-[#0077B5]/40 transition-all duration-150 rounded-xl group text-white/70 hover:text-white"
+                      >
+                        <LinkedinIcon className="w-4.5 h-4.5 text-[#0077B5] transition-transform duration-150 group-hover:scale-110 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[9px] uppercase tracking-widest text-white/30 block mb-0.5 font-bold font-mono">LinkedIn</span>
+                          <span className="truncate block text-white/90 group-hover:text-white transition-colors">Connect ↗</span>
+                        </div>
+                      </a>
+                    )}
+                    {activePartner.instagram && activePartner.instagram.trim() && (
+                      <a 
+                        href={activePartner.instagram.trim().startsWith("http") ? activePartner.instagram.trim() : `https://${activePartner.instagram.trim()}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2.5 px-4 py-3 border border-white/5 bg-white/[0.01] hover:bg-[#E4405F]/10 hover:border-[#E4405F]/40 transition-all duration-150 rounded-xl group text-white/70 hover:text-white"
+                      >
+                        <InstagramIcon className="w-4.5 h-4.5 text-[#E4405F] transition-transform duration-150 group-hover:scale-110 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[9px] uppercase tracking-widest text-white/30 block mb-0.5 font-bold font-mono">Instagram</span>
+                          <span className="truncate block text-white/90 group-hover:text-white transition-colors">Follow ↗</span>
+                        </div>
+                      </a>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* CTA */}
               <button

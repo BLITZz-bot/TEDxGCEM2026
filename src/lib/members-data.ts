@@ -22,6 +22,18 @@ export interface StaticMember {
 export const INITIAL_MEMBERS: StaticMember[] = [
   // Leadership
   {
+    slug: 'manoj-challa',
+    name: 'Dr. Manoj Challa',
+    role: 'Mentor, TEDxGCEM',
+    team: 'leadership',
+    oneLiner: 'Providing strategic counsel, academic stewardship, and inspiring the TEDxGCEM team to deliver world-class ideas.',
+    bio: "As Mentor for TEDxGCEM 2026, I provide strategic counsel, academic stewardship, and institutional guidance to the team, inspiring them to build an impactful platform that brings transformative, world-class ideas to the grand stage.",
+    contribution: 'Institutional mentorship, strategic guidance, and executive stewardship for the TEDxGCEM team.',
+    interests: ['Academic Leadership', 'Mentorship', 'Strategic Vision', 'TEDx Stewardship'],
+    photoUrl: '/members/placeholder.png',
+    linkedin: 'https://www.linkedin.com/in/dr-manoj-challa-9237a812/',
+  },
+  {
     slug: 'kartheek-gcr',
     name: 'Kartheek GCR',
     role: 'Organizer & Licensee',
@@ -29,7 +41,7 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     oneLiner: 'Official TED Licensee, Organizer, and Visionary behind TEDxGCEM 2026.',
     bio: 'Kartheek GCR is the Official TED Licensee and Organizer of TEDxGCEM 2026. He holds the official TED license, securing institutional approvals and steering the grand vision to bring world-class ideas to the GCEM stage.',
     contribution: 'Official TED Licensee holder, organizing executive leadership, institutional compliance, and event stewardship.',
-    interests: ['Leadership', 'Event Organization', 'TED Compliance', 'Strategic Vision'],
+    interests: ['Leadership', 'Event Organization', 'TED Compliance'],
     photoUrl: '/members/placeholder.png',
     linkedin: 'https://www.linkedin.com/in/kartheek-g-c-r-98090339/',
   },

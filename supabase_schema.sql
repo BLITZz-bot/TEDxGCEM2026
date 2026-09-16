@@ -346,8 +346,14 @@ CREATE TABLE IF NOT EXISTS public.partners (
     logo TEXT NOT NULL,
     description TEXT NOT NULL,
     email TEXT,
-    phone TEXT
+    phone TEXT,
+    instagram TEXT,
+    linkedin TEXT
 );
+
+-- Migration safety for existing tables:
+ALTER TABLE public.partners ADD COLUMN IF NOT EXISTS instagram TEXT;
+ALTER TABLE public.partners ADD COLUMN IF NOT EXISTS linkedin TEXT;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
