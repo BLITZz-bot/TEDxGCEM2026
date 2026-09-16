@@ -89,11 +89,12 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
   // Sync active tab with URL query parameters (?tab=register or ?draft_id=...)
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get("tab") as TabId | null;
-    const draftParam = params.get("draft_id");
 
-    const timer = setTimeout(() => {
+    const syncTabFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab") as TabId | null;
+      const draftParam = params.get("draft_id");
+
       if (draftParam || tabParam === "register") {
         setActiveTab("register");
       } else if (
@@ -102,9 +103,11 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
       ) {
         setActiveTab(tabParam);
       }
-    }, 0);
+    };
 
-    return () => clearTimeout(timer);
+    syncTabFromUrl();
+    window.addEventListener("popstate", syncTabFromUrl);
+    return () => window.removeEventListener("popstate", syncTabFromUrl);
   }, []);
 
   // â”€â”€â”€ Responsive layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -219,6 +222,11 @@ export default function HomeClient({ initialSettings }: HomeClientProps) {
     } else {
       // Mobile: switch immediately (mobile menu has its own transition)
       setActiveTab(id);
+    }
+
+    if (typeof window !== "undefined") {
+      const newUrl = id === "home" ? "/" : `/?tab=${id}`;
+      window.history.replaceState(null, "", newUrl);
     }
   };
 
