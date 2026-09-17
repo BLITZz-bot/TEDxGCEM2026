@@ -57,7 +57,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { id, name, role, image_url, email, linkedin, bio } = body;
+    const { id, name, role, image_url, email, linkedin, bio, display_order } = body;
+
+    const parsedOrder = 
+      display_order !== undefined && display_order !== null && display_order !== ""
+        ? Number(display_order)
+        : undefined;
 
     // Validation
     if (
@@ -66,7 +71,8 @@ export async function POST(request: Request) {
       typeof image_url !== "string" ||
       typeof bio !== "string" ||
       (email !== undefined && email !== null && typeof email !== "string") ||
-      (linkedin !== undefined && linkedin !== null && typeof linkedin !== "string")
+      (linkedin !== undefined && linkedin !== null && typeof linkedin !== "string") ||
+      (parsedOrder !== undefined && isNaN(parsedOrder))
     ) {
       return NextResponse.json({ error: "Invalid parameters." }, { status: 400 });
     }
@@ -82,6 +88,7 @@ export async function POST(request: Request) {
         email: email || "",
         linkedin: linkedin || "",
         bio,
+        ...(parsedOrder !== undefined ? { display_order: parsedOrder } : {}),
       };
       success = await updateTeamMember(memberToUpdate);
     } else {
@@ -93,6 +100,7 @@ export async function POST(request: Request) {
         email: email || "",
         linkedin: linkedin || "",
         bio,
+        ...(parsedOrder !== undefined ? { display_order: parsedOrder } : {}),
       };
       success = await addTeamMember(memberToAdd);
     }

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { readLocalStore, saveLocalStore } from "@/lib/db/local-store";
 import { isValidUUID } from "@/lib/db/uuid-validator";
 
-// â”€â”€â”€ Domain type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Domain type ─────────────────────────────────────────────────────────────
 
 export interface TeamMember {
   id: string;
@@ -18,14 +18,15 @@ export interface TeamMember {
   email?: string;
   linkedin?: string;
   bio: string;
+  display_order?: number;
 }
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const TEAM_FILE_PATH = path.join(process.cwd(), "data", "team.json");
 const DEFAULT_TEAM: TeamMember[] = [];
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function readLocal(): TeamMember[] {
   return readLocalStore<TeamMember>(TEAM_FILE_PATH, DEFAULT_TEAM);
@@ -35,26 +36,45 @@ async function saveLocal(members: TeamMember[]): Promise<void> {
   saveLocalStore<TeamMember>(TEAM_FILE_PATH, members);
 }
 
-// â”€â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Public API ──────────────────────────────────────────────────────────────
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
   // 1. Try Supabase first
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let data: TeamMember[] | null = null;
+    let error: unknown = null;
+
+    const res = await supabase
       .from("team_members")
       .select("*")
-      .order("created_at", { ascending: true });
+      .order("display_order", { ascending: true });
+
+    if (!res.error && Array.isArray(res.data)) {
+      data = res.data;
+    } else {
+      // Fallback to created_at if display_order column doesn't exist yet
+      const fallback = await supabase
+        .from("team_members")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (!fallback.error && Array.isArray(fallback.data)) {
+        data = fallback.data;
+      } else {
+        error = res.error || fallback.error;
+      }
+    }
 
     if (!error && Array.isArray(data) && data.length > 0) {
-      return data;
+      return data.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
     }
   } catch (err) {
     console.warn("[team-service] Supabase fetch error, falling back to local file:", err);
   }
 
   // 2. Fallback to local file
-  return readLocal();
+  const local = readLocal();
+  return local.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
 }
 
 /** @internal — write-through to local JSON after every mutation */
@@ -64,16 +84,30 @@ export async function saveTeamLocalFallback(members: TeamMember[]): Promise<void
 
 export async function addTeamMember(member: Omit<TeamMember, "id">): Promise<boolean> {
   let newId = crypto.randomUUID();
+  const current = readLocal();
+  const defaultOrder = current.length > 0 
+    ? Math.max(...current.map(m => (typeof m.display_order === "number" ? m.display_order : 0))) + 1 
+    : 1;
+  const memberWithOrder: Omit<TeamMember, "id"> = {
+    ...member,
+    display_order: member.display_order !== undefined && member.display_order !== null ? member.display_order : defaultOrder,
+  };
 
   // 1. Persist to Supabase
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.from("team_members").insert([member]).select();
+    const { data, error } = await supabase.from("team_members").insert([memberWithOrder]).select();
 
     if (!error && data && data.length > 0) {
       newId = data[0].id;
     } else {
-      console.warn("[team-service] Supabase insert error:", error);
+      console.warn("[team-service] Supabase insert with display_order failed, trying without:", error);
+      // If display_order column does not exist in Supabase yet, retry without it
+      const { display_order: _, ...memberWithoutOrder } = memberWithOrder;
+      const retry = await supabase.from("team_members").insert([memberWithoutOrder]).select();
+      if (!retry.error && retry.data && retry.data.length > 0) {
+        newId = retry.data[0].id;
+      }
     }
   } catch (err) {
     console.warn("[team-service] Supabase insert connection error:", err);
@@ -81,8 +115,7 @@ export async function addTeamMember(member: Omit<TeamMember, "id">): Promise<boo
 
   // 2. Write-through to local fallback
   try {
-    const current = readLocal();
-    current.push({ id: newId, ...member });
+    current.push({ id: newId, ...memberWithOrder });
     await saveLocal(current);
     return true;
   } catch (err) {
@@ -96,20 +129,29 @@ export async function updateTeamMember(member: TeamMember): Promise<boolean> {
   if (isValidUUID(member.id)) {
     try {
       const supabase = await createClient();
+      const updatePayload: Record<string, unknown> = {
+        name: member.name,
+        role: member.role,
+        image_url: member.image_url,
+        email: member.email,
+        linkedin: member.linkedin,
+        bio: member.bio,
+      };
+      if (member.display_order !== undefined) {
+        updatePayload.display_order = member.display_order;
+      }
+
       const { error } = await supabase
         .from("team_members")
-        .update({
-          name: member.name,
-          role: member.role,
-          image_url: member.image_url,
-          email: member.email,
-          linkedin: member.linkedin,
-          bio: member.bio,
-        })
+        .update(updatePayload)
         .eq("id", member.id);
 
       if (error) {
         console.warn("[team-service] Supabase update error:", error);
+        if (member.display_order !== undefined) {
+          delete updatePayload.display_order;
+          await supabase.from("team_members").update(updatePayload).eq("id", member.id);
+        }
       }
     } catch (err) {
       console.warn("[team-service] Supabase update connection error:", err);
@@ -123,6 +165,51 @@ export async function updateTeamMember(member: TeamMember): Promise<boolean> {
     return true;
   } catch (err) {
     console.error("[team-service] Local file update error:", err);
+    return false;
+  }
+}
+
+export async function reorderTeamMembers(orderedIds: string[]): Promise<boolean> {
+  try {
+    const current = readLocal();
+    const idToMember = new Map(current.map((m) => [m.id, m]));
+    const updated: TeamMember[] = [];
+
+    orderedIds.forEach((id, idx) => {
+      const m = idToMember.get(id);
+      if (m) {
+        updated.push({ ...m, display_order: idx + 1 });
+        idToMember.delete(id);
+      }
+    });
+
+    // Any unlisted members appended to the end
+    let nextOrder = updated.length + 1;
+    idToMember.forEach((m) => {
+      updated.push({ ...m, display_order: nextOrder++ });
+    });
+
+    await saveLocal(updated);
+
+    // Sync to Supabase
+    try {
+      const supabase = await createClient();
+      for (let i = 0; i < orderedIds.length; i++) {
+        const id = orderedIds[i];
+        if (isValidUUID(id)) {
+          await supabase
+            .from("team_members")
+            .update({ display_order: i + 1 })
+            .eq("id", id);
+        }
+      }
+    } catch (err) {
+      console.warn("[team-service] Supabase reorder sync error:", err);
+    }
+
+    return true;
+  } catch (err) {
+    console.error("[team-service] reorderTeamMembers error:", err);
     return false;
   }
 }

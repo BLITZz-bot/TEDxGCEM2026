@@ -307,8 +307,12 @@ CREATE TABLE IF NOT EXISTS public.team_members (
     image_url TEXT NOT NULL,
     email TEXT,
     linkedin TEXT,
-    bio TEXT NOT NULL
+    bio TEXT DEFAULT ''
 );
+
+-- Migration safety for existing tables:
+ALTER TABLE public.team_members ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT '';
+ALTER TABLE public.team_members ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -354,6 +358,7 @@ CREATE TABLE IF NOT EXISTS public.partners (
 -- Migration safety for existing tables:
 ALTER TABLE public.partners ADD COLUMN IF NOT EXISTS instagram TEXT;
 ALTER TABLE public.partners ADD COLUMN IF NOT EXISTS linkedin TEXT;
+ALTER TABLE public.partners ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
