@@ -15,5 +15,5 @@
   "reveal_partners": true,
   "reveal_register": true,
   "reveal_tickets": true,
-  "reveal_schedule": false
+  "reveal_schedule": true
 }
