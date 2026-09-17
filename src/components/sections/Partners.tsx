@@ -42,6 +42,7 @@ const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function Partners({ settings }: { settings?: EventSettings | null }) {
   const [partnersList, setPartnersList] = useState<Partner[]>(globalPartnersCache || []);
+  const [isLoading, setIsLoading] = useState<boolean>(!globalPartnersCache);
   const [activePartner, setActivePartner] = useState<Partner | null>(null);
 
   useEffect(() => {
@@ -50,11 +51,16 @@ export default function Partners({ settings }: { settings?: EventSettings | null
         const res = await fetch("/api/partners");
         const data = await res.json();
         if (res.ok && Array.isArray(data.partners)) {
-          globalPartnersCache = data.partners;
-          setPartnersList(data.partners);
+          const sorted = [...data.partners].sort(
+            (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+          );
+          globalPartnersCache = sorted;
+          setPartnersList(sorted);
         }
       } catch (err) {
         console.error("Error loading partners:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadPartners();
@@ -122,35 +128,99 @@ export default function Partners({ settings }: { settings?: EventSettings | null
                 <h4 className="text-white/50 uppercase tracking-[0.3em] text-[10px] font-mono font-bold">Our Partners</h4>
               </div>
               <div className="grid grid-cols-1 gap-10 sm:gap-12">
-                {partnersList.length > 0 ? (
-                  partnersList.slice(0, 2).map((partner, i) => (
-                    <div key={partner.id || i} className="flex flex-col w-full">
-                      <h5 className="text-sm sm:text-lg md:text-xl font-mono font-black uppercase tracking-[0.25em] text-white mb-3 text-center">
-                        {partner.role}
-                      </h5>
-                      <motion.div
-                        whileHover={{ y: -4 }}
-                        onClick={() => setActivePartner(partner)}
-                        className="flex flex-col items-center justify-center p-6 sm:p-8 group cursor-pointer transition-all duration-300 border border-white/20 bg-white/[0.04] backdrop-blur-md rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md hover:border-ted-red/60 hover:bg-white/[0.07] shadow-[0_4px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.18)]"
-                      >
-                        <img 
-                          src={partner.logo} 
-                          alt={`${partner.name} Logo`} 
-                          className="w-full max-w-[140px] sm:max-w-[210px] h-20 sm:h-28 object-contain transition-all duration-500" 
-                        />
-                        <div className="text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-white/50 group-hover:text-ted-red transition-colors duration-300 mt-4 text-center">
-                          {partner.name}
+                <AnimatePresence mode="wait">
+                  {isLoading ? (
+                    <motion.div
+                      key="loading-skeletons"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="grid grid-cols-1 gap-10 sm:gap-12 w-full"
+                    >
+                      {[0, 1].map((idx) => (
+                        <div key={idx} className="flex flex-col w-full">
+                          {/* Pulsing role bar */}
+                          <div className="h-5 w-44 mx-auto bg-white/10 rounded-full animate-pulse mb-3" />
+                          
+                          {/* Card skeleton */}
+                          <div className="relative flex flex-col items-center justify-center p-6 sm:p-8 border border-white/15 bg-white/[0.04] backdrop-blur-md rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md overflow-hidden min-h-[170px] sm:min-h-[200px]">
+                            {/* Shimmer light sweep */}
+                            <motion.div
+                              className="absolute -inset-full w-[300%] h-[300%] bg-gradient-to-r from-transparent via-ted-red/[0.08] to-transparent -rotate-45 pointer-events-none"
+                              animate={{ x: ["-100%", "100%"] }}
+                              transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
+                            />
+
+                            {/* Tech Corner Brackets in TED-red */}
+                            <div className="absolute top-2.5 left-2.5 w-3 h-3 border-t-2 border-l-2 border-ted-red z-20" />
+                            <div className="absolute bottom-2.5 right-2.5 w-3 h-3 border-b-2 border-r-2 border-ted-red z-20" />
+
+                            {/* Logo placeholder with animated status pill */}
+                            <div className="w-36 sm:w-48 h-16 sm:h-20 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center">
+                              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md">
+                                <span className="w-1.5 h-1.5 rounded-full bg-ted-red animate-pulse" />
+                                <span className="text-[9px] font-mono font-bold tracking-widest text-white/50 uppercase">
+                                  LOADING PARTNER...
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Partner name placeholder bar */}
+                            <div className="h-3 w-28 bg-white/10 rounded-full animate-pulse mt-4" />
+                          </div>
                         </div>
-                      </motion.div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="border border-white/10 p-8 rounded-2xl bg-white/[0.02] text-center space-y-2">
-                    <p className="text-white/60 font-mono text-xs uppercase tracking-widest">
-                      Partners to be announced soon
-                    </p>
-                  </div>
-                )}
+                      ))}
+                    </motion.div>
+                  ) : partnersList.length > 0 ? (
+                    <motion.div
+                      key="loaded-partners"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4 }}
+                      className="grid grid-cols-1 gap-10 sm:gap-12 w-full"
+                    >
+                      {partnersList.slice(0, 2).map((partner, i) => (
+                        <motion.div
+                          key={partner.id || i}
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: i * 0.1 }}
+                          className="flex flex-col w-full"
+                        >
+                          <h5 className="text-sm sm:text-lg md:text-xl font-mono font-black uppercase tracking-[0.25em] text-white mb-3 text-center">
+                            {partner.role}
+                          </h5>
+                          <motion.div
+                            whileHover={{ y: -4 }}
+                            onClick={() => setActivePartner(partner)}
+                            className="flex flex-col items-center justify-center p-6 sm:p-8 group cursor-pointer transition-all duration-300 border border-white/20 bg-white/[0.04] backdrop-blur-md rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md hover:border-ted-red/60 hover:bg-white/[0.07] shadow-[0_4px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.18)]"
+                          >
+                            <img 
+                              src={partner.logo} 
+                              alt={`${partner.name} Logo`} 
+                              className="w-full max-w-[140px] sm:max-w-[210px] h-20 sm:h-28 object-contain transition-all duration-500" 
+                            />
+                            <div className="text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-white/50 group-hover:text-ted-red transition-colors duration-300 mt-4 text-center">
+                              {partner.name}
+                            </div>
+                          </motion.div>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="no-partners"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="border border-white/10 p-8 rounded-2xl bg-white/[0.02] text-center space-y-2 w-full"
+                    >
+                      <p className="text-white/60 font-mono text-xs uppercase tracking-widest">
+                        Partners to be announced soon
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           ) : (
@@ -188,11 +258,22 @@ export default function Partners({ settings }: { settings?: EventSettings | null
       </div>
 
       {/* Remaining Partners Grid (Spans full page width below the split columns layout) */}
-      {settings?.reveal_partners !== false && partnersList.length > 2 && (
-        <div className="mt-8 sm:mt-12">
+      {settings?.reveal_partners !== false && !isLoading && partnersList.length > 2 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mt-8 sm:mt-12"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-12">
             {partnersList.slice(2).map((partner, i) => (
-              <div key={partner.id || (i + 2)} className="flex flex-col w-full">
+              <motion.div
+                key={partner.id || (i + 2)}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 * i }}
+                className="flex flex-col w-full"
+              >
                 <h5 className="text-sm sm:text-lg md:text-xl font-mono font-black uppercase tracking-[0.25em] text-white mb-3 text-center">
                   {partner.role}
                 </h5>
@@ -210,10 +291,10 @@ export default function Partners({ settings }: { settings?: EventSettings | null
                     {partner.name}
                   </div>
                 </motion.div>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Partner Info Modal Dialog */}

@@ -15,6 +15,7 @@ interface TeamMember {
   email?: string;
   linkedin?: string;
   bio: string;
+  display_order?: number;
 }
 
 interface TeamProps {
@@ -34,8 +35,11 @@ export default function Team({ settings }: TeamProps) {
       .then((res) => res.json())
       .then((data) => {
         if (data && data.team) {
-          globalTeamCache = data.team;
-          setTeam(data.team);
+          const sorted = [...data.team].sort(
+            (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+          );
+          globalTeamCache = sorted;
+          setTeam(sorted);
         }
       })
       .catch((err) => console.error("Error loading team members:", err))
@@ -84,45 +88,106 @@ export default function Team({ settings }: TeamProps) {
         </motion.div>
 
         {settings?.reveal_team !== false ? (
-          loading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-8 h-8 border-4 border-ted-red border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : team.length === 0 ? (
-            <p className="text-center text-white/40 font-mono text-sm py-16">No team members registered yet.</p>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-6 md:gap-8">
-              {team.map((member, index) => (
-                <div key={member.id || index} className="flex flex-col w-full">
-                  {/* Role Title above the card (identical to Partners style) */}
-                  <h5 className="text-[10px] sm:text-xs md:text-sm font-mono font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white mb-2 sm:mb-3 text-center truncate px-1" title={member.role}>
-                    {member.role}
-                  </h5>
+          <AnimatePresence mode="wait">
+            {loading ? (
+              /* High-tech TEDx shimmer skeleton loading state */
+              <motion.div
+                key="team-loading-skeletons"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-6 md:gap-8"
+              >
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((idx) => (
+                  <div key={idx} className="flex flex-col w-full">
+                    {/* Role Title Bar placeholder */}
+                    <div className="h-4 w-24 sm:w-28 mx-auto bg-white/10 rounded-full animate-pulse mb-2 sm:mb-3" />
 
-                  {/* Glassmorphism Card with exact asymmetric corners */}
-                  <motion.div
-                    whileHover={{ y: -4 }}
-                    onClick={() => setActiveMember(member)}
-                    className="flex flex-col items-center justify-center p-2.5 xs:p-3.5 sm:p-4.5 md:p-5 group cursor-pointer transition-all duration-300 border border-white/20 bg-white/[0.04] backdrop-blur-md rounded-tl-2xl rounded-br-2xl rounded-tr-md rounded-bl-md sm:rounded-tl-3xl sm:rounded-br-3xl hover:border-ted-red/60 hover:bg-white/[0.07] shadow-[0_4px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.18)] w-full"
-                  >
-                    {/* Member Photo Frame */}
-                    <div className="w-full aspect-square max-w-[145px] xs:max-w-[165px] sm:max-w-[185px] md:max-w-[210px] rounded-xl sm:rounded-2xl overflow-hidden border border-white/15 bg-zinc-950/60 p-1 flex items-center justify-center shadow-inner">
-                      <img 
-                        src={member.image_url || demoImg.src} 
-                        alt={`${member.name} Photo`} 
-                        className="w-full h-full object-cover rounded-lg sm:rounded-xl transition-all duration-500 group-hover:scale-105" 
+                    {/* Skeleton Card */}
+                    <div className="relative flex flex-col items-center justify-center p-2.5 xs:p-3.5 sm:p-4.5 md:p-5 border border-white/15 bg-white/[0.04] backdrop-blur-md rounded-tl-2xl rounded-br-2xl rounded-tr-md rounded-bl-md sm:rounded-tl-3xl sm:rounded-br-3xl overflow-hidden w-full">
+                      {/* Flowing diagonal shimmer */}
+                      <motion.div
+                        className="absolute -inset-full w-[300%] h-[300%] bg-gradient-to-r from-transparent via-ted-red/[0.08] to-transparent -rotate-45 pointer-events-none"
+                        animate={{ x: ["-100%", "100%"] }}
+                        transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
                       />
-                    </div>
 
-                    {/* Member Name */}
-                    <div className="text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/60 group-hover:text-ted-red transition-colors duration-300 mt-2.5 sm:mt-3 text-center font-mono truncate w-full px-1">
-                      {member.name}
+                      {/* Tech Corner Brackets in TED-red */}
+                      <div className="absolute top-2 left-2 w-2.5 h-2.5 border-t-2 border-l-2 border-ted-red z-20" />
+                      <div className="absolute bottom-2 right-2 w-2.5 h-2.5 border-b-2 border-r-2 border-ted-red z-20" />
+
+                      {/* Member Photo Frame Placeholder */}
+                      <div className="w-full aspect-square max-w-[145px] xs:max-w-[165px] sm:max-w-[185px] md:max-w-[210px] rounded-xl sm:rounded-2xl border border-white/10 bg-zinc-950/80 p-1 flex items-center justify-center">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md">
+                          <span className="w-1.5 h-1.5 rounded-full bg-ted-red animate-pulse" />
+                          <span className="text-[8px] sm:text-[9px] font-mono font-bold tracking-widest text-white/40 uppercase">
+                            LOADING...
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Member Name Bar placeholder */}
+                      <div className="h-3 w-20 sm:w-24 bg-white/10 rounded-full animate-pulse mt-2.5 sm:mt-3" />
                     </div>
+                  </div>
+                ))}
+              </motion.div>
+            ) : team.length === 0 ? (
+              <motion.div
+                key="team-empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center text-white/40 font-mono text-sm py-16"
+              >
+                No team members registered yet.
+              </motion.div>
+            ) : (
+              <motion.div
+                key="team-loaded"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+                className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-6 md:gap-8"
+              >
+                {team.map((member, index) => (
+                  <motion.div
+                    key={member.id || index}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.04 }}
+                    className="flex flex-col w-full"
+                  >
+                    {/* Role Title above the card */}
+                    <h5 className="text-[10px] sm:text-xs md:text-sm font-mono font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white mb-2 sm:mb-3 text-center truncate px-1" title={member.role}>
+                      {member.role}
+                    </h5>
+
+                    {/* Glassmorphism Card with exact asymmetric corners */}
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      onClick={() => setActiveMember(member)}
+                      className="flex flex-col items-center justify-center p-2.5 xs:p-3.5 sm:p-4.5 md:p-5 group cursor-pointer transition-all duration-300 border border-white/20 bg-white/[0.04] backdrop-blur-md rounded-tl-2xl rounded-br-2xl rounded-tr-md rounded-bl-md sm:rounded-tl-3xl sm:rounded-br-3xl hover:border-ted-red/60 hover:bg-white/[0.07] shadow-[0_4px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(235,0,40,0.18)] w-full"
+                    >
+                      {/* Member Photo Frame */}
+                      <div className="w-full aspect-square max-w-[145px] xs:max-w-[165px] sm:max-w-[185px] md:max-w-[210px] rounded-xl sm:rounded-2xl overflow-hidden border border-white/15 bg-zinc-950/60 p-1 flex items-center justify-center shadow-inner">
+                        <img 
+                          src={member.image_url || demoImg.src} 
+                          alt={`${member.name} Photo`} 
+                          className="w-full h-full object-cover rounded-lg sm:rounded-xl transition-all duration-500 group-hover:scale-105" 
+                        />
+                      </div>
+
+                      {/* Member Name */}
+                      <div className="text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/60 group-hover:text-ted-red transition-colors duration-300 mt-2.5 sm:mt-3 text-center font-mono truncate w-full px-1">
+                        {member.name}
+                      </div>
+                    </motion.div>
                   </motion.div>
-                </div>
-              ))}
-            </div>
-          )
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         ) : (
           /* Coming Soon placeholder */
           <motion.div

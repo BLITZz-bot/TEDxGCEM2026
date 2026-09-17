@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { readLocalStore, saveLocalStore } from "@/lib/db/local-store";
 import { isValidUUID } from "@/lib/db/uuid-validator";
 
-// â”€â”€â”€ Domain type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Domain type ─────────────────────────────────────────────────────────────
 
 export interface Partner {
   id: string;
@@ -22,14 +22,15 @@ export interface Partner {
   phone?: string;
   instagram?: string;
   linkedin?: string;
+  display_order?: number;
 }
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const PARTNERS_FILE_PATH = path.join(process.cwd(), "data", "partners.json");
 const DEFAULT_PARTNERS: Partner[] = [];
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function readLocal(): Partner[] {
   return readLocalStore<Partner>(PARTNERS_FILE_PATH, DEFAULT_PARTNERS);
@@ -39,26 +40,45 @@ async function saveLocal(partners: Partner[]): Promise<void> {
   saveLocalStore<Partner>(PARTNERS_FILE_PATH, partners);
 }
 
-// â”€â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Public API ──────────────────────────────────────────────────────────────
 
 export async function getPartners(): Promise<Partner[]> {
   // 1. Try Supabase first
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let data: Partner[] | null = null;
+    let error: unknown = null;
+
+    const res = await supabase
       .from("partners")
       .select("*")
-      .order("created_at", { ascending: true });
+      .order("display_order", { ascending: true });
+
+    if (!res.error && Array.isArray(res.data)) {
+      data = res.data;
+    } else {
+      // Fallback to created_at if display_order column doesn't exist yet
+      const fallback = await supabase
+        .from("partners")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (!fallback.error && Array.isArray(fallback.data)) {
+        data = fallback.data;
+      } else {
+        error = res.error || fallback.error;
+      }
+    }
 
     if (!error && Array.isArray(data) && data.length > 0) {
-      return data;
+      return data.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
     }
   } catch (err) {
     console.warn("[partners-service] Supabase fetch error, falling back to local file:", err);
   }
 
   // 2. Fallback to local file
-  return readLocal();
+  const local = readLocal();
+  return local.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
 }
 
 /** @internal — write-through to local JSON after every mutation */
@@ -68,16 +88,30 @@ export async function savePartnersLocalFallback(partners: Partner[]): Promise<vo
 
 export async function addPartner(partner: Omit<Partner, "id">): Promise<boolean> {
   let newId = crypto.randomUUID();
+  const current = readLocal();
+  const defaultOrder = current.length > 0 
+    ? Math.max(...current.map(p => (typeof p.display_order === "number" ? p.display_order : 0))) + 1 
+    : 1;
+  const partnerWithOrder: Omit<Partner, "id"> = {
+    ...partner,
+    display_order: partner.display_order !== undefined && partner.display_order !== null ? partner.display_order : defaultOrder,
+  };
 
   // 1. Persist to Supabase
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.from("partners").insert([partner]).select();
+    const { data, error } = await supabase.from("partners").insert([partnerWithOrder]).select();
 
     if (!error && data && data.length > 0) {
       newId = data[0].id;
     } else {
-      console.warn("[partners-service] Supabase insert error:", error);
+      console.warn("[partners-service] Supabase insert with display_order failed, trying without:", error);
+      // If display_order column does not exist in Supabase yet, retry without it
+      const { display_order: _, ...partnerWithoutOrder } = partnerWithOrder;
+      const retry = await supabase.from("partners").insert([partnerWithoutOrder]).select();
+      if (!retry.error && retry.data && retry.data.length > 0) {
+        newId = retry.data[0].id;
+      }
     }
   } catch (err) {
     console.warn("[partners-service] Supabase insert connection error:", err);
@@ -85,8 +119,7 @@ export async function addPartner(partner: Omit<Partner, "id">): Promise<boolean>
 
   // 2. Write-through to local fallback
   try {
-    const current = readLocal();
-    current.push({ id: newId, ...partner });
+    current.push({ id: newId, ...partnerWithOrder });
     await saveLocal(current);
     return true;
   } catch (err) {
@@ -100,23 +133,32 @@ export async function updatePartner(partner: Partner): Promise<boolean> {
   if (isValidUUID(partner.id)) {
     try {
       const supabase = await createClient();
+      const updatePayload: Record<string, unknown> = {
+        name: partner.name,
+        role: partner.role,
+        level: partner.level,
+        logo: partner.logo,
+        description: partner.description,
+        email: partner.email,
+        phone: partner.phone,
+        instagram: partner.instagram,
+        linkedin: partner.linkedin,
+      };
+      if (partner.display_order !== undefined) {
+        updatePayload.display_order = partner.display_order;
+      }
+
       const { error } = await supabase
         .from("partners")
-        .update({
-          name: partner.name,
-          role: partner.role,
-          level: partner.level,
-          logo: partner.logo,
-          description: partner.description,
-          email: partner.email,
-          phone: partner.phone,
-          instagram: partner.instagram,
-          linkedin: partner.linkedin,
-        })
+        .update(updatePayload)
         .eq("id", partner.id);
 
       if (error) {
         console.warn("[partners-service] Supabase update error:", error);
+        if (partner.display_order !== undefined) {
+          delete updatePayload.display_order;
+          await supabase.from("partners").update(updatePayload).eq("id", partner.id);
+        }
       }
     } catch (err) {
       console.warn("[partners-service] Supabase update connection error:", err);
@@ -130,6 +172,51 @@ export async function updatePartner(partner: Partner): Promise<boolean> {
     return true;
   } catch (err) {
     console.error("[partners-service] Local file update error:", err);
+    return false;
+  }
+}
+
+export async function reorderPartners(orderedIds: string[]): Promise<boolean> {
+  try {
+    const current = readLocal();
+    const idToPartner = new Map(current.map((p) => [p.id, p]));
+    const updated: Partner[] = [];
+
+    orderedIds.forEach((id, idx) => {
+      const p = idToPartner.get(id);
+      if (p) {
+        updated.push({ ...p, display_order: idx + 1 });
+        idToPartner.delete(id);
+      }
+    });
+
+    // Any unlisted partner appended to the end
+    let nextOrder = updated.length + 1;
+    idToPartner.forEach((p) => {
+      updated.push({ ...p, display_order: nextOrder++ });
+    });
+
+    await saveLocal(updated);
+
+    // Sync to Supabase
+    try {
+      const supabase = await createClient();
+      for (let i = 0; i < orderedIds.length; i++) {
+        const id = orderedIds[i];
+        if (isValidUUID(id)) {
+          await supabase
+            .from("partners")
+            .update({ display_order: i + 1 })
+            .eq("id", id);
+        }
+      }
+    } catch (err) {
+      console.warn("[partners-service] Supabase reorder sync error:", err);
+    }
+
+    return true;
+  } catch (err) {
+    console.error("[partners-service] reorderPartners error:", err);
     return false;
   }
 }
