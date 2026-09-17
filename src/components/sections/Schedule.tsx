@@ -17,68 +17,132 @@ interface ScheduleItem {
 
 const schedule: ScheduleItem[] = [
   { 
-    time: "09:00 AM", 
-    event: "Registration & Morning Coffee", 
+    time: "08:30 AM to 09:30 AM", 
+    event: "Registrations", 
     type: "break",
-    location: "Lounge // Grid_C",
+    location: "Registration Desk",
     speaker: "All Attendees",
-    desc: "Collect your custom access passes, badges, and curated welcome kits. Connect with fellow attendees over fresh hot brews before the main event."
+    desc: "Collect your custom access passes, badges, and curated welcome kits."
   },
   { 
-    time: "10:00 AM", 
-    event: "Opening Ceremony", 
+    time: "09:30 AM", 
+    event: "Welcome", 
     type: "session",
-    location: "Main Auditorium // Grid_A",
+    location: "Main Auditorium",
     speaker: "TEDx Committee",
-    desc: "An immersive sensory and visual introduction to the core themes of TEDxGCEM 2026. Setting the blueprint for the day's ideas."
+    desc: "Welcome address to kick off the event."
   },
   { 
-    time: "10:30 AM", 
-    event: "The Digital Frontier", 
+    time: "", 
+    event: "Indu Antony", 
     type: "session",
-    location: "Main Auditorium // Grid_A",
-    speaker: "Dr. Sarah Chen",
-    desc: "A deep dive into AI ethics, algorithmic accountability, and the upcoming landscape of human-AI collaborative systems."
+    location: "Main Auditorium",
+    speaker: "Indu Antony",
+    desc: "Speaker Session"
   },
   { 
-    time: "12:00 PM", 
-    event: "Networking Lunch", 
-    type: "break",
-    location: "Bistro Area // Grid_D",
-    speaker: "Community Space",
-    desc: "A catered lunch break designed to match attendees with shared research fields and interests in modular collaborative hubs."
-  },
-  { 
-    time: "01:30 PM", 
-    event: "Urban Rewilding & Bionic Architecture", 
+    time: "", 
+    event: "Sunil Subrahmanyam Yadavalli", 
     type: "session",
-    location: "Main Auditorium // Grid_A",
-    speaker: "Marcus Thorne & Elena Rodriguez",
-    desc: "Co-designing carbon-neutral vertical forests, bio-mimetic skyscrapers, and self-regulating structural building materials for the next century."
+    location: "Main Auditorium",
+    speaker: "Sunil Subrahmanyam Yadavalli",
+    desc: "Speaker Session"
   },
   { 
-    time: "03:00 PM", 
-    event: "Afternoon Tea & Unwind", 
+    time: "", 
+    event: "A MELODY ACROSS GENERATIONS", 
+    type: "session",
+    location: "Main Auditorium",
+    speaker: "Dr. Shruthi Harsha & Master H. Shri Krishna",
+    desc: "Performance by Dr. Shruthi Harsha & Master H. Shri Krishna."
+  },
+  { 
+    time: "10:45 AM to 11:15 AM", 
+    event: "Break & Networking", 
     type: "break",
-    location: "Lounge // Grid_C",
+    location: "Lounge Area",
     speaker: "All Attendees",
-    desc: "Take a break, recharge, and explore the interactive bionic material exhibits in the foyer."
+    desc: "Take a short break, grab some refreshments, and network with fellow attendees."
   },
   { 
-    time: "04:00 PM", 
-    event: "Quantum Storytelling & Mathematics", 
+    time: "11:15 AM", 
+    event: "Sagar Simha", 
     type: "session",
-    location: "Main Auditorium // Grid_A",
-    speaker: "Aisha Roberts & Kenji Tanaka",
-    desc: "Bridging the boundaries between topological network algorithms, quantum probability mechanics, and next-gen digital interactive narratives."
+    location: "Main Auditorium",
+    speaker: "Sagar Simha",
+    desc: "Speaker Session"
   },
   { 
-    time: "05:30 PM", 
-    event: "Closing Remarks & Panel", 
+    time: "", 
+    event: "Performance by Sagar Simha", 
     type: "session",
-    location: "Main Auditorium // Grid_A",
-    speaker: "All Speakers",
-    desc: "Synthesis of the concepts discussed throughout the day. Final Q&A session with the full featured speakers panel."
+    location: "Main Auditorium",
+    speaker: "Sagar Simha",
+    desc: "Special Performance"
+  },
+  { 
+    time: "", 
+    event: "Suman Balakrishna", 
+    type: "session",
+    location: "Main Auditorium",
+    speaker: "Suman Balakrishna",
+    desc: "Speaker Session"
+  },
+  { 
+    time: "", 
+    event: "Surya Keerthi", 
+    type: "session",
+    location: "Main Auditorium",
+    speaker: "Surya Keerthi",
+    desc: "Speaker Session"
+  },
+  { 
+    time: "12:45 PM to 02:00 PM", 
+    event: "Lunch & Networking", 
+    type: "break",
+    location: "Dining Area",
+    speaker: "All Attendees",
+    desc: "A catered lunch break designed to match attendees with shared fields and interests in collaborative hubs."
+  },
+  { 
+    time: "02:00 PM", 
+    event: "Dr. Nalini Chandraiah", 
+    type: "session",
+    location: "Main Auditorium",
+    speaker: "Dr. Nalini Chandraiah",
+    desc: "Speaker Session"
+  },
+  { 
+    time: "", 
+    event: "Performance by Pavan Bhat", 
+    type: "session",
+    location: "Main Auditorium",
+    speaker: "Pavan Bhat",
+    desc: "Special Performance"
+  },
+  { 
+    time: "", 
+    event: "Janani BM", 
+    type: "session",
+    location: "Main Auditorium",
+    speaker: "Janani BM",
+    desc: "Speaker Session"
+  },
+  { 
+    time: "", 
+    event: "Vote of Thanks", 
+    type: "session",
+    location: "Main Auditorium",
+    speaker: "TEDx Committee",
+    desc: "Closing remarks and vote of thanks."
+  },
+  { 
+    time: "03:15 PM to 04:00 PM", 
+    event: "Networking & Close With Goodie Bag", 
+    type: "break",
+    location: "Lounge Area",
+    speaker: "All Attendees",
+    desc: "Final networking session to reflect on the day's ideas. Don't forget to collect your goodie bag before departing!"
   },
 ];
 
@@ -270,23 +334,40 @@ export default function Schedule({ settings }: ScheduleProps) {
                       } ${item.type === "session" ? "shadow-[0_0_8px_rgba(235,0,40,0.5)] border-ted-red" : ""}`} />
 
                       {/* Left Side Time Block (Monospace, desktop absolute position) */}
-                      <div className={`absolute left-[-152px] top-6 w-28 text-right pr-6 hidden md:flex items-center justify-end gap-2 font-mono text-base font-black tracking-tight transition-colors duration-300 ${
-                        isCardHovered ? "text-ted-red" : "text-white group-hover:text-ted-red"
-                      }`}>
-                        <span>{item.time.split(" ")[0]}</span>
-                        <span className={`text-[10px] uppercase transition-colors duration-300 ${
-                          isCardHovered ? "text-ted-red/60" : "text-white group-hover:text-ted-red/60"
-                        }`}>{item.time.split(" ")[1]}</span>
-                      </div>
+                      {item.time && (
+                        <div className={`absolute left-[-152px] top-4 w-28 text-right pr-6 hidden md:flex flex-col items-end justify-start gap-1 font-mono text-base font-black tracking-tight transition-colors duration-300 ${
+                          isCardHovered ? "text-ted-red" : "text-white group-hover:text-ted-red"
+                        }`}>
+                          <div className="flex items-center gap-1">
+                            <span>{item.time.split(" to ")[0].split(" ")[0]}</span>
+                            <span className={`text-[10px] uppercase transition-colors duration-300 ${
+                              isCardHovered ? "text-ted-red/60" : "text-white group-hover:text-ted-red/60"
+                            }`}>{item.time.split(" to ")[0].split(" ")[1]}</span>
+                          </div>
+                          {item.time.includes(" to ") && (
+                            <>
+                              <div className="text-white/40 text-xs pr-4">-</div>
+                              <div className="flex items-center gap-1">
+                                <span>{item.time.split(" to ")[1].split(" ")[0]}</span>
+                                <span className={`text-[10px] uppercase transition-colors duration-300 ${
+                                  isCardHovered ? "text-ted-red/60" : "text-white group-hover:text-ted-red/60"
+                                }`}>{item.time.split(" to ")[1].split(" ")[1]}</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
 
                       {/* Card Main Info */}
                       <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="space-y-2 text-left">
                           {/* Mobile Only Time Label */}
-                          <div className="flex md:hidden items-center gap-1.5 font-mono text-xs font-bold text-white">
-                            <Clock className="w-3.5 h-3.5 text-white" />
-                            <span>{item.time}</span>
-                          </div>
+                          {item.time && (
+                            <div className="flex md:hidden items-center gap-1.5 font-mono text-xs font-bold text-white">
+                              <Clock className="w-3.5 h-3.5 text-white" />
+                              <span>{item.time}</span>
+                            </div>
+                          )}
 
                           <h4 className={`text-lg sm:text-xl font-bold tracking-tight uppercase transition-colors duration-300 ${
                             isCardHovered ? "text-ted-red" : "text-white group-hover:text-ted-red"
