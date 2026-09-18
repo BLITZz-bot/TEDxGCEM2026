@@ -4,28 +4,28 @@
     "name": "Early Bird",
     "tag": "Priority Pass",
     "description": "Exclusive early bird access pass with curated kit and all speaker sessions.",
-    "price": 300,
+    "price": 250,
     "total_capacity": 20,
     "allow_coupons": false,
     "discount_price": null,
     "status": "upcoming",
     "sort_order": 1,
     "manual_override": false,
-    "updated_at": "2026-08-29T07:02:25.593+00:00"
+    "updated_at": "2026-09-18T13:00:33.191+00:00"
   },
   {
     "id": "phase_1",
     "name": "Phase 1",
     "tag": "Phase 1 Pass",
     "description": "Official Phase 1 delegate pass including keynote talks, delegate kit, and networking.",
-    "price": 400,
-    "total_capacity": 35,
+    "price": 350,
+    "total_capacity": 6,
     "allow_coupons": true,
-    "discount_price": 300,
-    "status": "upcoming",
+    "discount_price": 250,
+    "status": "active",
     "sort_order": 2,
-    "manual_override": false,
-    "updated_at": "2026-08-29T07:02:25.656+00:00"
+    "manual_override": true,
+    "updated_at": "2026-09-18T13:00:42.142+00:00"
   },
   {
     "id": "phase_2",
@@ -35,24 +35,24 @@
     "price": 500,
     "total_capacity": 35,
     "allow_coupons": true,
-    "discount_price": 400,
-    "status": "active",
+    "discount_price": 350,
+    "status": "upcoming",
     "sort_order": 3,
-    "manual_override": true,
-    "updated_at": "2026-08-29T15:49:52.846+00:00"
+    "manual_override": false,
+    "updated_at": "2026-09-18T13:00:33.4+00:00"
   },
   {
     "id": "phase_3",
     "name": "Phase 3",
     "tag": "Final Release",
     "description": "Final release general delegate pass with elite networking opportunities.",
-    "price": 1000,
+    "price": 500,
     "total_capacity": 10,
     "allow_coupons": true,
     "discount_price": 500,
     "status": "upcoming",
     "sort_order": 4,
     "manual_override": false,
-    "updated_at": "2026-08-29T07:02:25.82+00:00"
+    "updated_at": "2026-09-18T13:00:33.476+00:00"
   }
 ]

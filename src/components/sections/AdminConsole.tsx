@@ -917,7 +917,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     setMemberImageUrl(member.image_url);
     setMemberEmail(member.email || "");
     setMemberLinkedin(member.linkedin || "");
-    setMemberBio(member.bio);
+    setMemberBio(member.bio || "");
     setMemberDisplayOrder(member.display_order ?? "");
   };
 
@@ -1156,7 +1156,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     setSpeakerEmail(speaker.email || "");
     setSpeakerLinkedin(speaker.linkedin || "");
     setSpeakerInstagram(speaker.instagram || "");
-    setSpeakerBio(speaker.bio);
+    setSpeakerBio(speaker.bio || "");
     setSpeakerDetails(speaker.details || "");
   };
 
