@@ -224,9 +224,9 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
           </div>
 
           {/* Asymmetrical Editorial Composition */}
-          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-end my-auto">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center my-auto">
             {/* Left Column: Name & Metadata */}
-            <div className="lg:col-span-7 flex flex-col justify-end order-2 lg:order-1">
+            <div className="lg:col-span-7 flex flex-col justify-center order-2 lg:order-1">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -270,7 +270,7 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="relative w-full max-w-[420px] aspect-[3/4]"
+                className="relative w-full max-w-[420px]"
               >
                 {/* Outer offset hairline box */}
                 <div className="absolute -inset-3 border border-white/10 rounded-sm pointer-events-none" />
@@ -278,7 +278,7 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
                 {/* Main Photo Frame */}
                 <div
                   ref={photoContainerRef}
-                  className="relative w-full h-full overflow-hidden rounded-sm border border-white/15 shadow-2xl bg-neutral-900 group"
+                  className="relative w-full aspect-[1536/1285] overflow-hidden rounded-sm border border-white/15 shadow-2xl bg-white group"
                 >
                   <Image
                     src={imageSrc}
@@ -287,7 +287,7 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
                     priority
                     onError={() => setImageSrc(FALLBACK_PHOTO)}
                     sizes="(max-width: 768px) 95vw, 40vw"
-                    className="object-cover object-center grayscale hover:grayscale-0 transition-all duration-1000 ease-out group-hover:scale-105"
+                    className="object-cover object-center transition-all duration-1000 ease-out group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 

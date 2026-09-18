@@ -103,7 +103,7 @@ export function TeamGrid({ members }: { members: GridMember[] }) {
 
                 {/* Photo Container */}
                 <div>
-                  <div className="relative aspect-[4/4.5] w-full overflow-hidden rounded-2xl border border-white/10 shadow-inner">
+                  <div className="relative w-full aspect-[1536/1285] overflow-hidden rounded-2xl border border-white/10 shadow-inner bg-transparent flex justify-center items-center">
                     <Image
                       src={imageSrc}
                       alt={member.name}
@@ -112,7 +112,7 @@ export function TeamGrid({ members }: { members: GridMember[] }) {
                       sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
                       className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 pointer-events-none" />
 
                     {/* Team Group Badge */}
                     <div className="absolute top-3 left-3">
