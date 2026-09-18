@@ -9,7 +9,6 @@ import {
   Mail, 
   X 
 } from "lucide-react";
-import slImg from "../../../public/SLIMG.webp";
 
 // Local SVG social icons for maximum compatibility
 const Linkedin = (props: React.SVGProps<SVGSVGElement>) => (
@@ -108,7 +107,7 @@ export default function Speakers({ settings, onModalToggle }: SpeakersProps) {
             designation: s.designation,
             bio: s.bio,
             details: s.details || "",
-            photo: s.image_url || slImg.src,
+            photo: s.image_url || "/members/placeholder.png",
             email: s.email,
             linkedin: s.linkedin,
             instagram: s.instagram
