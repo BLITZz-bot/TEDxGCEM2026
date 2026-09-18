@@ -78,8 +78,8 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
       }
     }
 
-    if (!error && Array.isArray(data) && data?.length > 0) {
-      return data.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+    if (!error && Array.isArray(data) && (data as TeamMember[]).length > 0) {
+      return (data as TeamMember[]).sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
     }
   } catch (err) {
     console.warn("[team-service] Supabase fetch error, falling back to local file:", err);

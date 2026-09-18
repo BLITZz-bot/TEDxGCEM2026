@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import demoImg from "../../../public/DEMO.webp";
 import type { EventSettings } from "@/lib/settings-service";
 import { INITIAL_MEMBERS } from "@/lib/members-data";
 
@@ -171,7 +170,7 @@ export default function Team({ settings }: TeamProps) {
                       {/* Member Photo Frame */}
                       <div className="w-full aspect-square max-w-[145px] xs:max-w-[165px] sm:max-w-[185px] md:max-w-[210px] rounded-xl sm:rounded-2xl overflow-hidden border border-white/15 bg-zinc-950/60 p-1 flex items-center justify-center shadow-inner">
                         <img 
-                          src={member.image_url || demoImg.src} 
+                          src={member.image_url || "/members/placeholder.png"} 
                           alt={`${member.name} Photo`} 
                           className="w-full h-full object-cover rounded-lg sm:rounded-xl transition-all duration-500 group-hover:scale-105" 
                         />
@@ -263,7 +262,7 @@ export default function Team({ settings }: TeamProps) {
               {/* Member Photo */}
               <div className="w-32 h-32 md:w-36 md:h-36 rounded-2xl overflow-hidden border border-white/20 shadow-lg mb-2 bg-black/40 p-1 flex items-center justify-center shrink-0">
                 <img 
-                  src={activeMember.image_url || demoImg.src} 
+                  src={activeMember.image_url || "/members/placeholder.png"} 
                   alt={`${activeMember.name} Photo`} 
                   className="w-full h-full object-cover rounded-xl" 
                 />
