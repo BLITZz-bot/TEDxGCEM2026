@@ -22,28 +22,27 @@ interface TeamProps {
   settings: EventSettings | null;
 }
 
-// Module-level in-memory cache for instant tab switching (0ms delay)
-let globalTeamCache: TeamMember[] | null = null;
+// Static team members are loaded directly from INITIAL_MEMBERS
 
 export default function Team({ settings }: TeamProps) {
-  const [team, setTeam] = useState<TeamMember[]>(globalTeamCache || []);
-  const [loading, setLoading] = useState(!globalTeamCache);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeMember, setActiveMember] = useState<TeamMember | null>(null);
 
   useEffect(() => {
-    fetch("/api/team")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.team) {
-          const sorted = [...data.team].sort(
-            (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
-          );
-          globalTeamCache = sorted;
-          setTeam(sorted);
-        }
-      })
-      .catch((err) => console.error("Error loading team members:", err))
-      .finally(() => setLoading(false));
+    // Use static members data
+    const staticTeam = INITIAL_MEMBERS.map((m, index) => ({
+      id: m.slug,
+      name: m.name,
+      role: m.role,
+      image_url: m.photoUrl,
+      email: m.email || undefined,
+      linkedin: m.linkedin || undefined,
+      bio: m.bio,
+      display_order: index
+    }));
+    setTeam(staticTeam);
+    setLoading(false);
   }, []);
 
   // Disable body scroll and hide mobile hamburger when modal is open
