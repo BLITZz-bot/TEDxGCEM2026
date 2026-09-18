@@ -398,7 +398,7 @@ export const INITIAL_MEMBERS: StaticMember[] = [
 
   // Leadership
   {
-    slug: 'manoj-challa',
+    slug: 'dr.manoj-challa',
     name: 'Dr. Manoj Challa',
     role: 'Mentor, TEDxGCEM',
     team: 'leadership',
@@ -415,10 +415,10 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     name: 'Kartheek GCR',
     role: 'Organizer & Licensee',
     team: 'leadership',
-    oneLiner: 'Official TED Licensee, Organizer, and Visionary behind TEDxGCEM 2026.',
+    oneLiner: 'Official TED Licensee and Lead Organizer, steering the overarching vision and execution of TEDxGCEM 2026.',
     bio: 'Kartheek GCR is the Official TED Licensee and Organizer of TEDxGCEM 2026. He holds the official TED license, securing institutional approvals and steering the grand vision to bring world-class ideas to the GCEM stage.',
     contribution: 'Official TED Licensee holder, organizing executive leadership, institutional compliance, and event stewardship.',
-    interests: ['Leadership', 'Event Organization', 'TED Compliance'],
+    interests: ['Leadership', 'Event Organization', 'TED Compliance','Strategic Vision'],
     photoUrl: '/KARTHEEK GCR.png',
     linkedin: 'https://www.linkedin.com/in/kartheek-g-c-r-98090339/',
   },
