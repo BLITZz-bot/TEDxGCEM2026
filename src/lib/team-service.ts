@@ -39,6 +39,19 @@ async function saveLocal(members: TeamMember[]): Promise<void> {
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
+  // BYPASS SUPABASE: Return static INITIAL_MEMBERS to disconnect from database as requested
+  const { INITIAL_MEMBERS } = require("@/lib/members-data");
+  return INITIAL_MEMBERS.map((m: any, index: number) => ({
+    id: m.slug,
+    name: m.name,
+    role: m.role,
+    image_url: m.photoUrl,
+    email: m.email || undefined,
+    linkedin: m.linkedin || undefined,
+    bio: m.bio,
+    display_order: index,
+  }));
+
   // 1. Try Supabase first
   try {
     const supabase = await createClient();
@@ -65,7 +78,7 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
       }
     }
 
-    if (!error && Array.isArray(data) && data.length > 0) {
+    if (!error && Array.isArray(data) && data?.length > 0) {
       return data.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
     }
   } catch (err) {
