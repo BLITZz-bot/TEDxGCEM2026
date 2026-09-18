@@ -8,9 +8,11 @@ export const revalidate = 60;
 
 // Pre-render all known member slugs at build time for instant QR scan loading
 export async function generateStaticParams() {
-  return INITIAL_MEMBERS.map((m) => ({
+  const params = INITIAL_MEMBERS.map((m) => ({
     slug: m.slug,
   }));
+  params.push({ slug: 'vinayak' }, { slug: 'vinayak-v' });
+  return params;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
