@@ -26,7 +26,7 @@ export const DEFAULT_TICKET_TIERS: TicketTier[] = [
     name: "Early Bird",
     tag: "Priority Pass",
     description: "Exclusive early bird access pass with curated kit and all speaker sessions.",
-    price: 300,
+    price: 250,
     total_capacity: 20,
     allow_coupons: false,
     discount_price: null,
@@ -38,10 +38,10 @@ export const DEFAULT_TICKET_TIERS: TicketTier[] = [
     name: "Phase 1",
     tag: "Phase 1 Pass",
     description: "Official Phase 1 delegate pass including keynote talks, delegate kit, and networking.",
-    price: 400,
+    price: 350,
     total_capacity: 35,
     allow_coupons: true,
-    discount_price: 300, // Reverts to Early Bird price with coupon
+    discount_price: 250, // Reverts to Early Bird price with coupon
     status: "upcoming",
     sort_order: 2,
   },
@@ -53,7 +53,7 @@ export const DEFAULT_TICKET_TIERS: TicketTier[] = [
     price: 500,
     total_capacity: 35,
     allow_coupons: true,
-    discount_price: 400, // Reverts to Phase 1 price with coupon
+    discount_price: 350, // Reverts to Phase 1 price with coupon
     status: "upcoming",
     sort_order: 3,
   },
@@ -62,10 +62,10 @@ export const DEFAULT_TICKET_TIERS: TicketTier[] = [
     name: "Phase 3",
     tag: "Final Release",
     description: "Final release general delegate pass with elite networking opportunities.",
-    price: 1000,
+    price: 500,
     total_capacity: 10,
     allow_coupons: true,
-    discount_price: 500, // Reverts to Phase 2 price with coupon
+    discount_price: 500, // No discount logic for this phase or set it to Phase 2 price
     status: "upcoming",
     sort_order: 4,
   },
