@@ -60,7 +60,7 @@ const schedule: ScheduleItem[] = [
     time: "10:45 AM to 11:15 AM", 
     event: "Break & Networking", 
     type: "break",
-    location: "Lounge Area",
+    location: "Main Auditorium",
     speaker: "All Attendees",
     desc: "Take a short break, grab some refreshments, and network with fellow attendees."
   },
@@ -140,7 +140,7 @@ const schedule: ScheduleItem[] = [
     time: "03:15 PM to 04:00 PM", 
     event: "Networking & Close With Goodie Bag", 
     type: "break",
-    location: "Lounge Area",
+    location: "Main Auditorium",
     speaker: "All Attendees",
     desc: "Final networking session to reflect on the day's ideas. Don't forget to collect your goodie bag before departing!"
   },
