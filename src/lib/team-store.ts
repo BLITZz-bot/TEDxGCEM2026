@@ -9,5 +9,14 @@ export async function getAllMembers(): Promise<StaticMember[]> {
 }
 
 export async function getMemberBySlug(slug: string): Promise<StaticMember | null> {
-  return INITIAL_MEMBERS.find((m) => m.slug.toLowerCase() === slug.toLowerCase()) || null;
+  const clean = slug.toLowerCase().trim();
+  return (
+    INITIAL_MEMBERS.find((m) => {
+      const s = m.slug.toLowerCase();
+      if (s === clean) return true;
+      if (s === 'vinayaka' && (clean === 'vinayak' || clean === 'vinayak-v')) return true;
+      if (s === 'vinayak' && clean === 'vinayaka') return true;
+      return false;
+    }) || null
+  );
 }

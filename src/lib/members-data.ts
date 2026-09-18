@@ -153,15 +153,15 @@ export const INITIAL_MEMBERS: StaticMember[] = [
   },
 
   {
-    slug: 'vinayaka',
-    name: 'Vinayaka V',
+    slug: 'vinayak',
+    name: 'Vinayak V',
     role: 'Partnership Director',
     team: 'partnerships',
     oneLiner: 'Aligning corporate visionaries with the TEDx mission.',
     bio: 'As Partnership Director, I focus on building strategic alliances and fostering high-value collaborations that drive mutual growth and expand our network. My goal is to bridge the gap between our team and key industry stakeholders to unlock new opportunities for innovation. I am thrilled to work alongside such a talented group to help bring our shared vision to life.',
     contribution: 'Established key corporate partnerships and sponsor booth installations.',
     interests: ['Partnerships', 'Financial Strategy', 'Negotiation'],
-    photoUrl: '/VINAYAKA V.png',
+    photoUrl: '/VINAYAK V.png',
     linkedin: 'https://www.linkedin.com/in/vinayaka464',
     email: 'vinayakavini464@gmail.com',
   },
