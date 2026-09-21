@@ -16,6 +16,7 @@ export async function getMemberBySlug(slug: string): Promise<StaticMember | null
       if (s === clean) return true;
       if (s === 'vinayaka' && (clean === 'vinayak' || clean === 'vinayak-v')) return true;
       if (s === 'vinayak' && clean === 'vinayaka') return true;
+      if (s === 'dr.manoj-challa' && clean === 'dr-manoj-challa') return true;
       return false;
     }) || null
   );
