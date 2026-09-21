@@ -112,7 +112,15 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
   const [imageSrc, setImageSrc] = useState(() => getValidPhotoUrl(member.photoUrl));
   const photoContainerRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
-  const isSingleLineName = member.slug === 'bharatha01' || member.slug === 'nivet.2006';
+  const isSingleLineName =
+    member.slug === 'bharatha01' ||
+    member.slug === 'bharath-m' ||
+    member.slug === 'nivet.2006' ||
+    member.slug === 'dr.manoj-challa' ||
+    member.slug === 'dr-manoj-challa' ||
+    member.slug === 'kartheek-gcr' ||
+    member.name.toLowerCase().includes('manoj challa') ||
+    member.name.toLowerCase().includes('kartheek');
 
   const nameFormatted = React.useMemo(() => {
     return formatName(member.name);
@@ -242,7 +250,7 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
 
                 {/* Oversized Name Typography */}
                 {isSingleLineName ? (
-                  <h1 className="font-serif-editorial font-medium uppercase tracking-tight text-white leading-tight text-[clamp(2.2rem,5.6vw,6.5rem)] whitespace-nowrap drop-shadow-[0_0_35px_rgba(255,255,255,0.35)]">
+                  <h1 className="font-serif-editorial font-medium uppercase tracking-tight text-white leading-tight text-[clamp(1.75rem,5.4vw,6.5rem)] sm:text-[clamp(2.2rem,5.6vw,6.5rem)] whitespace-nowrap drop-shadow-[0_0_35px_rgba(255,255,255,0.35)]">
                     {member.name}
                   </h1>
                 ) : (
