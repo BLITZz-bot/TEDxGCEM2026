@@ -11,7 +11,19 @@ export async function generateStaticParams() {
   const params = INITIAL_MEMBERS.map((m) => ({
     slug: m.slug,
   }));
-  params.push({ slug: 'vinayak' }, { slug: 'vinayak-v' }, { slug: 'dr-manoj-challa' });
+  params.push(
+    { slug: 'vinayaka' },
+    { slug: 'vinayaka-v' },
+    { slug: 'vinayak' },
+    { slug: 'vinayak-v' },
+    { slug: 'thanishasri' },
+    { slug: 'thanishasri-ss' },
+    { slug: 'thanishasri-ss' },
+    { slug: 'thanisha' },
+    { slug: 'yeshwanth' },
+    { slug: 'yeswanth' },
+    { slug: 'dr-manoj-challa' }
+  );
   return params;
 }
 

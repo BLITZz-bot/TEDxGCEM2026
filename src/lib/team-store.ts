@@ -14,8 +14,11 @@ export async function getMemberBySlug(slug: string): Promise<StaticMember | null
     INITIAL_MEMBERS.find((m) => {
       const s = m.slug.toLowerCase();
       if (s === clean) return true;
-      if (s === 'vinayaka' && (clean === 'vinayak' || clean === 'vinayak-v')) return true;
-      if (s === 'vinayak' && clean === 'vinayaka') return true;
+      if (s === 'vinayaka' && (clean === 'vinayak' || clean === 'vinayak-v' || clean === 'vinayaka-v')) return true;
+      if (s === 'vinayak' && (clean === 'vinayaka' || clean === 'vinayaka-v')) return true;
+      if (s === 'thanishasri' && (clean === 'thanisashri-ss' || clean === 'thanisha' || clean === 'thanishasri-ss' || clean === 'thanisashri')) return true;
+      if (s === 'thanisashri-ss' && (clean === 'thanishasri' || clean === 'thanisha')) return true;
+      if (s === 'itz.yez' && (clean === 'yeshwanth' || clean === 'yeswanth' || clean === 'yeshwanth-kg')) return true;
       if (s === 'dr.manoj-challa' && clean === 'dr-manoj-challa') return true;
       return false;
     }) || null
