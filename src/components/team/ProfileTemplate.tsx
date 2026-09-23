@@ -38,7 +38,15 @@ export interface MemberData {
 
 const FALLBACK_PHOTO = '/members/placeholder.png';
 
-function getValidPhotoUrl(url?: string | null): string {
+function getValidPhotoUrl(url?: string | null, name?: string, slug?: string): string {
+  const lowerName = (name || '').toLowerCase();
+  const lowerSlug = (slug || '').toLowerCase();
+  if (lowerName.includes('vinayaka') || lowerSlug.includes('vinayak')) {
+    return '/VINAYAKA V.png';
+  }
+  if (lowerName.includes('yeshwanth') || lowerSlug.includes('yeshwanth') || lowerSlug === 'itz.yez' || lowerSlug === 'itz-yez') {
+    return '/YESHWANTH.png';
+  }
   if (!url || typeof url !== 'string') return FALLBACK_PHOTO;
   const trimmed = url.trim();
   if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
@@ -109,7 +117,11 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
   const sourceParam = searchParams.get('src') || 'direct-link';
   const theme = getTeamTheme(member.team);
 
-  const [imageSrc, setImageSrc] = useState(() => getValidPhotoUrl(member.photoUrl));
+  const [imageSrc, setImageSrc] = useState(() => getValidPhotoUrl(member.photoUrl, member.name, member.slug));
+
+  useEffect(() => {
+    setImageSrc(getValidPhotoUrl(member.photoUrl, member.name, member.slug));
+  }, [member.photoUrl, member.name, member.slug]);
   const photoContainerRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const isSingleLineName =
@@ -293,7 +305,17 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
                     alt={member.name}
                     fill
                     priority
-                    onError={() => setImageSrc(FALLBACK_PHOTO)}
+                    onError={() => {
+                      const lowerName = (member.name || '').toLowerCase();
+                      const lowerSlug = (member.slug || '').toLowerCase();
+                      if (lowerName.includes('vinayaka') || lowerSlug.includes('vinayak')) {
+                        setImageSrc('/VINAYAKA V.png');
+                      } else if (lowerName.includes('yeshwanth') || lowerSlug.includes('yeshwanth') || lowerSlug === 'itz.yez' || lowerSlug === 'itz-yez') {
+                        setImageSrc('/YESHWANTH.png');
+                      } else {
+                        setImageSrc(FALLBACK_PHOTO);
+                      }
+                    }}
                     sizes="(max-width: 768px) 95vw, 40vw"
                     className="object-cover object-center transition-all duration-1000 ease-out group-hover:scale-105"
                   />

@@ -18,10 +18,12 @@ export async function generateStaticParams() {
     { slug: 'vinayak-v' },
     { slug: 'thanishasri' },
     { slug: 'thanishasri-ss' },
-    { slug: 'thanishasri-ss' },
     { slug: 'thanisha' },
     { slug: 'yeshwanth' },
     { slug: 'yeswanth' },
+    { slug: 'yeshwanth-kg' },
+    { slug: 'itz.yez' },
+    { slug: 'itz-yez' },
     { slug: 'dr-manoj-challa' }
   );
   return params;

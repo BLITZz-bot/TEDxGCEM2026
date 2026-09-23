@@ -31,16 +31,26 @@ export default function Team({ settings }: TeamProps) {
 
   useEffect(() => {
     // Use static members data
-    const staticTeam = INITIAL_MEMBERS.map((m, index) => ({
-      id: m.slug,
-      name: m.name,
-      role: m.role,
-      image_url: m.photoUrl,
-      email: m.email || undefined,
-      linkedin: m.linkedin || undefined,
-      bio: m.bio,
-      display_order: index
-    }));
+    const staticTeam = INITIAL_MEMBERS.map((m, index) => {
+      let photo = m.photoUrl;
+      const lowerName = m.name.toLowerCase();
+      const lowerSlug = m.slug.toLowerCase();
+      if (lowerName.includes('vinayaka') || lowerSlug.includes('vinayak')) {
+        photo = '/VINAYAKA V.png';
+      } else if (lowerName.includes('yeshwanth') || lowerSlug.includes('yeshwanth') || lowerSlug === 'itz.yez' || lowerSlug === 'itz-yez') {
+        photo = '/YESHWANTH.png';
+      }
+      return {
+        id: m.slug,
+        name: m.name,
+        role: m.role,
+        image_url: photo,
+        email: m.email || undefined,
+        linkedin: m.linkedin || undefined,
+        bio: m.bio,
+        display_order: index
+      };
+    });
     setTeam(staticTeam);
     setLoading(false);
   }, []);
@@ -177,7 +187,13 @@ export default function Team({ settings }: TeamProps) {
                           style={{ aspectRatio: ratio }}
                         >
                           <img 
-                            src={member.image_url || "/members/placeholder.png"} 
+                            src={
+                              member.name.toLowerCase().includes('vinayaka') || (member.id && member.id.toLowerCase().includes('vinayak'))
+                                ? '/VINAYAKA V.png'
+                                : member.name.toLowerCase().includes('yeshwanth') || (member.id && (member.id.toLowerCase().includes('yeshwanth') || member.id === 'itz.yez' || member.id === 'itz-yez'))
+                                ? '/YESHWANTH.png'
+                                : member.image_url || "/members/placeholder.png"
+                            } 
                             alt={`${member.name} Photo`} 
                             onLoad={(e) => {
                               const { naturalWidth, naturalHeight } = e.currentTarget;
@@ -287,7 +303,13 @@ export default function Team({ settings }: TeamProps) {
                   }}
                 >
                   <img 
-                    src={activeMember.image_url || "/members/placeholder.png"} 
+                    src={
+                      activeMember.name.toLowerCase().includes('vinayaka') || (activeMember.id && activeMember.id.toLowerCase().includes('vinayak'))
+                        ? '/VINAYAKA V.png'
+                        : activeMember.name.toLowerCase().includes('yeshwanth') || (activeMember.id && (activeMember.id.toLowerCase().includes('yeshwanth') || activeMember.id === 'itz.yez' || activeMember.id === 'itz-yez'))
+                        ? '/YESHWANTH.png'
+                        : activeMember.image_url || "/members/placeholder.png"
+                    } 
                     alt={`${activeMember.name} Photo`} 
                     className="w-full h-full object-contain rounded-xl" 
                   />
@@ -310,7 +332,9 @@ export default function Team({ settings }: TeamProps) {
                   const matched = INITIAL_MEMBERS.find(
                     (m) =>
                       m.name.trim().toLowerCase() === activeMember.name.trim().toLowerCase() ||
-                      m.slug.toLowerCase() === activeMember.name.trim().toLowerCase().replace(/\s+/g, "-")
+                      m.slug.toLowerCase() === activeMember.name.trim().toLowerCase().replace(/\s+/g, "-") ||
+                      (activeMember.name.toLowerCase().includes('yeshwanth') && (m.slug === 'yeshwanth' || m.slug === 'itz.yez')) ||
+                      (activeMember.name.toLowerCase().includes('vinayaka') && (m.slug === 'vinayaka' || m.slug === 'vinayak'))
                   );
                   if (matched) {
                     return (

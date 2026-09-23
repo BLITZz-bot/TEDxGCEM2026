@@ -20,7 +20,15 @@ export interface GridMember {
 
 const FALLBACK_PHOTO = '/members/placeholder.png';
 
-function getValidPhotoUrl(url?: string | null): string {
+function getValidPhotoUrl(url?: string | null, name?: string, slug?: string): string {
+  const lowerName = (name || '').toLowerCase();
+  const lowerSlug = (slug || '').toLowerCase();
+  if (lowerName.includes('vinayaka') || lowerSlug.includes('vinayak')) {
+    return '/VINAYAKA V.png';
+  }
+  if (lowerName.includes('yeshwanth') || lowerSlug.includes('yeshwanth') || lowerSlug === 'itz.yez' || lowerSlug === 'itz-yez') {
+    return '/YESHWANTH.png';
+  }
   if (!url || typeof url !== 'string') return FALLBACK_PHOTO;
   const trimmed = url.trim();
   if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
@@ -71,9 +79,11 @@ export function TeamGrid({ members }: { members: GridMember[] }) {
         <AnimatePresence mode="popLayout">
           {filteredMembers.map((member, index) => {
             const theme = getTeamTheme(member.team);
+            const isVinayaka = member.name.toLowerCase().includes('vinayaka') || member.slug.toLowerCase().includes('vinayak');
+            const isYeshwanth = member.name.toLowerCase().includes('yeshwanth') || member.slug.toLowerCase().includes('yeshwanth') || member.slug === 'itz.yez' || member.slug === 'itz-yez';
             const imageSrc = failedImages[member.slug]
-              ? FALLBACK_PHOTO
-              : getValidPhotoUrl(member.photoUrl);
+              ? (isVinayaka ? '/VINAYAKA V.png' : isYeshwanth ? '/YESHWANTH.png' : FALLBACK_PHOTO)
+              : getValidPhotoUrl(member.photoUrl, member.name, member.slug);
 
             return (
               <motion.div
