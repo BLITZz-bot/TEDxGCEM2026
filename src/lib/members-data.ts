@@ -124,6 +124,8 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     contribution: 'Managing master event schedule, stage protocol, and attendee experience teams.',
     interests: ['Event Management', 'Operations', 'Experience Design'],
     photoUrl: '/MANOJ V.png',
+    linkedin: 'https://www.linkedin.com/in/manoj-gowda-80806632b',
+    email: 'manojgowdav11@gmail.com',
   },
 
   {
@@ -330,6 +332,8 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     contribution: 'Authored speaker announcement copy, press notes, and website stories.',
     interests: ['Copywriting', 'Content Writing', 'Journalism'],
     photoUrl: '/MALLIKARJUN.png',
+    linkedin: 'https://www.linkedin.com/in/mallikarjuna-l-3a919a438',
+    email: 'Mallikarjunpatil200601@gmail.com',
   },
 
   {
