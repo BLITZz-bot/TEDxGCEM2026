@@ -141,12 +141,26 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
       {
-        // Aggressively cache static media on Vercel CDN Edge to eliminate Fast Origin Transfer
-        source: "/:all*(svg|jpg|jpeg|png|webp|avif|ico|woff|woff2)",
+        // Cache fonts & icons forever — these never change
+        source: "/:all*(ico|woff|woff2|svg)",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // Team/member photos and other images:
+        // Serve from cache instantly (max-age=86400 = 1 day),
+        // but silently revalidate in the background on each visit.
+        // This means updated photos are visible within ~24 hours
+        // on every device without the user needing to clear cache.
+        source: "/:all*(jpg|jpeg|png|webp|avif)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
           },
         ],
       },
