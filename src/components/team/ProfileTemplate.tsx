@@ -262,11 +262,11 @@ export function ProfileTemplate({ member }: { member: MemberData }) {
 
                 {/* Oversized Name Typography */}
                 {isSingleLineName ? (
-                  <h1 className="font-serif-editorial font-medium uppercase tracking-tight text-white leading-tight text-[clamp(1.75rem,5.4vw,6.5rem)] sm:text-[clamp(2.2rem,5.6vw,6.5rem)] whitespace-nowrap drop-shadow-[0_0_35px_rgba(255,255,255,0.35)]">
+                  <h1 className="font-serif-editorial font-medium uppercase tracking-tight text-white leading-tight text-[clamp(1.5rem,4.2vw,4.8rem)] sm:text-[clamp(1.8rem,4.5vw,5rem)] whitespace-nowrap drop-shadow-[0_0_35px_rgba(255,255,255,0.35)]">
                     {member.name}
                   </h1>
                 ) : (
-                  <h1 className="font-serif-editorial font-light uppercase tracking-tight text-white leading-[0.88] text-[clamp(3.2rem,8.5vw,9.5rem)] text-balance">
+                  <h1 className="font-serif-editorial font-light uppercase tracking-tight text-white leading-[0.9] text-[clamp(2.2rem,5vw,5.5rem)] text-balance">
                     <span className="block font-normal">{nameFormatted.first}</span>
                     {nameFormatted.rest && (
                       <span className="block text-neutral-400 font-extralight italic">
