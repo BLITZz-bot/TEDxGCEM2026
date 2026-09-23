@@ -152,6 +152,7 @@ export const INITIAL_MEMBERS: StaticMember[] = [
     contribution: 'Lead operational strategist for venue logistics, badge control, and emergency planning.',
     interests: ['Logistics', 'Operations Engineering', 'Security Control'],
     photoUrl: '/VINAY.png',
+    email: 'vinays013042005@gmail.com',
   },
 
   {
