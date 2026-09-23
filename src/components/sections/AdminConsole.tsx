@@ -145,6 +145,7 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [resendingGuestId, setResendingGuestId] = useState<string | null>(null);
   const [downloadingBadgeId, setDownloadingBadgeId] = useState<string | null>(null);
+  const [downloadingPassId, setDownloadingPassId] = useState<string | null>(null);
 
   // Expandable Co-Participants viewer state in registrations table
   const [expandedCoParticipantsId, setExpandedCoParticipantsId] = useState<string | null>(null);
@@ -2449,6 +2450,239 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
     }
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ADMIN: DOWNLOAD DELEGATE PASS PNG
+  // Generates the exact same 800×1200 canvas badge as GetMyPass.tsx.
+  // For group registrations, downloads one PNG per attendee sequentially.
+  // ─────────────────────────────────────────────────────────────────────────
+  const handleDownloadDelegatePass = async (reg: AdminRegistration) => {
+    setDownloadingPassId(reg.id);
+    try {
+      const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://tedxgcem.in";
+      const eventYear = reg.created_at ? new Date(reg.created_at).getFullYear() : 2026;
+      const baseUuidPart = reg.id.replace(/^tedx-/i, "").slice(0, 8).toUpperCase();
+
+      const attendeesList = Array.isArray(reg.attendees_json) && reg.attendees_json.length > 0
+        ? reg.attendees_json
+        : [{
+            fullName: reg.full_name,
+            email: reg.email,
+            phone: reg.phone,
+            organization: reg.organization,
+            designation: reg.designation || "Student",
+          }];
+
+      const isGroup = attendeesList.length > 1;
+
+      const downloadSinglePass = (opts: {
+        fullName: string;
+        email: string;
+        organization: string;
+        designation: string;
+        passCode: string;
+      }) => new Promise<void>((resolve) => {
+        const W = 800;
+        const H = 1200;
+        const R = 36;
+        const canvas = document.createElement("canvas");
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext("2d")!;
+
+        const roundRect = (x: number, y: number, w: number, h: number, r: number) => {
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.arcTo(x + w, y, x + w, y + h, r);
+          ctx.arcTo(x + w, y + h, x, y + h, r);
+          ctx.arcTo(x, y + h, x, y, r);
+          ctx.arcTo(x, y, x + w, y, r);
+          ctx.closePath();
+        };
+
+        // 1. Background
+        roundRect(0, 0, W, H, R);
+        ctx.fillStyle = "#09090b";
+        ctx.fill();
+
+        // 2. Outer White Border
+        roundRect(0, 0, W, H, R);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // 3. Top Red Accent Header Banner
+        roundRect(0, 0, W, 140, R);
+        ctx.fillStyle = "#EB0028";
+        ctx.fill();
+        ctx.fillRect(0, 70, W, 70);
+
+        // 4. Top Lanyard Slot Graphic (Mock Hole)
+        ctx.beginPath();
+        ctx.arc(W / 2, 35, 14, 0, Math.PI * 2);
+        ctx.fillStyle = "#09090b";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.4)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 5. Banner Text: TEDxGCEM 2026
+        ctx.font = "bold 44px Arial, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.fillText(`TEDxGCEM ${eventYear}`, W / 2, 105);
+
+        // 6. Subtitle below banner
+        ctx.font = "14px 'Courier New', monospace";
+        ctx.fillStyle = "rgba(255,255,255,0.45)";
+        ctx.fillText("x = independently organized TED event", W / 2, 175);
+
+        // 7. Category Pill: OFFICIAL DELEGATE PASS
+        ctx.fillStyle = "rgba(235, 0, 40, 0.15)";
+        roundRect(W / 2 - 130, 205, 260, 40, 20);
+        ctx.fill();
+        ctx.strokeStyle = "#EB0028";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.font = "bold 16px 'Courier New', monospace";
+        ctx.fillStyle = "#EB0028";
+        ctx.fillText("● OFFICIAL DELEGATE PASS", W / 2, 230);
+
+        // 8. ATTENDEE NAME
+        ctx.font = "13px 'Courier New', monospace";
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillText("ATTENDEE NAME", W / 2, 310);
+        ctx.font = "bold 56px Arial, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        let nameText = (opts.fullName || "DELEGATE").toUpperCase();
+        while (ctx.measureText(nameText).width > W - 100 && nameText.length > 0) {
+          nameText = nameText.slice(0, -1);
+        }
+        ctx.fillText(nameText, W / 2, 375);
+
+        // 9. Designation Role
+        if (opts.designation) {
+          ctx.font = "bold 20px 'Courier New', monospace";
+          ctx.fillStyle = "#EB0028";
+          ctx.fillText(opts.designation.toUpperCase(), W / 2, 420);
+        }
+
+        // 10. Institution / Organization
+        ctx.font = "13px 'Courier New', monospace";
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillText("INSTITUTION / ORGANIZATION", W / 2, 480);
+        ctx.font = "bold 26px Arial, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        let orgText = (opts.organization || "").toUpperCase();
+        while (ctx.measureText(orgText).width > W - 120 && orgText.length > 0) {
+          orgText = orgText.slice(0, -1);
+        }
+        ctx.fillText(orgText, W / 2, 520);
+
+        // 11. Divider Line
+        ctx.setLineDash([10, 6]);
+        ctx.strokeStyle = "rgba(255,255,255,0.2)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(60, 565);
+        ctx.lineTo(W - 60, 565);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 12. QR Code Container Box
+        const qrBoxSize = 250;
+        const qrBoxX = W / 2 - qrBoxSize / 2;
+        const qrBoxY = 600;
+        ctx.fillStyle = "#ffffff";
+        roundRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 20);
+        ctx.fill();
+
+        const verifyUrl = `${siteOrigin}/api/verify-pass?id=${encodeURIComponent(opts.passCode)}&email=${encodeURIComponent(opts.email)}`;
+
+        const finishDelegateCanvas = () => {
+          // Label under QR Code
+          ctx.font = "bold 13px 'Courier New', monospace";
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
+          ctx.textAlign = "center";
+          ctx.fillText("EVENT DAY CHECK-IN SCAN QR", W / 2, qrBoxY + qrBoxSize + 30);
+
+          // 13. Barcode Strip
+          const bcY = 910;
+          const bcH = 100;
+          const barWidths = [3, 1, 2, 1, 4, 1, 2, 3, 1, 2, 1, 4, 2, 1, 3, 1, 2, 4, 1, 2, 3, 1, 1, 2, 4, 3, 1, 2, 1, 3, 1, 4, 2, 1, 2];
+          let totalW = 0;
+          barWidths.forEach((w) => (totalW += w * 5));
+          let bx = W / 2 - totalW / 2;
+          barWidths.forEach((w, i) => {
+            if (i % 2 === 0) {
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(bx, bcY, w * 5, bcH);
+            }
+            bx += w * 5;
+          });
+
+          // 14. Pass ID text
+          ctx.font = "bold 20px 'Courier New', monospace";
+          ctx.fillStyle = "#EB0028";
+          ctx.fillText(opts.passCode, W / 2, bcY + bcH + 35);
+
+          // 15. Bottom Footer Bar
+          ctx.fillStyle = "rgba(255,255,255,0.05)";
+          ctx.fillRect(0, H - 75, W, 75);
+          ctx.font = "14px 'Courier New', monospace";
+          ctx.fillStyle = "rgba(255,255,255,0.4)";
+          ctx.fillText("VENUE: GCEM AUDITORIUM, BENGALURU", W / 2, H - 32);
+
+          // 16. Download PNG Image
+          const link = document.createElement("a");
+          const safeName = opts.fullName.replace(/[^a-zA-Z0-9]/g, "_");
+          link.download = `TEDxGCEM_Pass_${safeName}.png`;
+          link.href = canvas.toDataURL("image/png", 1.0);
+          link.click();
+          resolve();
+        };
+
+        const qrPadding = 15;
+        const qrImg = new window.Image();
+        qrImg.crossOrigin = "anonymous";
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(verifyUrl)}&color=000000&bgcolor=ffffff`;
+        qrImg.onload = () => {
+          ctx.drawImage(qrImg, qrBoxX + qrPadding, qrBoxY + qrPadding, qrBoxSize - qrPadding * 2, qrBoxSize - qrPadding * 2);
+          finishDelegateCanvas();
+        };
+        qrImg.onerror = () => {
+          ctx.font = "12px monospace";
+          ctx.fillStyle = "#000000";
+          ctx.textAlign = "center";
+          ctx.fillText("QR SCAN CODE", W / 2, qrBoxY + 130);
+          finishDelegateCanvas();
+        };
+      });
+
+      for (let idx = 0; idx < attendeesList.length; idx++) {
+        const att = attendeesList[idx];
+        const passCode = isGroup
+          ? `TEDX-${baseUuidPart}-${idx + 1}`
+          : `TEDX-${baseUuidPart}`;
+        await downloadSinglePass({
+          fullName: att.fullName?.trim() || reg.full_name,
+          email: att.email?.trim() || reg.email,
+          organization: att.organization?.trim() || reg.organization || "GCEM",
+          designation: att.designation?.trim() || reg.designation || "Student",
+          passCode,
+        });
+        // Small delay between sequential downloads for browser compatibility
+        if (idx < attendeesList.length - 1) {
+          await new Promise((r) => setTimeout(r, 400));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to generate delegate pass:", err);
+      alert("Failed to download pass image.");
+    } finally {
+      setDownloadingPassId(null);
+    }
+  };
+
   const exportComplimentaryPassesToExcel = (format: "excel" | "csv" = "excel") => {
     if (complimentaryPasses.length === 0) {
       alert("No special guest passes recorded to export.");
@@ -3359,13 +3593,33 @@ export default function AdminConsole({ settings, onSettingsUpdate }: AdminConsol
                             )}
                           </td>
                           <td className="py-4 pl-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => deleteRegistration(reg.id)}
-                              className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white rounded-lg uppercase text-white/50 cursor-pointer font-bold transition-all text-xs"
-                            >
-                              Delete
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadDelegatePass(reg)}
+                                disabled={downloadingPassId === reg.id}
+                                title={`Download delegate pass PNG${Array.isArray(reg.attendees_json) && reg.attendees_json.length > 1 ? ` (${reg.attendees_json.length} separate files)` : ""}`}
+                                className="px-3 py-1.5 bg-blue-500/15 border border-blue-500/30 hover:bg-blue-500 text-blue-400 hover:text-white rounded-lg uppercase text-xs font-bold tracking-wider transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 shadow-sm"
+                              >
+                                {downloadingPassId === reg.id ? (
+                                  <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                  </svg>
+                                )}
+                                {Array.isArray(reg.attendees_json) && reg.attendees_json.length > 1
+                                  ? `Pass ×${reg.attendees_json.length}`
+                                  : "Pass"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteRegistration(reg.id)}
+                                className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-ted-red hover:text-white rounded-lg uppercase text-white/50 cursor-pointer font-bold transition-all text-xs"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
