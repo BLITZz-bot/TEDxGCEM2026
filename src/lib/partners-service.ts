@@ -5,6 +5,7 @@ import path from "path";
 import { createClient } from "@/lib/supabase/server";
 import { readLocalStore, saveLocalStore } from "@/lib/db/local-store";
 import { isValidUUID } from "@/lib/db/uuid-validator";
+import { INITIAL_PARTNERS } from "@/lib/partners-data";
 
 // ─── Domain type ─────────────────────────────────────────────────────────────
 
@@ -43,7 +44,14 @@ async function saveLocal(partners: Partner[]): Promise<void> {
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export async function getPartners(): Promise<Partner[]> {
-  // 1. Try Supabase first
+  // BYPASS SUPABASE: Return static data snapshot from local store or preloaded INITIAL_PARTNERS
+  const staticLocal = readLocal();
+  if (staticLocal && staticLocal.length > 0) {
+    return staticLocal.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+  }
+  return [...INITIAL_PARTNERS].sort((a: Partner, b: Partner) => (a.display_order ?? 0) - (b.display_order ?? 0));
+
+  // 1. Try Supabase first (kept intact below for future use)
   try {
     const supabase = await createClient();
     let data: Partner[] | null = null;
@@ -69,8 +77,9 @@ export async function getPartners(): Promise<Partner[]> {
       }
     }
 
-    if (!error && Array.isArray(data) && data.length > 0) {
-      return data.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+    const partnersData = data as Partner[] | null;
+    if (!error && partnersData && partnersData!.length > 0) {
+      return partnersData!.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
     }
   } catch (err) {
     console.warn("[partners-service] Supabase fetch error, falling back to local file:", err);

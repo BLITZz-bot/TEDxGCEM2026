@@ -5,6 +5,7 @@ import path from "path";
 import { createClient } from "@/lib/supabase/server";
 import { readLocalStore, saveLocalStore } from "@/lib/db/local-store";
 import { isValidUUID } from "@/lib/db/uuid-validator";
+import { INITIAL_SPEAKERS } from "@/lib/speakers-data";
 
 // â”€â”€â”€ Domain type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -40,7 +41,12 @@ async function saveLocal(speakers: Speaker[]): Promise<void> {
 // â”€â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getSpeakers(): Promise<Speaker[]> {
-  // 1. Try Supabase first
+  // BYPASS SUPABASE: Return static data snapshot from local store or preloaded INITIAL_SPEAKERS
+  const local = readLocal();
+  if (local && local.length > 0) return local;
+  return INITIAL_SPEAKERS;
+
+  // 1. Try Supabase first (kept intact below for future use)
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -48,8 +54,9 @@ export async function getSpeakers(): Promise<Speaker[]> {
       .select("*")
       .order("created_at", { ascending: true });
 
-    if (!error && Array.isArray(data) && data.length > 0) {
-      return data;
+    const speakersData = data as Speaker[] | null;
+    if (!error && speakersData && speakersData!.length > 0) {
+      return speakersData!;
     }
   } catch (err) {
     console.warn("[speakers-service] Supabase fetch error, falling back to local file:", err);

@@ -1,4 +1,7 @@
-[
+// Auto-generated static snapshot from Supabase
+import { Partner } from "./partners-service";
+
+export const INITIAL_PARTNERS: Partner[] = [
   {
     "id": "b380b253-c022-4451-a60c-06e0cb8971aa",
     "created_at": "2026-09-17T16:47:11.713033+00:00",
@@ -55,4 +58,4 @@
     "linkedin": "",
     "display_order": 4
   }
-]
+];

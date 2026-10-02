@@ -1,4 +1,7 @@
-[
+// Auto-generated static snapshot from Supabase
+import { Speaker } from "./speakers-service";
+
+export const INITIAL_SPEAKERS: Speaker[] = [
   {
     "id": "797dd93a-b914-43ce-9ddf-cdbed24be889",
     "created_at": "2026-09-10T10:10:23.530928+00:00",
@@ -107,4 +110,4 @@
     "bio": "Janani BM is a Computer Science Engineering student who enjoys exploring new experiences and actively engaging in diverse activities beyond academics. With a strong interest in public speaking and communication, she enjoys expressing her thoughts and ideas and taking part in opportunities that help her learn, grow, and connect with others. She is an IEEE Women in Engineering (WIE) Scholarship recipient and has been actively involved in IEEE initiatives. Her outreach idea was shortlisted under IEEE Bangalore Section – PRAVARTANA 2026, through which she contributed to a two-day STEM outreach programme for PU students. Beyond academics and technology, Janani enjoys reading and sports and has been involved in athletics. Her curiosity and willingness to explore different interests continue to shape her journey, as she seeks out experiences that challenge her, broaden her perspective, and help her discover something new. ",
     "details": ""
   }
-]
+];

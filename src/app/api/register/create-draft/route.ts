@@ -54,6 +54,12 @@ export async function POST(request: Request) {
     // Server-Side Tamper-Proof Price Calculation
     // Never trust client-provided amount; fetch active tier and validate coupon server-side
     const activeTier = await getActiveTicketTier();
+    if (activeTier.status === "sold_out" || activeTier.status === "closed") {
+      return NextResponse.json(
+        { error: "Registrations are currently closed. All seats have been allocated." },
+        { status: 400 }
+      );
+    }
     const cleanQty = Math.max(1, Math.min(10, Number(quantity) || 1));
     const baseAmount = activeTier.price * cleanQty;
 
