@@ -54,18 +54,49 @@ export default function RegisterNow({ onTabChange, settings }: RegisterNowProps)
   const [step, setStep] = useState<"tier_card" | "intro_pillars" | "form">("tier_card");
 
   const [activeTier, setActiveTier] = useState<ActiveTierInfo>({
-    id: "early_bird",
-    name: "Early Bird",
-    tag: "Priority Pass",
-    description: "Exclusive early bird access pass with curated kit and all speaker sessions.",
-    price: 300,
+    id: "phase_2",
+    name: "Phase 2",
+    tag: "Phase 2 Pass",
+    description: "Phase 2 standard admission with access to all speaker presentations and event goodies.",
+    price: 500,
     discount_price: null,
     allow_coupons: false,
-    status: "active",
+    status: "sold_out",
   });
 
-  const [allPublicTiers, setAllPublicTiers] = useState<ActiveTierInfo[]>([]);
-  const [tierLoading, setTierLoading] = useState(true);
+  const [allPublicTiers, setAllPublicTiers] = useState<ActiveTierInfo[]>([
+    {
+      id: "early_bird",
+      name: "Early Bird",
+      tag: "Priority Pass",
+      description: "Exclusive early bird access pass with curated kit and all speaker sessions.",
+      price: 250,
+      discount_price: null,
+      allow_coupons: false,
+      status: "sold_out",
+    },
+    {
+      id: "phase_1",
+      name: "Phase 1",
+      tag: "Phase 1 Pass",
+      description: "Official Phase 1 delegate pass including keynote talks, delegate kit, and networking.",
+      price: 350,
+      discount_price: 250,
+      allow_coupons: true,
+      status: "sold_out",
+    },
+    {
+      id: "phase_2",
+      name: "Phase 2",
+      tag: "Phase 2 Pass",
+      description: "Phase 2 standard admission with access to all speaker presentations and event goodies.",
+      price: 500,
+      discount_price: 350,
+      allow_coupons: true,
+      status: "sold_out",
+    },
+  ]);
+  const [tierLoading, setTierLoading] = useState(false);
 
   // Multi-Ticket Quantity & Attendees state
   const [ticketQuantity, setTicketQuantity] = useState<number>(1);

@@ -71,6 +71,51 @@ export const DEFAULT_TICKET_TIERS: TicketTier[] = [
   },
 ];
 
+export const STATIC_SOLD_OUT_TIERS: TicketTier[] = [
+  {
+    id: "early_bird",
+    name: "Early Bird",
+    tag: "Priority Pass",
+    description: "Exclusive early bird access pass with curated kit and all speaker sessions.",
+    price: 250,
+    total_capacity: 20,
+    sold_count: 20,
+    allow_coupons: false,
+    discount_price: null,
+    status: "sold_out",
+    sort_order: 1,
+    manual_override: true,
+  },
+  {
+    id: "phase_1",
+    name: "Phase 1",
+    tag: "Phase 1 Pass",
+    description: "Official Phase 1 delegate pass including keynote talks, delegate kit, and networking.",
+    price: 350,
+    total_capacity: 35,
+    sold_count: 35,
+    allow_coupons: true,
+    discount_price: 250,
+    status: "sold_out",
+    sort_order: 2,
+    manual_override: true,
+  },
+  {
+    id: "phase_2",
+    name: "Phase 2",
+    tag: "Phase 2 Pass",
+    description: "Phase 2 standard admission with access to all speaker presentations and event goodies.",
+    price: 500,
+    total_capacity: 35,
+    sold_count: 35,
+    allow_coupons: true,
+    discount_price: 350,
+    status: "sold_out",
+    sort_order: 3,
+    manual_override: true,
+  },
+];
+
 const TICKETS_FILE_PATH = path.join(process.cwd(), "data", "tickets.json");
 
 // Helper to read local json
@@ -166,10 +211,20 @@ export async function getTierSoldCounts(): Promise<Record<string, number>> {
   return counts;
 }
 
+// Toggle to statically lock ticket tiers without deleting live database query logic
+const USE_STATIC_TIERS: boolean = true;
+
 /**
  * Returns all ticket tiers with dynamic status and live sold counts
  */
 export async function getAllTicketTiers(): Promise<TicketTier[]> {
+  // BYPASS SUPABASE: Return static sold-out tiers to display past tiers in locked state
+  if (USE_STATIC_TIERS) {
+    const local = readLocalTiers();
+    if (local && local.length > 0) return local;
+    return STATIC_SOLD_OUT_TIERS;
+  }
+
   let tiers = readLocalTiers();
 
   // 1. Fetch from Supabase (Primary Source of Truth)
